@@ -1,0 +1,1657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<title>ABC Music Player - FreeMusicStore</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/abcjs@6.4.4/dist/abcjs-basic-min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Manrope', sans-serif;
+  background: #0a0a0b;
+  color: #f0f0f2;
+  min-height: 100vh;
+  line-height: 1.5;
+}
+a { color: #8b5cf6; text-decoration: none; }
+a:hover { text-decoration: underline; }
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 16px 24px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #999;
+}
+.back:hover { color: #8b5cf6; text-decoration: none; }
+header {
+  text-align: center;
+  padding: 24px 24px 32px;
+  border-bottom: 1px solid #1e1e1e;
+}
+header h1 {
+  font-size: 28px;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 6px;
+}
+header p { color: #888; font-size: 15px; }
+
+.app-layout {
+  display: flex;
+  min-height: calc(100vh - 140px);
+}
+
+/* --- Sidebar --- */
+.sidebar {
+  width: 300px;
+  min-width: 300px;
+  background: #141416;
+  border-right: 1px solid #1e1e1e;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.sidebar-header {
+  padding: 16px;
+  border-bottom: 1px solid #1e1e1e;
+}
+.sidebar-header h3 {
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.sidebar-search {
+  width: 100%;
+  background: #0a0a0b;
+  color: #f0f0f2;
+  border: 1px solid #2a2a2e;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-family: 'Manrope', sans-serif;
+}
+.sidebar-search:focus { outline: none; border-color: #8b5cf6; }
+.sidebar-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+}
+.sidebar-list::-webkit-scrollbar { width: 6px; }
+.sidebar-list::-webkit-scrollbar-track { background: transparent; }
+.sidebar-list::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+.category-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  padding: 12px 8px 4px;
+}
+.piece-item {
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #bbb;
+  transition: all 0.15s;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.piece-item:hover { background: #1e1e22; color: #fff; }
+.piece-item.active { background: #8b5cf620; color: #8b5cf6; }
+.piece-item .piece-title { font-weight: 600; }
+.piece-item .piece-composer { font-size: 11px; color: #666; }
+.piece-item.active .piece-composer { color: #8b5cf6aa; }
+
+/* --- Main --- */
+.main-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}
+
+/* --- Toolbar --- */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  padding: 16px 24px;
+  border-bottom: 1px solid #1e1e1e;
+  background: #141416;
+}
+.toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.toolbar-group label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+.toolbar-separator {
+  width: 1px;
+  height: 28px;
+  background: #2a2a2e;
+}
+
+/* Buttons */
+.btn {
+  font-family: 'Manrope', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.btn-primary {
+  background: #8b5cf6;
+  color: #fff;
+}
+.btn-primary:hover { background: #7c3aed; }
+.btn-primary:disabled { background: #3b2670; color: #888; cursor: default; }
+.btn-secondary {
+  background: #1e1e22;
+  color: #ccc;
+  border: 1px solid #2a2a2e;
+}
+.btn-secondary:hover { background: #28282e; color: #fff; border-color: #444; }
+.btn-secondary:disabled { color: #555; cursor: default; }
+.btn-icon {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: #1e1e22;
+  color: #ccc;
+  border: 1px solid #2a2a2e;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.15s;
+}
+.btn-icon:hover { background: #28282e; color: #fff; border-color: #444; }
+.btn-icon.active { background: #8b5cf620; color: #8b5cf6; border-color: #8b5cf6; }
+
+/* Tempo/transpose controls */
+input[type="range"] {
+  accent-color: #8b5cf6;
+  width: 100px;
+}
+.range-val {
+  font-size: 13px;
+  color: #8b5cf6;
+  font-weight: 600;
+  min-width: 45px;
+  text-align: center;
+}
+select {
+  font-family: 'Manrope', sans-serif;
+  background: #1e1e22;
+  color: #f0f0f2;
+  border: 1px solid #2a2a2e;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+select:focus { outline: none; border-color: #8b5cf6; }
+
+/* --- Content area --- */
+.content-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  border-bottom: 1px solid #1e1e1e;
+  background: #111113;
+  padding: 0 24px;
+}
+.tab {
+  padding: 12px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #666;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s;
+}
+.tab:hover { color: #aaa; }
+.tab.active { color: #8b5cf6; border-bottom-color: #8b5cf6; }
+
+/* Panels */
+.panels {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+.panel {
+  flex: 1;
+  display: none;
+  overflow: auto;
+}
+.panel.active { display: flex; flex-direction: column; }
+
+/* Editor panel */
+.editor-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.editor-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+#abc-editor {
+  flex: 1;
+  min-height: 250px;
+  background: #0a0a0b;
+  color: #f0f0f2;
+  border: none;
+  padding: 20px 24px;
+  font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  font-size: 14px;
+  line-height: 1.6;
+  resize: none;
+  outline: none;
+  tab-size: 4;
+}
+#abc-editor::placeholder { color: #444; }
+
+/* Sheet music display */
+.sheet-music-container {
+  background: #fff;
+  border-radius: 8px;
+  margin: 16px 24px;
+  padding: 20px;
+  min-height: 200px;
+  overflow-x: auto;
+}
+#paper svg {
+  width: 100% !important;
+  max-width: 100%;
+}
+#paper .abcjs-cursor {
+  stroke: #8b5cf6 !important;
+  stroke-width: 2;
+}
+
+/* Score panel (full view) */
+.score-panel .sheet-music-container {
+  flex: 1;
+  margin: 16px 24px;
+}
+
+/* Synth controls placeholder */
+#synth-control {
+  padding: 0 24px 16px;
+}
+#synth-control .abcjs-inline-audio {
+  background: #141416;
+  border: 1px solid #2a2a2e;
+  border-radius: 8px;
+}
+
+/* Status bar */
+.status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 24px;
+  border-top: 1px solid #1e1e1e;
+  background: #111113;
+  font-size: 12px;
+  color: #555;
+}
+.status-bar .status-left { display: flex; gap: 16px; }
+.status-bar .status-right { display: flex; gap: 8px; }
+
+/* Mobile */
+@media (max-width: 768px) {
+  .app-layout { flex-direction: column; }
+  .sidebar {
+    width: 100%;
+    min-width: 100%;
+    max-height: 50vh;
+    border-right: none;
+    border-bottom: 1px solid #1e1e1e;
+  }
+  .toolbar { padding: 12px 16px; }
+  #abc-editor { min-height: 150px; padding: 16px; }
+  .sheet-music-container { margin: 12px 16px; }
+}
+
+/* Highlight note during playback */
+.abcjs-note_selected {
+  fill: #8b5cf6 !important;
+}
+
+/* Export modal */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+}
+.modal-overlay.active { display: flex; }
+.modal {
+  background: #141416;
+  border: 1px solid #2a2a2e;
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 400px;
+  width: 90%;
+}
+.modal h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 16px;
+}
+.modal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.modal-close {
+  margin-top: 16px;
+  text-align: right;
+}
+</style>
+</head>
+<body>
+
+<a href="/" class="back">&larr; Back to Store</a>
+
+<header>
+  <h1>ABC Music Player</h1>
+  <p>Write, view, and play sheet music using ABC notation</p>
+</header>
+
+<div class="app-layout">
+  <!-- Sidebar: Library -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <h3>Library</h3>
+      <input type="text" class="sidebar-search" id="library-search" placeholder="Search pieces...">
+    </div>
+    <div class="sidebar-list" id="library-list"></div>
+  </aside>
+
+  <!-- Main panel -->
+  <div class="main-panel">
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="toolbar-group">
+        <button class="btn btn-primary" id="btn-play" title="Play">&#9654; Play</button>
+        <button class="btn-icon" id="btn-pause" title="Pause">&#10074;&#10074;</button>
+        <button class="btn-icon" id="btn-stop" title="Stop">&#9632;</button>
+      </div>
+      <div class="toolbar-separator"></div>
+      <div class="toolbar-group">
+        <label>Tempo</label>
+        <input type="range" id="tempo-slider" min="40" max="240" value="120">
+        <span class="range-val" id="tempo-val">120</span>
+      </div>
+      <div class="toolbar-separator"></div>
+      <div class="toolbar-group">
+        <label>Transpose</label>
+        <button class="btn-icon" id="transpose-down" title="Down semitone">-</button>
+        <span class="range-val" id="transpose-val">0</span>
+        <button class="btn-icon" id="transpose-up" title="Up semitone">+</button>
+      </div>
+      <div class="toolbar-separator"></div>
+      <div class="toolbar-group">
+        <button class="btn btn-secondary" id="btn-export" title="Export">Export</button>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <div class="tab active" data-tab="editor">Editor</div>
+      <div class="tab" data-tab="score">Full Score</div>
+    </div>
+
+    <!-- Content -->
+    <div class="content-area">
+      <!-- Editor tab -->
+      <div class="panel active" id="panel-editor">
+        <div class="editor-panel">
+          <div class="editor-area">
+            <textarea id="abc-editor" spellcheck="false" placeholder="X:1
+T:My Tune
+M:4/4
+L:1/8
+K:C
+CDEF GABc|..."
+            ></textarea>
+          </div>
+          <div class="sheet-music-container">
+            <div id="paper"></div>
+          </div>
+          <div id="synth-control"></div>
+        </div>
+      </div>
+
+      <!-- Full Score tab -->
+      <div class="panel" id="panel-score">
+        <div class="score-panel" style="display:flex;flex-direction:column;flex:1;">
+          <div class="sheet-music-container" style="flex:1;">
+            <div id="paper-full"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Status bar -->
+    <div class="status-bar">
+      <div class="status-left">
+        <span id="status-key">Key: -</span>
+        <span id="status-meter">Meter: -</span>
+        <span id="status-notes">Notes: 0</span>
+      </div>
+      <div class="status-right">
+        <span>abcjs 6.4.4</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Export Modal -->
+<div class="modal-overlay" id="export-modal">
+  <div class="modal">
+    <h3>Export</h3>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="export-svg" style="width:100%;justify-content:center;">Download SVG (Sheet Music)</button>
+      <button class="btn btn-secondary" id="export-midi" style="width:100%;justify-content:center;">Download MIDI</button>
+      <button class="btn btn-secondary" id="export-abc" style="width:100%;justify-content:center;">Download ABC File</button>
+    </div>
+    <div class="modal-close">
+      <button class="btn btn-secondary" id="close-modal">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// LIBRARY: 40 classical pieces in valid ABC notation
+// ============================================================
+const library = [
+  // ---- Piano Classics ----
+  {
+    category: "Piano Classics",
+    title: "Fur Elise",
+    composer: "Beethoven",
+    abc: `X:1
+T:Fur Elise
+C:Ludwig van Beethoven
+M:3/8
+L:1/16
+Q:1/8=100
+K:Am
+|:e^d|e^de B dc|A2 z2 CE|AB z2 EG|^A2 z2 E e^d|
+e^de B dc|A2 z2 CE|AB z2 E c|B2 z2 :|
+|:z2 Bc d e|f2 z2 E a|ge z2 Ea|
+e2 z2 ^de|e2 z2 ^de|e^de B dc|A2 z2 CE|AB z2 Ec|B2 z2 :|`
+  },
+  {
+    category: "Piano Classics",
+    title: "Moonlight Sonata, Mvt.1",
+    composer: "Beethoven",
+    abc: `X:1
+T:Moonlight Sonata
+C:Ludwig van Beethoven
+M:4/4
+L:1/8
+Q:1/4=56
+K:C#min
+E,G,C E G C E G,C E G C|E,G,C E G C E G,C E G C|
+E,A,C E A C E A,C E A C|E,^G,B, E ^G B, E ^G,B, E ^G B,|
+E,A,C E A C E A,C E A C|E,A,C E A C E A,C E A C|
+^D,A,B, ^D A B, ^D A,B, ^D A B,|E,G,B, E G B, E G,B, E G B,|`
+  },
+  {
+    category: "Piano Classics",
+    title: "Prelude in C Major BWV 846",
+    composer: "J.S. Bach",
+    abc: `X:1
+T:Prelude in C Major BWV 846
+C:J.S. Bach
+M:4/4
+L:1/16
+Q:1/4=70
+K:C
+z2EG cGcG z2EG cGcG|z2DF Ac FA z2DF AcFA|
+z2DG BdGB z2DG BdGB|z2EG cGcG z2EG cGcG|
+z2EA cAcA z2EA cAcA|z2DF AdFA z2DF AdFA|
+z2DG BGBG z2DG BGBG|z2EG cGcG z2EG cGcG|`
+  },
+  {
+    category: "Piano Classics",
+    title: "Clair de Lune",
+    composer: "Debussy",
+    abc: `X:1
+T:Clair de Lune
+C:Claude Debussy
+M:9/8
+L:1/8
+Q:3/8=40
+K:Db
+z3 z3 z A,B,|D3 E3 F2 E|D3 B,3 A,2 B,|D3 E3 F2 E|
+D3 B,3 z A,B,|D3 E3 FAF|E3 D3 B,2 A,|B,6 z A,B,|
+D3 E3 F2 E|D3 B,3 A,2 B,|D3 E3 F2 A|B6 z3|`
+  },
+  {
+    category: "Piano Classics",
+    title: "Gymnopedie No.1",
+    composer: "Erik Satie",
+    abc: `X:1
+T:Gymnopedie No.1
+C:Erik Satie
+M:3/4
+L:1/4
+Q:1/4=72
+K:D
+F|A2 G|F2 D|E2 F|A3|B2 A|G2 E|F3-|F2 F|
+A2 G|F2 D|E2 F|A3|d2 c|B2 G|A3-|A2 F|
+A2 G|F2 D|E2 F|A3|B2 A|G2 E|D3-|D3|`
+  },
+  {
+    category: "Piano Classics",
+    title: "Minute Waltz",
+    composer: "Chopin",
+    abc: `X:1
+T:Minute Waltz
+C:Frederic Chopin
+M:3/4
+L:1/8
+Q:1/4=168
+K:Db
+AB|:cd ef ge|fd B2 AB|cd ef ge|f6|
+cd ef ge|fd B2 AB|cd ef gf|e6|
+AB cd ef|ge fd B2|AB cd ef|ge f4:|`
+  },
+  {
+    category: "Piano Classics",
+    title: "Liebestraum No.3",
+    composer: "Liszt",
+    abc: `X:1
+T:Liebestraum No.3
+C:Franz Liszt
+M:6/4
+L:1/4
+Q:1/4=70
+K:Ab
+c2 B A2 G|A4 E2|F2 E D2 C|E4 z2|
+c2 B A2 G|A4 c2|e2 d c2 B|c4 z2|
+A2 B c2 e|d4 B2|A2 B c2 e|d4 z2|`
+  },
+  {
+    category: "Piano Classics",
+    title: "Reverie",
+    composer: "Debussy",
+    abc: `X:1
+T:Reverie
+C:Claude Debussy
+M:4/4
+L:1/8
+Q:1/4=66
+K:F
+z4 z2 FA|c4 d2 cA|G4 A2 GE|F6 FA|
+c4 d2 cA|G4 A2 GE|F6 z2|z4 z2 cd|
+e4 f2 ed|c4 d2 cA|G4 F2 EF|G6 z2|`
+  },
+  {
+    category: "Piano Classics",
+    title: "Nocturne Op.9 No.2",
+    composer: "Chopin",
+    abc: `X:1
+T:Nocturne Op.9 No.2
+C:Frederic Chopin
+M:12/8
+L:1/8
+Q:3/8=50
+K:Eb
+z3 z3 z3 z B,E|G3 F3 z EFG AB|c3- c2B AGF G3|
+z3 z3 z3 z B,E|G3 F3 z EFG AB|c3 B3 A3 G3|
+z3 z3 z3 z3|z3 z3 z3 z B,E|G3 F3 z EFG AB|
+c3 e3 d3 c2B|B6 z6|`
+  },
+  {
+    category: "Piano Classics",
+    title: "Prelude in C# minor",
+    composer: "Rachmaninoff",
+    abc: `X:1
+T:Prelude in C# minor
+C:Sergei Rachmaninoff
+M:4/4
+L:1/4
+Q:1/4=50
+K:C#min
+[A,,E,,A,,,]3 z|[A,,E,,A,,,]3 z|[^G,,E,,^G,,,]3 z|[A,,E,,A,,,]3 z|
+z C E A|^G2 F E|E3 z|z C E A|
+^G2 A B|c3 z|B2 A ^G|A3 z|`
+  },
+
+  // ---- Orchestral Themes ----
+  {
+    category: "Orchestral Themes",
+    title: "Ode to Joy",
+    composer: "Beethoven",
+    abc: `X:1
+T:Ode to Joy
+C:Ludwig van Beethoven
+M:4/4
+L:1/4
+Q:1/4=120
+K:D
+F F G A|A G F E|D D E F|F2 E2|
+F F G A|A G F E|D D E F|E2 D2|
+E E F D|E FG F D|E FG F E|D E A,2|
+F F G A|A G F E|D D E F|E2 D2|`
+  },
+  {
+    category: "Orchestral Themes",
+    title: "Eine kleine Nachtmusik",
+    composer: "Mozart",
+    abc: `X:1
+T:Eine kleine Nachtmusik
+C:W.A. Mozart
+M:4/4
+L:1/8
+Q:1/4=128
+K:G
+G2 z D G2 z D|GDG B d4|c2 z A c2 z A|cAce a4|
+g2 a2 g2 d2|e2 f2 e2 B2|c2 d2 c2 B2|ABAG F2 z2|
+G2 z D G2 z D|GDG B d4|d2 c2 B2 A2|G4 z4|`
+  },
+  {
+    category: "Orchestral Themes",
+    title: "Spring (Four Seasons)",
+    composer: "Vivaldi",
+    abc: `X:1
+T:Spring from The Four Seasons
+C:Antonio Vivaldi
+M:4/4
+L:1/8
+Q:1/4=132
+K:E
+E4 z ^D E F|^G4 z F ^G A|B4 B4|BA^G F E2 z2|
+E4 z ^D E F|^G4 z F ^G A|B4 B4|BA^G F E2 z2|
+z4 B2 BA|^GAGF E2 EF|^GABc B2 BA|^GAGF E4|`
+  },
+  {
+    category: "Orchestral Themes",
+    title: "New World Symphony (Largo)",
+    composer: "Dvorak",
+    abc: `X:1
+T:New World Symphony - Largo
+C:Antonin Dvorak
+M:4/4
+L:1/4
+Q:1/4=52
+K:Db
+E|A2 A B|A2 F E|F2 A c|B3 A|
+F2 E D|E2 A,2|D3 E|F2 A2|
+B2 B c|B2 A F|A2 F E|D3 E|F2 E D|E2 D2|D3 z|`
+  },
+  {
+    category: "Orchestral Themes",
+    title: "Canon in D",
+    composer: "Pachelbel",
+    abc: `X:1
+T:Canon in D
+C:Johann Pachelbel
+M:4/4
+L:1/4
+Q:1/4=72
+K:D
+F A B F|G D G A|F A B F|G D G A|
+d c B A|G F G A|d c B A|G F E A|
+F D F A|G F E D|E C E A|F D D A|
+d2 c A|B G A F|G E F D|E D D2|`
+  },
+  {
+    category: "Orchestral Themes",
+    title: "William Tell Overture",
+    composer: "Rossini",
+    abc: `X:1
+T:William Tell Overture - Finale
+C:Gioachino Rossini
+M:2/4
+L:1/16
+Q:1/4=152
+K:E
+E2E2 E4|E2E2 E4|EFGA B2B2|B2A2 G2F2|
+E2E2 E4|E2E2 E4|EFGA B2B2|e4 z4|
+B2B2 B4|B2B2 B4|Bcde f2f2|f2e2 d2c2|
+B2B2 B4|B2B2 B4|Bcde f2e2|e4 z4|`
+  },
+  {
+    category: "Orchestral Themes",
+    title: "In the Hall of the Mountain King",
+    composer: "Grieg",
+    abc: `X:1
+T:In the Hall of the Mountain King
+C:Edvard Grieg
+M:4/4
+L:1/8
+Q:1/4=80
+K:Bm
+B,CDE FEDC|B,E z E D z D C|B,CDE FEDC|B,F z F E z E ^D|
+B,CDE FEDC|B,E z E D z D C|B,CDE FAGF|E2 D2 C2 B,2|
+B,CDE FEDC|B,E z E D z D C|B,CDE FEDC|B,F z F E z E ^D|`
+  },
+  {
+    category: "Orchestral Themes",
+    title: "Morning Mood",
+    composer: "Grieg",
+    abc: `X:1
+T:Morning Mood (Peer Gynt)
+C:Edvard Grieg
+M:6/8
+L:1/8
+Q:3/8=60
+K:E
+G AB|:e2 d c2 B|A2 G F2 E|F2 G A2 B|
+e2 d c2 B|A2 G F2 E|F2 G A2 B|
+e2 d c2 B|A2 G F2 G|A2 B e3:|`
+  },
+  {
+    category: "Orchestral Themes",
+    title: "Blue Danube Waltz",
+    composer: "J. Strauss II",
+    abc: `X:1
+T:The Blue Danube
+C:Johann Strauss II
+M:3/4
+L:1/4
+Q:1/4=168
+K:D
+z2 A,|D2 D|D2 F|A2 A|A2 d|c2 A|F2 D|
+E2 E|E2 A|G2 E|D2 D|F2 A|d2 d|
+c2 A|F2 D|E2 E|G2 E|D2 z|`
+  },
+  {
+    category: "Orchestral Themes",
+    title: "Hungarian Dance No.5",
+    composer: "Brahms",
+    abc: `X:1
+T:Hungarian Dance No.5
+C:Johannes Brahms
+M:2/4
+L:1/8
+Q:1/4=100
+K:Gm
+dd|d2 B2|cd e2|dd d2|BA G2|
+dd d2|BA G2|AB c2|BA G2|
+dd d2|B2 cd|e2 dd|d2 BA|G2 AB|c2 BA|G4|`
+  },
+
+  // ---- Vocal / Famous Melodies ----
+  {
+    category: "Famous Melodies",
+    title: "Ave Maria",
+    composer: "Schubert",
+    abc: `X:1
+T:Ave Maria
+C:Franz Schubert
+M:4/4
+L:1/8
+Q:1/4=66
+K:Bb
+z4 z2 F2|B4 c2 d2|c4 B2 A2|B4 z2 F2|
+B4 c2 d2|f4 e2 d2|c4 z2 A2|c4 B2 A2|
+G4 F2 G2|A4 z2 F2|B4 c2 d2|c4 B2 A2|B4 z4|`
+  },
+  {
+    category: "Famous Melodies",
+    title: "Habanera (Carmen)",
+    composer: "Bizet",
+    abc: `X:1
+T:Habanera from Carmen
+C:Georges Bizet
+M:2/4
+L:1/8
+Q:1/4=72
+K:Dm
+d2 cd|ec dB|A2 ^G2|A2 z2|d2 cd|
+ec dB|A2 ^G2|A2 z2|
+A2 BA|^GF EF|A2 BA|^GF EF|
+AB cd|ed cB|A2 ^G2|A2 z2|`
+  },
+  {
+    category: "Famous Melodies",
+    title: "La donna e mobile",
+    composer: "Verdi",
+    abc: `X:1
+T:La donna e mobile
+C:Giuseppe Verdi
+M:3/8
+L:1/8
+Q:3/8=68
+K:Bb
+d|:BAB|d2 d|dcB|c2 d|BAB|d2 d|dcB|c3|
+FGA|B2 B|Bcd|c2 B|AGA|B2 B|Bcd|c2 :|`
+  },
+  {
+    category: "Famous Melodies",
+    title: "Nessun dorma",
+    composer: "Puccini",
+    abc: `X:1
+T:Nessun dorma
+C:Giacomo Puccini
+M:4/4
+L:1/4
+Q:1/4=72
+K:G
+B2 B B|A2 z G|A B c A|G2 F2|E3 D|
+G2 A B|c2 B A|G2 z2|
+B2 B B|d2 c B|A2 G F|G3 z|
+d2 c B|A2 B c|d2 B2|G4|`
+  },
+  {
+    category: "Famous Melodies",
+    title: "Toreador Song (Carmen)",
+    composer: "Bizet",
+    abc: `X:1
+T:Toreador Song
+C:Georges Bizet
+M:4/4
+L:1/4
+Q:1/4=108
+K:F
+A2 AG|F2 z C|F2 FG|A2 z A|c2 cB|
+A2 z A|G2 GA|B2 z G|A2 AG|F2 z C|
+F2 FG|A2 z c|d2 dc|BA GF|F4|`
+  },
+
+  // ---- Other Classics ----
+  {
+    category: "Other Classics",
+    title: "Flight of the Bumblebee",
+    composer: "Rimsky-Korsakov",
+    abc: `X:1
+T:Flight of the Bumblebee
+C:Nikolai Rimsky-Korsakov
+M:2/4
+L:1/16
+Q:1/4=140
+K:Am
+edcB AGFE|DCBA, G,A,B,C|DEFG ABcd|edcB AGFE|
+DEFG ABcB|AGFE DCBA,|B,CDE FGAB|cBAG FEDC|
+DCBA, G,A,B,C|DEFG ABcd|edcB AGFE|DCBA, A,4|`
+  },
+  {
+    category: "Other Classics",
+    title: "Bolero Theme",
+    composer: "Ravel",
+    abc: `X:1
+T:Bolero
+C:Maurice Ravel
+M:3/4
+L:1/8
+Q:1/4=72
+K:C
+C2 DE FE DC|E2 z2 EF GE|F2 EF GF ED|C2 z2 z4|
+C2 DE FE DC|E2 z2 EF GA|c2 BA GF ED|C2 z2 z4|
+C2 DE FE DC|E2 z2 ED CB,|C2 DE FG AF|E2 C2 C4|`
+  },
+  {
+    category: "Other Classics",
+    title: "Danse Macabre Theme",
+    composer: "Saint-Saens",
+    abc: `X:1
+T:Danse Macabre
+C:Camille Saint-Saens
+M:3/4
+L:1/8
+Q:1/4=144
+K:Gm
+G2 AB c2|d2 ef g2|d4 c2|BA G2 z2|
+G2 AB c2|d2 ef g2|a4 g2|f2 d2 z2|
+d2 ef g2|a2 bg a2|g4 f2|ed c2 z2|
+G2 AB c2|d2 ef g2|d4 c2|BA G2 z2|`
+  },
+  {
+    category: "Other Classics",
+    title: "Swan Lake Theme",
+    composer: "Tchaikovsky",
+    abc: `X:1
+T:Swan Lake Theme
+C:Pyotr Ilyich Tchaikovsky
+M:4/4
+L:1/8
+Q:1/4=66
+K:Bm
+B2 A2 G2 F2|E4 z2 E2|F2 G2 A2 B2|
+A4 z2 F2|G2 A2 B2 c2|B4 z2 B2|
+A2 G2 F2 E2|F4 z2 F2|B2 A2 G2 F2|
+E4 z2 E2|F2 G2 A2 B2|B4 z4|`
+  },
+  {
+    category: "Other Classics",
+    title: "Sleeping Beauty Waltz",
+    composer: "Tchaikovsky",
+    abc: `X:1
+T:Sleeping Beauty Waltz
+C:Pyotr Ilyich Tchaikovsky
+M:3/4
+L:1/4
+Q:1/4=168
+K:Bb
+F|B2 c|d2 B|c2 A|B3|
+d2 e|f2 d|e2 c|d3|
+F2 G|A2 F|G2 E|F3|
+B2 c|d2 B|c2 A|B3|`
+  },
+  {
+    category: "Other Classics",
+    title: "The Entertainer",
+    composer: "Scott Joplin",
+    abc: `X:1
+T:The Entertainer
+C:Scott Joplin
+M:2/4
+L:1/16
+Q:1/4=96
+K:C
+z2DE|:FGA z AGF z|E2C2 z CDE|FGA z AGF z|c4 z CDE|
+FGA z AGF z|E2C2 z EFG|ABcA Gcec|d4 z CDE|
+FGA z AGF z|E2C2 z CDE|FGA z AGF z|c4 z4:|`
+  },
+  {
+    category: "Other Classics",
+    title: "Maple Leaf Rag",
+    composer: "Scott Joplin",
+    abc: `X:1
+T:Maple Leaf Rag
+C:Scott Joplin
+M:2/4
+L:1/16
+Q:1/4=96
+K:Ab
+e2c2|:A2BA G2E2|CDE2 z2 c2|BcBA G2E2|A4 z2 e2c2|
+A2BA G2E2|CDE2 z2 ce|dcBA GEce|A4 z2 e2c2|
+A2BA G2E2|CDE2 z2 c2|BcBA G2A2|B4 z4:|`
+  },
+  {
+    category: "Other Classics",
+    title: "Turkish March",
+    composer: "Mozart",
+    abc: `X:1
+T:Turkish March (Rondo alla Turca)
+C:W.A. Mozart
+M:2/4
+L:1/16
+Q:1/4=130
+K:Am
+|:BAGAB2 z2|cBcde2 z2|dcdedc BA|B2 E2 z4|
+BAGAB2 z2|cBcde2 z2|dcBAB dcB|A4 z4:|
+|:e2e2 efed|c2c2 cdcB|ABABAG FE|E2 B2 z4|
+e2e2 efed|c2c2 cdcB|ABAG FEDE|A4 z4:|`
+  },
+  {
+    category: "Other Classics",
+    title: "Jesu Joy of Man's Desiring",
+    composer: "J.S. Bach",
+    abc: `X:1
+T:Jesu Joy of Man's Desiring
+C:J.S. Bach
+M:9/8
+L:1/8
+Q:3/8=72
+K:G
+G3 A2 B c2 d|B3 A2 G A2 F|G3 A2 B c2 B|
+A3 G2 F G3|E3 F2 G A2 G|F3 E2 D E3|
+G3 A2 B c2 d|B3 A2 G A2 F|G3 z3 z3|`
+  },
+  {
+    category: "Other Classics",
+    title: "Air on the G String",
+    composer: "J.S. Bach",
+    abc: `X:1
+T:Air on the G String
+C:J.S. Bach
+M:4/4
+L:1/8
+Q:1/4=60
+K:C
+G4 A4|B2 AG F2 ED|C2 DE F2 GA|B4 c4|
+d2 cB A2 GF|E2 FG A4|B2 AG F2 ED|C4 z4|
+E4 F4|G2 FE D2 CB,|C2 DE F2 GA|G4 z4|`
+  },
+  {
+    category: "Other Classics",
+    title: "Toccata and Fugue in D minor",
+    composer: "J.S. Bach",
+    abc: `X:1
+T:Toccata and Fugue in D minor
+C:J.S. Bach
+M:4/4
+L:1/16
+Q:1/4=80
+K:Dm
+z2 A2 G2A2 z8|z2 G2 F2G2 z8|z2 F2 E2F2 E2D2C2D2|D8 z8|
+z2 a2 g2a2 z8|z2 g2 f2g2 z8|z2 f2 e2f2 e2d2c2d2|d8 z8|
+z2 A4 d4 f4|e2d2c2d2 A8|z2 d4 f4 a4|g2f2e2d2 A8|`
+  },
+  {
+    category: "Other Classics",
+    title: "Hallelujah Chorus",
+    composer: "Handel",
+    abc: `X:1
+T:Hallelujah Chorus
+C:George Frideric Handel
+M:4/4
+L:1/4
+Q:1/4=108
+K:D
+D D D D|D D D D|F F F F|A2 z2|
+A A A A|d d d d|A2 F2|D2 z2|
+d d c c|B B A A|B2 A2|A2 z2|
+D2 F2|A2 d2|d c B A|d4|`
+  },
+  {
+    category: "Other Classics",
+    title: "Wedding March",
+    composer: "Mendelssohn",
+    abc: `X:1
+T:Wedding March
+C:Felix Mendelssohn
+M:4/4
+L:1/8
+Q:1/4=120
+K:C
+c4 e2 c2|G4 c4|c2 e2 g2 e2|c4 z4|
+c4 e2 c2|G4 c4|c2 e2 g2 e2|c4 z4|
+e2 e2 e2 f2|g4 g2 f2|e4 e2 d2|c4 z4|
+c4 e2 c2|G4 c4|c2 e2 g2 e2|c4 z4|`
+  },
+  {
+    category: "Other Classics",
+    title: "Funeral March",
+    composer: "Chopin",
+    abc: `X:1
+T:Funeral March (Sonata No.2)
+C:Frederic Chopin
+M:4/4
+L:1/4
+Q:1/4=48
+K:Bbm
+B, B, B,2|B, C D B,|E E F D|B, B, B,2|
+B, B, B,2|B, C D B,|E E F D|B, B, B, z|
+F F G E|F F G E|F G A F|G G A F|
+B, B, B,2|B, C D B,|E E F D|B,3 z|`
+  },
+  {
+    category: "Other Classics",
+    title: "Pomp and Circumstance",
+    composer: "Elgar",
+    abc: `X:1
+T:Pomp and Circumstance March No.1
+C:Edward Elgar
+M:4/4
+L:1/4
+Q:1/4=84
+K:Bb
+d2 dc|B2 AG|F2 FG|A2 z2|
+B2 BA|G2 FE|F2 GA|B2 z2|
+d2 dc|B2 AG|F2 FG|A2 z2|
+B2 BA|G2 FE|D2 EF|D2 z2|`
+  }
+];
+
+// ============================================================
+// APP STATE
+// ============================================================
+let currentAbc = '';
+let transposeAmount = 0;
+let tempoOverride = null;
+let visualObj = null;
+let synthControl = null;
+let isPlaying = false;
+let activeTab = 'editor';
+
+// ============================================================
+// INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+  buildLibraryList();
+  setupTabs();
+  setupControls();
+  setupEditor();
+  setupExport();
+
+  // Load first piece
+  if (library.length > 0) {
+    loadPiece(0);
+  }
+});
+
+// ============================================================
+// LIBRARY LIST
+// ============================================================
+function buildLibraryList(filter = '') {
+  const list = document.getElementById('library-list');
+  list.innerHTML = '';
+  let currentCategory = '';
+  const lf = filter.toLowerCase();
+
+  library.forEach((piece, idx) => {
+    if (lf && !piece.title.toLowerCase().includes(lf) && !piece.composer.toLowerCase().includes(lf)) return;
+
+    if (piece.category !== currentCategory) {
+      currentCategory = piece.category;
+      const label = document.createElement('div');
+      label.className = 'category-label';
+      label.textContent = currentCategory;
+      list.appendChild(label);
+    }
+
+    const item = document.createElement('div');
+    item.className = 'piece-item';
+    item.dataset.index = idx;
+    item.innerHTML = `<span class="piece-title">${piece.title}</span><span class="piece-composer">${piece.composer}</span>`;
+    item.addEventListener('click', () => loadPiece(idx));
+    list.appendChild(item);
+  });
+}
+
+document.getElementById('library-search').addEventListener('input', (e) => {
+  buildLibraryList(e.target.value);
+});
+
+function loadPiece(idx) {
+  const piece = library[idx];
+  transposeAmount = 0;
+  document.getElementById('transpose-val').textContent = '0';
+  document.getElementById('abc-editor').value = piece.abc.trim();
+  currentAbc = piece.abc.trim();
+
+  // Highlight active
+  document.querySelectorAll('.piece-item').forEach(el => el.classList.remove('active'));
+  const active = document.querySelector(`.piece-item[data-index="${idx}"]`);
+  if (active) {
+    active.classList.add('active');
+    active.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }
+
+  stopPlayback();
+  renderAbc();
+}
+
+// ============================================================
+// TABS
+// ============================================================
+function setupTabs() {
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      activeTab = tab.dataset.tab;
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      document.getElementById(`panel-${activeTab}`).classList.add('active');
+      if (activeTab === 'score') renderFullScore();
+    });
+  });
+}
+
+// ============================================================
+// EDITOR
+// ============================================================
+function setupEditor() {
+  const editor = document.getElementById('abc-editor');
+  let debounceTimer;
+  editor.addEventListener('input', () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      currentAbc = editor.value;
+      renderAbc();
+    }, 300);
+  });
+}
+
+// ============================================================
+// RENDER
+// ============================================================
+function getTransposedAbc() {
+  if (transposeAmount === 0) return currentAbc;
+  return currentAbc;
+}
+
+function renderAbc() {
+  const abc = currentAbc;
+  if (!abc.trim()) {
+    document.getElementById('paper').innerHTML = '<p style="color:#666;padding:20px;">Enter ABC notation above to see sheet music</p>';
+    updateStatus(null);
+    return;
+  }
+
+  try {
+    const renderOpts = {
+      responsive: 'resize',
+      staffwidth: 700,
+      paddingtop: 10,
+      paddingbottom: 10,
+      paddingleft: 10,
+      paddingright: 10,
+      add_classes: true
+    };
+
+    if (transposeAmount !== 0) {
+      renderOpts.visualTranspose = transposeAmount;
+    }
+
+    visualObj = ABCJS.renderAbc('paper', abc, renderOpts);
+    updateStatus(visualObj[0]);
+  } catch (e) {
+    document.getElementById('paper').innerHTML = `<p style="color:#ef4444;padding:20px;">Parse error: ${e.message}</p>`;
+  }
+}
+
+function renderFullScore() {
+  const abc = currentAbc;
+  if (!abc.trim()) return;
+
+  try {
+    const renderOpts = {
+      responsive: 'resize',
+      staffwidth: 700,
+      paddingtop: 10,
+      paddingbottom: 10,
+      paddingleft: 10,
+      paddingright: 10,
+      add_classes: true
+    };
+
+    if (transposeAmount !== 0) {
+      renderOpts.visualTranspose = transposeAmount;
+    }
+
+    ABCJS.renderAbc('paper-full', abc, renderOpts);
+  } catch (e) {
+    document.getElementById('paper-full').innerHTML = `<p style="color:#ef4444;padding:20px;">Parse error: ${e.message}</p>`;
+  }
+}
+
+function updateStatus(tune) {
+  if (!tune) {
+    document.getElementById('status-key').textContent = 'Key: -';
+    document.getElementById('status-meter').textContent = 'Meter: -';
+    document.getElementById('status-notes').textContent = 'Notes: 0';
+    return;
+  }
+
+  const key = tune.getKeySignature ? tune.getKeySignature().root + (tune.getKeySignature().acc || '') + (tune.getKeySignature().mode || '') : '-';
+  const meter = tune.getMeterFraction ? `${tune.getMeterFraction().num}/${tune.getMeterFraction().den}` : '-';
+
+  let noteCount = 0;
+  if (tune.lines) {
+    tune.lines.forEach(line => {
+      if (line.staff) {
+        line.staff.forEach(staff => {
+          staff.voices.forEach(voice => {
+            voice.forEach(el => {
+              if (el.pitches) noteCount += el.pitches.length;
+            });
+          });
+        });
+      }
+    });
+  }
+
+  document.getElementById('status-key').textContent = `Key: ${key}`;
+  document.getElementById('status-meter').textContent = `Meter: ${meter}`;
+  document.getElementById('status-notes').textContent = `Notes: ${noteCount}`;
+}
+
+// ============================================================
+// PLAYBACK with ABCJS Synth
+// ============================================================
+function setupControls() {
+  document.getElementById('btn-play').addEventListener('click', startPlayback);
+  document.getElementById('btn-pause').addEventListener('click', togglePause);
+  document.getElementById('btn-stop').addEventListener('click', stopPlayback);
+
+  // Tempo slider
+  const tempoSlider = document.getElementById('tempo-slider');
+  const tempoVal = document.getElementById('tempo-val');
+  tempoSlider.addEventListener('input', () => {
+    tempoVal.textContent = tempoSlider.value;
+    tempoOverride = parseInt(tempoSlider.value);
+  });
+
+  // Transpose
+  document.getElementById('transpose-up').addEventListener('click', () => {
+    transposeAmount++;
+    document.getElementById('transpose-val').textContent = transposeAmount > 0 ? `+${transposeAmount}` : transposeAmount;
+    renderAbc();
+    if (activeTab === 'score') renderFullScore();
+  });
+
+  document.getElementById('transpose-down').addEventListener('click', () => {
+    transposeAmount--;
+    document.getElementById('transpose-val').textContent = transposeAmount > 0 ? `+${transposeAmount}` : transposeAmount;
+    renderAbc();
+    if (activeTab === 'score') renderFullScore();
+  });
+}
+
+async function startPlayback() {
+  if (!currentAbc.trim() || !visualObj || !visualObj[0]) return;
+
+  stopPlayback();
+
+  try {
+    if (ABCJS.synth.supportsAudio()) {
+      const synthControlEl = document.getElementById('synth-control');
+      synthControlEl.innerHTML = '';
+
+      synthControl = new ABCJS.synth.SynthController();
+      synthControl.load(synthControlEl, null, {
+        displayLoop: true,
+        displayRestart: true,
+        displayPlay: true,
+        displayProgress: true,
+        displayWarp: true
+      });
+
+      const renderOpts = {
+        responsive: 'resize',
+        staffwidth: 700,
+        paddingtop: 10,
+        paddingbottom: 10,
+        paddingleft: 10,
+        paddingright: 10,
+        add_classes: true
+      };
+
+      if (transposeAmount !== 0) {
+        renderOpts.visualTranspose = transposeAmount;
+      }
+
+      // Re-render to get a fresh visual object with cursor callback
+      const cursorControl = new CursorControl();
+      visualObj = ABCJS.renderAbc('paper', currentAbc, Object.assign({}, renderOpts));
+
+      const createSynth = new ABCJS.synth.CreateSynth();
+
+      const synthOpts = {};
+      if (tempoOverride) {
+        synthOpts.qpm = tempoOverride;
+      }
+
+      await createSynth.init({
+        visualObj: visualObj[0],
+        options: synthOpts
+      });
+
+      await synthControl.setTune(visualObj[0], false, synthOpts);
+      synthControl.play();
+
+      isPlaying = true;
+      document.getElementById('btn-play').textContent = '▶ Playing';
+      document.getElementById('btn-play').disabled = true;
+
+      // Style the synth control to match our theme
+      styleSynthControl();
+    } else {
+      alert('Audio playback is not supported in this browser.');
+    }
+  } catch (e) {
+    console.error('Playback error:', e);
+    document.getElementById('synth-control').innerHTML = `<p style="color:#ef4444;padding:12px;font-size:13px;">Playback error: ${e.message}</p>`;
+  }
+}
+
+function togglePause() {
+  if (synthControl) {
+    synthControl.pause();
+  }
+}
+
+function stopPlayback() {
+  if (synthControl) {
+    synthControl.pause();
+    synthControl.restart();
+  }
+  isPlaying = false;
+  document.getElementById('btn-play').textContent = '▶ Play';
+  document.getElementById('btn-play').disabled = false;
+}
+
+// Cursor control for highlighting notes
+class CursorControl {
+  onReady() {}
+  onStart() {
+    const svg = document.querySelector('#paper svg');
+    if (svg) {
+      const cursor = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      cursor.setAttribute('class', 'abcjs-cursor');
+      cursor.setAttributeNS(null, 'x1', 0);
+      cursor.setAttributeNS(null, 'y1', 0);
+      cursor.setAttributeNS(null, 'x2', 0);
+      cursor.setAttributeNS(null, 'y2', 0);
+      svg.appendChild(cursor);
+    }
+  }
+  onBeat(beatNumber, totalBeats, totalTime) {}
+  onEvent(ev) {
+    if (!ev) return;
+    // Remove previous highlights
+    document.querySelectorAll('#paper svg .abcjs-note_selected').forEach(el => {
+      el.classList.remove('abcjs-note_selected');
+    });
+    // Highlight current notes
+    if (ev.elements) {
+      ev.elements.forEach(arr => {
+        arr.forEach(el => {
+          el.classList.add('abcjs-note_selected');
+        });
+      });
+    }
+  }
+  onFinished() {
+    document.querySelectorAll('#paper svg .abcjs-note_selected').forEach(el => {
+      el.classList.remove('abcjs-note_selected');
+    });
+  }
+}
+
+function styleSynthControl() {
+  // Apply dark theme to the ABCJS synth controller
+  const style = document.createElement('style');
+  style.textContent = `
+    .abcjs-inline-audio {
+      background: #141416 !important;
+      border: 1px solid #2a2a2e !important;
+      border-radius: 8px !important;
+      height: auto !important;
+    }
+    .abcjs-inline-audio .abcjs-btn {
+      background: #1e1e22 !important;
+      border: 1px solid #333 !important;
+      color: #ccc !important;
+      fill: #ccc !important;
+    }
+    .abcjs-inline-audio .abcjs-btn:hover {
+      background: #28282e !important;
+      color: #fff !important;
+      fill: #fff !important;
+    }
+    .abcjs-inline-audio .abcjs-midi-clock {
+      color: #8b5cf6 !important;
+      font-family: 'Manrope', sans-serif !important;
+    }
+    .abcjs-inline-audio .abcjs-midi-progress-background {
+      background: #1e1e22 !important;
+      border: 1px solid #333 !important;
+    }
+    .abcjs-inline-audio .abcjs-midi-progress-indicator {
+      background: #8b5cf6 !important;
+    }
+    .abcjs-inline-audio .abcjs-tempo-wrapper label {
+      color: #888 !important;
+      font-family: 'Manrope', sans-serif !important;
+    }
+    .abcjs-inline-audio .abcjs-tempo-wrapper input {
+      background: #1e1e22 !important;
+      color: #f0f0f2 !important;
+      border: 1px solid #333 !important;
+    }
+    .abcjs-inline-audio .abcjs-midi-progress-background {
+      border-radius: 4px !important;
+    }
+    .abcjs-inline-audio .abcjs-midi-progress-indicator {
+      border-radius: 4px !important;
+    }
+    .abcjs-inline-audio svg {
+      fill: #ccc !important;
+    }
+    .abcjs-inline-audio .abcjs-btn svg {
+      fill: inherit !important;
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+// ============================================================
+// EXPORT
+// ============================================================
+function setupExport() {
+  document.getElementById('btn-export').addEventListener('click', () => {
+    document.getElementById('export-modal').classList.add('active');
+  });
+
+  document.getElementById('close-modal').addEventListener('click', () => {
+    document.getElementById('export-modal').classList.remove('active');
+  });
+
+  document.getElementById('export-modal').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) {
+      e.currentTarget.classList.remove('active');
+    }
+  });
+
+  // SVG Export
+  document.getElementById('export-svg').addEventListener('click', () => {
+    const svgEl = document.querySelector('#paper svg');
+    if (!svgEl) { alert('No sheet music to export.'); return; }
+
+    const clone = svgEl.cloneNode(true);
+    // Add white background for export
+    const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    bg.setAttribute('width', '100%');
+    bg.setAttribute('height', '100%');
+    bg.setAttribute('fill', 'white');
+    clone.insertBefore(bg, clone.firstChild);
+
+    const svgData = new XMLSerializer().serializeToString(clone);
+    const blob = new Blob([svgData], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'sheet-music.svg';
+    a.click();
+    URL.revokeObjectURL(url);
+    document.getElementById('export-modal').classList.remove('active');
+  });
+
+  // MIDI Export
+  document.getElementById('export-midi').addEventListener('click', () => {
+    if (!visualObj || !visualObj[0]) { alert('No music to export.'); return; }
+
+    try {
+      const midi = ABCJS.synth.getMidiFile(currentAbc, {
+        midiOutputType: 'binary'
+      });
+
+      if (midi && midi[0]) {
+        const blob = new Blob([midi[0]], { type: 'audio/midi' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'music.mid';
+        a.click();
+        URL.revokeObjectURL(url);
+      } else {
+        alert('MIDI generation not available. Use the ABC file export instead.');
+      }
+    } catch (e) {
+      // Fallback: offer ABC file
+      alert('MIDI export not supported in this version. Use the ABC file export instead.');
+    }
+    document.getElementById('export-modal').classList.remove('active');
+  });
+
+  // ABC Export
+  document.getElementById('export-abc').addEventListener('click', () => {
+    const abc = document.getElementById('abc-editor').value;
+    if (!abc.trim()) { alert('No ABC notation to export.'); return; }
+
+    const blob = new Blob([abc], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'music.abc';
+    a.click();
+    URL.revokeObjectURL(url);
+    document.getElementById('export-modal').classList.remove('active');
+  });
+}
+
+// ============================================================
+// SET TEMPO FROM ABC HEADER
+// ============================================================
+function extractTempoFromAbc(abc) {
+  const match = abc.match(/Q:\s*(?:\d+\/\d+=)?(\d+)/);
+  return match ? parseInt(match[1]) : 120;
+}
+
+// When loading a piece, sync the tempo slider
+const origLoadPiece = loadPiece;
+loadPiece = function(idx) {
+  origLoadPiece(idx);
+  const tempo = extractTempoFromAbc(library[idx].abc);
+  document.getElementById('tempo-slider').value = tempo;
+  document.getElementById('tempo-val').textContent = tempo;
+  tempoOverride = tempo;
+};
+</script>
+
+<script src="/related.js"></script>
+</body>
+</html>

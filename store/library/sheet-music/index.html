@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sheet Music Library — FreeMusicStore</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0a0b;--surface:#141416;--surface2:#1c1c1f;--surface3:#242428;
+  --text:#f0f0f2;--text2:#a0a0a8;--text3:#68686e;
+  --accent:#8b5cf6;--accent2:#a78bfa;--accent-dim:rgba(139,92,246,.12);
+  --border:#2a2a2e;--radius:10px;--radius-sm:6px;
+}
+html{scroll-behavior:smooth}
+body{font-family:'Manrope',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;min-height:100vh}
+a{color:var(--accent2);text-decoration:none;transition:color .2s}
+a:hover{color:#c4b5fd}
+
+/* Back link */
+.back{display:inline-flex;align-items:center;gap:6px;padding:16px 0 0 24px;font-size:14px;font-weight:500;color:var(--text2)}
+.back:hover{color:var(--accent2)}
+
+/* Header */
+.header{padding:24px 24px 0;max-width:1400px;margin:0 auto}
+.header h1{font-size:clamp(28px,4vw,42px);font-weight:800;letter-spacing:-.02em;background:linear-gradient(135deg,var(--text),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.header p.subtitle{color:var(--text2);font-size:15px;margin-top:6px}
+.stats{display:flex;gap:24px;margin-top:16px;flex-wrap:wrap}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 20px;display:flex;flex-direction:column;gap:2px}
+.stat .num{font-size:24px;font-weight:700;color:var(--accent2)}
+.stat .label{font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+
+/* Layout */
+.layout{display:grid;grid-template-columns:260px 1fr;gap:0;max-width:1400px;margin:24px auto 0;min-height:calc(100vh - 220px)}
+@media(max-width:900px){.layout{grid-template-columns:1fr}}
+
+/* Sidebar */
+.sidebar{border-right:1px solid var(--border);padding:0 20px 40px 24px;overflow-y:auto;max-height:calc(100vh - 180px);position:sticky;top:20px}
+@media(max-width:900px){.sidebar{display:none}}
+.sidebar h3{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:10px;font-weight:700}
+.composer-list{list-style:none}
+.composer-list li{margin-bottom:2px}
+.composer-list button{width:100%;text-align:left;background:none;border:none;color:var(--text2);font:inherit;font-size:13px;padding:7px 10px;border-radius:var(--radius-sm);cursor:pointer;transition:all .15s;display:flex;justify-content:space-between;align-items:center}
+.composer-list button:hover{background:var(--surface2);color:var(--text)}
+.composer-list button.active{background:var(--accent-dim);color:var(--accent2);font-weight:600}
+.composer-list button .count{font-size:11px;background:var(--surface2);padding:1px 7px;border-radius:10px;color:var(--text3);font-weight:600}
+.composer-list button.active .count{background:rgba(139,92,246,.2);color:var(--accent2)}
+
+/* Main */
+.main{padding:0 24px 60px}
+
+/* Controls */
+.controls{display:flex;flex-direction:column;gap:12px;margin-bottom:24px;position:sticky;top:0;z-index:10;background:var(--bg);padding:16px 0}
+.search-row{display:flex;gap:10px;align-items:center}
+.search-box{flex:1;position:relative}
+.search-box svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text3);width:18px;height:18px;pointer-events:none}
+.search-box input{width:100%;padding:12px 16px 12px 42px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font:inherit;font-size:14px;outline:none;transition:border-color .2s}
+.search-box input::placeholder{color:var(--text3)}
+.search-box input:focus{border-color:var(--accent)}
+.filter-row{display:flex;gap:6px;flex-wrap:wrap}
+.filter-btn{padding:7px 14px;border-radius:20px;border:1px solid var(--border);background:var(--surface);color:var(--text2);font:inherit;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap}
+.filter-btn:hover{border-color:var(--accent);color:var(--text)}
+.filter-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.filter-group{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.filter-group-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;font-weight:700;margin-right:4px}
+
+/* Results info */
+.results-info{font-size:13px;color:var(--text3);margin-bottom:16px;font-weight:500}
+
+/* Grid */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+@media(max-width:500px){.grid{grid-template-columns:1fr}}
+
+/* Card */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;transition:all .2s;cursor:default;display:flex;flex-direction:column;gap:10px}
+.card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 8px 30px rgba(139,92,246,.08)}
+.card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.card-title{font-size:15px;font-weight:700;color:var(--text);line-height:1.35}
+.card-composer{font-size:13px;color:var(--accent2);font-weight:600}
+.card-meta{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.badge{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:3px 8px;border-radius:4px;white-space:nowrap}
+.badge-baroque{background:rgba(234,179,8,.12);color:#eab308}
+.badge-classical{background:rgba(59,130,246,.12);color:#60a5fa}
+.badge-romantic{background:rgba(244,63,94,.12);color:#fb7185}
+.badge-modern{background:rgba(34,197,94,.12);color:#4ade80}
+.badge-instrument{background:var(--surface2);color:var(--text3);font-weight:600}
+.card-links{display:flex;gap:8px;margin-top:auto;padding-top:4px}
+.card-link{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;padding:6px 12px;border-radius:var(--radius-sm);transition:all .15s}
+.card-link.imslp{background:var(--accent-dim);color:var(--accent2)}
+.card-link.imslp:hover{background:rgba(139,92,246,.22)}
+.card-link.mutopia{background:rgba(34,197,94,.1);color:#4ade80}
+.card-link.mutopia:hover{background:rgba(34,197,94,.18)}
+.card-link svg{width:14px;height:14px}
+
+/* Empty state */
+.empty{grid-column:1/-1;text-align:center;padding:80px 20px;color:var(--text3)}
+.empty svg{width:48px;height:48px;margin-bottom:16px;opacity:.4}
+.empty h3{font-size:18px;color:var(--text2);margin-bottom:6px}
+.empty p{font-size:14px}
+
+/* Mobile composer toggle */
+.mobile-composer-toggle{display:none;padding:10px 16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);color:var(--text2);font:inherit;font-size:13px;font-weight:600;cursor:pointer;width:100%;text-align:left;margin-bottom:12px}
+@media(max-width:900px){.mobile-composer-toggle{display:flex;justify-content:space-between;align-items:center}}
+.mobile-sidebar{display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:16px;max-height:300px;overflow-y:auto}
+.mobile-sidebar.open{display:block}
+@media(min-width:901px){.mobile-sidebar{display:none!important}}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--text3)}
+
+/* Footer */
+.footer{text-align:center;padding:40px 24px;color:var(--text3);font-size:13px;border-top:1px solid var(--border);max-width:1400px;margin:0 auto}
+.footer a{color:var(--accent2);font-weight:500}
+</style>
+</head>
+<body>
+
+<a href="/" class="back">&larr; Back to Store</a>
+
+<header class="header">
+  <h1>Sheet Music Library</h1>
+  <p class="subtitle">Curated catalog of free public domain classical sheet music — sourced from IMSLP and Mutopia</p>
+  <div class="stats" id="stats"></div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <h3>Composers</h3>
+    <ul class="composer-list" id="composerList"></ul>
+  </aside>
+
+  <div class="main">
+    <div class="controls">
+      <div class="search-row">
+        <div class="search-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="searchInput" placeholder="Search by composer, title, or instrument...">
+        </div>
+      </div>
+      <div class="filter-row">
+        <div class="filter-group">
+          <span class="filter-group-label">Era</span>
+          <button class="filter-btn active" data-era="all">All</button>
+          <button class="filter-btn" data-era="Baroque">Baroque</button>
+          <button class="filter-btn" data-era="Classical">Classical</button>
+          <button class="filter-btn" data-era="Romantic">Romantic</button>
+          <button class="filter-btn" data-era="20th Century">20th Century</button>
+        </div>
+        <div class="filter-group">
+          <span class="filter-group-label">Instrument</span>
+          <button class="filter-btn active" data-inst="all">All</button>
+          <button class="filter-btn" data-inst="Piano">Piano</button>
+          <button class="filter-btn" data-inst="Violin">Violin</button>
+          <button class="filter-btn" data-inst="Cello">Cello</button>
+          <button class="filter-btn" data-inst="Orchestra">Orchestra</button>
+          <button class="filter-btn" data-inst="Chamber">Chamber</button>
+          <button class="filter-btn" data-inst="Vocal/Opera">Vocal/Opera</button>
+          <button class="filter-btn" data-inst="Organ">Organ</button>
+        </div>
+      </div>
+    </div>
+
+    <button class="mobile-composer-toggle" id="mobileComposerToggle">
+      <span>Filter by Composer</span>
+      <span id="mobileToggleArrow">&#9662;</span>
+    </button>
+    <div class="mobile-sidebar" id="mobileSidebar">
+      <ul class="composer-list" id="mobileComposerList"></ul>
+    </div>
+
+    <div class="results-info" id="resultsInfo"></div>
+    <div class="grid" id="grid"></div>
+  </div>
+</div>
+
+<footer class="footer">
+  All works listed are in the public domain. Sheet music hosted by
+  <a href="https://imslp.org" target="_blank" rel="noopener">IMSLP</a> and
+  <a href="https://www.mutopiaproject.org" target="_blank" rel="noopener">Mutopia Project</a>.
+  <br>FreeMusicStore &mdash; free music tools, free forever.
+</footer>
+
+<script>
+// ── Catalog ──────────────────────────────────────────────────────────────
+// Each entry: [composer, title, era, instrument, imslpSlug, hasMutopia]
+// imslpSlug maps to https://imslp.org/wiki/{slug}
+// hasMutopia → link to mutopiaproject.org search
+
+const CATALOG = [
+  // ── Bach (1685-1750) ──
+  ["J.S. Bach","The Well-Tempered Clavier, Book 1, BWV 846-869","Baroque","Piano","The_Well-Tempered_Clavier,_Book_1_(Bach,_Johann_Sebastian)",true],
+  ["J.S. Bach","The Well-Tempered Clavier, Book 2, BWV 870-893","Baroque","Piano","The_Well-Tempered_Clavier,_Book_2_(Bach,_Johann_Sebastian)",true],
+  ["J.S. Bach","Goldberg Variations, BWV 988","Baroque","Piano","Goldberg_Variations,_BWV_988_(Bach,_Johann_Sebastian)",true],
+  ["J.S. Bach","Cello Suite No.1 in G major, BWV 1007","Baroque","Cello","Cello_Suite_No.1_in_G_major,_BWV_1007_(Bach,_Johann_Sebastian)",true],
+  ["J.S. Bach","Cello Suite No.2 in D minor, BWV 1008","Baroque","Cello","Cello_Suite_No.2_in_D_minor,_BWV_1008_(Bach,_Johann_Sebastian)",true],
+  ["J.S. Bach","Cello Suite No.3 in C major, BWV 1009","Baroque","Cello","Cello_Suite_No.3_in_C_major,_BWV_1009_(Bach,_Johann_Sebastian)",true],
+  ["J.S. Bach","Brandenburg Concerto No.3, BWV 1048","Baroque","Orchestra","Brandenburg_Concerto_No.3_(Bach,_Johann_Sebastian)",false],
+  ["J.S. Bach","Brandenburg Concerto No.5, BWV 1050","Baroque","Orchestra","Brandenburg_Concerto_No.5_(Bach,_Johann_Sebastian)",false],
+  ["J.S. Bach","Toccata and Fugue in D minor, BWV 565","Baroque","Organ","Toccata_and_Fugue_in_D_minor,_BWV_565_(Bach,_Johann_Sebastian)",true],
+  ["J.S. Bach","The Art of Fugue, BWV 1080","Baroque","Piano","The_Art_of_Fugue,_BWV_1080_(Bach,_Johann_Sebastian)",true],
+  ["J.S. Bach","Mass in B minor, BWV 232","Baroque","Vocal/Opera","Mass_in_B_minor,_BWV_232_(Bach,_Johann_Sebastian)",false],
+  ["J.S. Bach","Partita No.2 for Violin, BWV 1004 (Chaconne)","Baroque","Violin","Partita_No.2_in_D_minor,_BWV_1004_(Bach,_Johann_Sebastian)",true],
+
+  // ── Vivaldi (1678-1741) ──
+  ["Vivaldi","The Four Seasons, Op.8","Baroque","Orchestra","The_Four_Seasons_(Vivaldi,_Antonio)",true],
+  ["Vivaldi","Gloria in D major, RV 589","Baroque","Vocal/Opera","Gloria_in_D_major,_RV_589_(Vivaldi,_Antonio)",false],
+  ["Vivaldi","L'Estro Armonico, Op.3","Baroque","Orchestra","L%27Estro_Armonico,_Op.3_(Vivaldi,_Antonio)",false],
+  ["Vivaldi","Concerto for 2 Violins in A minor, RV 522","Baroque","Violin","Concerto_for_2_Violins_in_A_minor,_RV_522_(Vivaldi,_Antonio)",false],
+
+  // ── Handel (1685-1759) ──
+  ["Handel","Messiah, HWV 56","Baroque","Vocal/Opera","Messiah,_HWV_56_(Handel,_George_Frideric)",false],
+  ["Handel","Water Music, HWV 348-350","Baroque","Orchestra","Water_Music_(Handel,_George_Frideric)",false],
+  ["Handel","Music for the Royal Fireworks, HWV 351","Baroque","Orchestra","Music_for_the_Royal_Fireworks,_HWV_351_(Handel,_George_Frideric)",false],
+  ["Handel","Keyboard Suite No.5 in E major, HWV 430 (Harmonious Blacksmith)","Baroque","Piano","Keyboard_Suite_No.5_in_E_major,_HWV_430_(Handel,_George_Frideric)",false],
+
+  // ── Haydn (1732-1809) ──
+  ["Haydn","Symphony No.94 in G major 'Surprise'","Classical","Orchestra","Symphony_No.94_in_G_major_(Haydn,_Joseph)",false],
+  ["Haydn","Symphony No.101 in D major 'Clock'","Classical","Orchestra","Symphony_No.101_in_D_major_(Haydn,_Joseph)",false],
+  ["Haydn","The Creation, Hob.XXI:2","Classical","Vocal/Opera","The_Creation_(Haydn,_Joseph)",false],
+  ["Haydn","Trumpet Concerto in E-flat major, Hob.VIIe:1","Classical","Orchestra","Trumpet_Concerto_(Haydn,_Joseph)",false],
+  ["Haydn","String Quartet Op.76 No.3 'Emperor'","Classical","Chamber","String_Quartets,_Op.76_(Haydn,_Joseph)",false],
+  ["Haydn","Piano Sonata No.52 in E-flat major, Hob.XVI:52","Classical","Piano","Piano_Sonata_Hob.XVI:52_(Haydn,_Joseph)",false],
+
+  // ── Mozart (1756-1791) ──
+  ["Mozart","Piano Sonata No.11 in A major, K.331 (Alla Turca)","Classical","Piano","Piano_Sonata_No.11_(Mozart,_Wolfgang_Amadeus)",true],
+  ["Mozart","Piano Sonata No.16 in C major, K.545 (Sonata Facile)","Classical","Piano","Piano_Sonata_No.16_(Mozart,_Wolfgang_Amadeus)",true],
+  ["Mozart","Eine kleine Nachtmusik, K.525","Classical","Chamber","Eine_kleine_Nachtmusik,_K.525_(Mozart,_Wolfgang_Amadeus)",true],
+  ["Mozart","Requiem in D minor, K.626","Classical","Vocal/Opera","Requiem_(Mozart,_Wolfgang_Amadeus)",false],
+  ["Mozart","Symphony No.40 in G minor, K.550","Classical","Orchestra","Symphony_No.40_(Mozart,_Wolfgang_Amadeus)",false],
+  ["Mozart","The Magic Flute, K.620","Classical","Vocal/Opera","Die_Zauberfl%C3%B6te,_K.620_(Mozart,_Wolfgang_Amadeus)",false],
+  ["Mozart","Don Giovanni, K.527","Classical","Vocal/Opera","Don_Giovanni,_K.527_(Mozart,_Wolfgang_Amadeus)",false],
+  ["Mozart","The Marriage of Figaro, K.492","Classical","Vocal/Opera","Le_nozze_di_Figaro,_K.492_(Mozart,_Wolfgang_Amadeus)",false],
+  ["Mozart","Piano Concerto No.21 in C major, K.467","Classical","Piano","Piano_Concerto_No.21_(Mozart,_Wolfgang_Amadeus)",false],
+  ["Mozart","Clarinet Concerto in A major, K.622","Classical","Orchestra","Clarinet_Concerto_(Mozart,_Wolfgang_Amadeus)",false],
+  ["Mozart","Symphony No.41 in C major, K.551 'Jupiter'","Classical","Orchestra","Symphony_No.41_(Mozart,_Wolfgang_Amadeus)",false],
+
+  // ── Beethoven (1770-1827) ──
+  ["Beethoven","Piano Sonata No.14 in C-sharp minor, Op.27/2 'Moonlight'","Classical","Piano","Piano_Sonata_No.14_(Beethoven,_Ludwig_van)",true],
+  ["Beethoven","Piano Sonata No.8 in C minor, Op.13 'Pathetique'","Classical","Piano","Piano_Sonata_No.8_(Beethoven,_Ludwig_van)",true],
+  ["Beethoven","Piano Sonata No.23 in F minor, Op.57 'Appassionata'","Classical","Piano","Piano_Sonata_No.23_(Beethoven,_Ludwig_van)",true],
+  ["Beethoven","Piano Sonata No.21 in C major, Op.53 'Waldstein'","Classical","Piano","Piano_Sonata_No.21_(Beethoven,_Ludwig_van)",true],
+  ["Beethoven","Piano Sonata No.29 in B-flat major, Op.106 'Hammerklavier'","Classical","Piano","Piano_Sonata_No.29_(Beethoven,_Ludwig_van)",false],
+  ["Beethoven","Symphony No.3 in E-flat major, Op.55 'Eroica'","Classical","Orchestra","Symphony_No.3_(Beethoven,_Ludwig_van)",false],
+  ["Beethoven","Symphony No.5 in C minor, Op.67","Classical","Orchestra","Symphony_No.5_(Beethoven,_Ludwig_van)",false],
+  ["Beethoven","Symphony No.6 in F major, Op.68 'Pastoral'","Classical","Orchestra","Symphony_No.6_(Beethoven,_Ludwig_van)",false],
+  ["Beethoven","Symphony No.7 in A major, Op.92","Classical","Orchestra","Symphony_No.7_(Beethoven,_Ludwig_van)",false],
+  ["Beethoven","Symphony No.9 in D minor, Op.125 'Choral'","Classical","Orchestra","Symphony_No.9_(Beethoven,_Ludwig_van)",false],
+  ["Beethoven","Fur Elise, WoO 59","Classical","Piano","F%C3%BCr_Elise,_WoO_59_(Beethoven,_Ludwig_van)",true],
+  ["Beethoven","Piano Concerto No.5 in E-flat major, Op.73 'Emperor'","Classical","Piano","Piano_Concerto_No.5_(Beethoven,_Ludwig_van)",false],
+  ["Beethoven","Violin Concerto in D major, Op.61","Classical","Violin","Violin_Concerto_(Beethoven,_Ludwig_van)",false],
+  ["Beethoven","String Quartet No.14 in C-sharp minor, Op.131","Classical","Chamber","String_Quartet_No.14_(Beethoven,_Ludwig_van)",false],
+
+  // ── Schubert (1797-1828) ──
+  ["Schubert","Winterreise, D.911","Romantic","Vocal/Opera","Winterreise,_D.911_(Schubert,_Franz)",false],
+  ["Schubert","Die schone Mullerin, D.795","Romantic","Vocal/Opera","Die_sch%C3%B6ne_M%C3%BCllerin,_D.795_(Schubert,_Franz)",false],
+  ["Schubert","Erlkonig, D.328","Romantic","Vocal/Opera","Erlk%C3%B6nig,_D.328_(Schubert,_Franz)",true],
+  ["Schubert","Piano Quintet in A major, D.667 'Trout'","Romantic","Chamber","Piano_Quintet_(Schubert,_Franz)",false],
+  ["Schubert","Symphony No.8 in B minor, D.759 'Unfinished'","Romantic","Orchestra","Symphony_No.8_(Schubert,_Franz)",false],
+  ["Schubert","4 Impromptus, D.899","Romantic","Piano","4_Impromptus,_D.899_(Schubert,_Franz)",true],
+  ["Schubert","4 Impromptus, D.935","Romantic","Piano","4_Impromptus,_D.935_(Schubert,_Franz)",false],
+  ["Schubert","Ave Maria, D.839","Romantic","Vocal/Opera","Ave_Maria,_D.839_(Schubert,_Franz)",true],
+
+  // ── Mendelssohn (1809-1847) ──
+  ["Mendelssohn","Violin Concerto in E minor, Op.64","Romantic","Violin","Violin_Concerto_(Mendelssohn,_Felix)",false],
+  ["Mendelssohn","A Midsummer Night's Dream, Op.61 (Wedding March)","Romantic","Orchestra","A_Midsummer_Night%27s_Dream,_Op.61_(Mendelssohn,_Felix)",false],
+  ["Mendelssohn","Songs Without Words (Complete)","Romantic","Piano","Songs_Without_Words_(Mendelssohn,_Felix)",true],
+  ["Mendelssohn","Symphony No.4 in A major, Op.90 'Italian'","Romantic","Orchestra","Symphony_No.4_(Mendelssohn,_Felix)",false],
+
+  // ── Chopin (1810-1849) ──
+  ["Chopin","Nocturnes, Op.9 (No.2 in E-flat major)","Romantic","Piano","Nocturnes,_Op.9_(Chopin,_Fr%C3%A9d%C3%A9ric)",true],
+  ["Chopin","Nocturnes, Op.27","Romantic","Piano","Nocturnes,_Op.27_(Chopin,_Fr%C3%A9d%C3%A9ric)",true],
+  ["Chopin","Nocturne in C-sharp minor, Op. posth.","Romantic","Piano","Nocturne_in_C-sharp_minor,_B.49_(Chopin,_Fr%C3%A9d%C3%A9ric)",true],
+  ["Chopin","Ballade No.1 in G minor, Op.23","Romantic","Piano","Ballade_No.1_(Chopin,_Fr%C3%A9d%C3%A9ric)",true],
+  ["Chopin","Ballade No.4 in F minor, Op.52","Romantic","Piano","Ballade_No.4_(Chopin,_Fr%C3%A9d%C3%A9ric)",true],
+  ["Chopin","Etudes, Op.10","Romantic","Piano","Etudes,_Op.10_(Chopin,_Fr%C3%A9d%C3%A9ric)",true],
+  ["Chopin","Etudes, Op.25","Romantic","Piano","Etudes,_Op.25_(Chopin,_Fr%C3%A9d%C3%A9ric)",true],
+  ["Chopin","24 Preludes, Op.28","Romantic","Piano","Preludes,_Op.28_(Chopin,_Fr%C3%A9d%C3%A9ric)",true],
+  ["Chopin","Polonaise in A-flat major, Op.53 'Heroic'","Romantic","Piano","Polonaise_in_A-flat_major,_Op.53_(Chopin,_Fr%C3%A9d%C3%A9ric)",true],
+  ["Chopin","Waltzes (Complete)","Romantic","Piano","Waltzes_(Chopin,_Fr%C3%A9d%C3%A9ric)",true],
+  ["Chopin","Mazurkas, Op.6-68","Romantic","Piano","Mazurkas_(Chopin,_Fr%C3%A9d%C3%A9ric)",true],
+  ["Chopin","Scherzo No.2 in B-flat minor, Op.31","Romantic","Piano","Scherzo_No.2_(Chopin,_Fr%C3%A9d%C3%A9ric)",true],
+  ["Chopin","Piano Concerto No.1 in E minor, Op.11","Romantic","Piano","Piano_Concerto_No.1_(Chopin,_Fr%C3%A9d%C3%A9ric)",false],
+  ["Chopin","Piano Sonata No.2 in B-flat minor, Op.35 (Funeral March)","Romantic","Piano","Piano_Sonata_No.2_(Chopin,_Fr%C3%A9d%C3%A9ric)",true],
+
+  // ── Schumann (1810-1856) ──
+  ["Schumann","Kinderszenen, Op.15 (Traumerei)","Romantic","Piano","Kinderszenen,_Op.15_(Schumann,_Robert)",true],
+  ["Schumann","Carnaval, Op.9","Romantic","Piano","Carnaval,_Op.9_(Schumann,_Robert)",true],
+  ["Schumann","Piano Concerto in A minor, Op.54","Romantic","Piano","Piano_Concerto_(Schumann,_Robert)",false],
+  ["Schumann","Dichterliebe, Op.48","Romantic","Vocal/Opera","Dichterliebe,_Op.48_(Schumann,_Robert)",true],
+  ["Schumann","Fantasie in C major, Op.17","Romantic","Piano","Fantasie_in_C_major,_Op.17_(Schumann,_Robert)",false],
+
+  // ── Liszt (1811-1886) ──
+  ["Liszt","Hungarian Rhapsody No.2, S.244/2","Romantic","Piano","Hungarian_Rhapsody_No.2_(Liszt,_Franz)",true],
+  ["Liszt","Hungarian Rhapsody No.6, S.244/6","Romantic","Piano","Hungarian_Rhapsody_No.6_(Liszt,_Franz)",false],
+  ["Liszt","Liebestraum No.3 in A-flat major, S.541/3","Romantic","Piano","Liebestr%C3%A4ume,_S.541_(Liszt,_Franz)",true],
+  ["Liszt","La Campanella, S.141/3","Romantic","Piano","Grandes_%C3%A9tudes_de_Paganini,_S.141_(Liszt,_Franz)",true],
+  ["Liszt","Transcendental Etudes, S.139","Romantic","Piano","Transcendental_%C3%89tudes,_S.139_(Liszt,_Franz)",false],
+  ["Liszt","Piano Sonata in B minor, S.178","Romantic","Piano","Piano_Sonata_in_B_minor,_S.178_(Liszt,_Franz)",false],
+  ["Liszt","Consolations, S.172","Romantic","Piano","Consolations,_S.172_(Liszt,_Franz)",true],
+
+  // ── Verdi (1813-1901) ──
+  ["Verdi","Aida","Romantic","Vocal/Opera","Aida_(Verdi,_Giuseppe)",false],
+  ["Verdi","La Traviata","Romantic","Vocal/Opera","La_traviata_(Verdi,_Giuseppe)",false],
+  ["Verdi","Rigoletto","Romantic","Vocal/Opera","Rigoletto_(Verdi,_Giuseppe)",false],
+  ["Verdi","Requiem","Romantic","Vocal/Opera","Requiem_(Verdi,_Giuseppe)",false],
+  ["Verdi","Nabucco (Va, pensiero)","Romantic","Vocal/Opera","Nabucco_(Verdi,_Giuseppe)",false],
+
+  // ── Brahms (1833-1897) ──
+  ["Brahms","Symphony No.1 in C minor, Op.68","Romantic","Orchestra","Symphony_No.1_(Brahms,_Johannes)",false],
+  ["Brahms","Symphony No.2 in D major, Op.73","Romantic","Orchestra","Symphony_No.2_(Brahms,_Johannes)",false],
+  ["Brahms","Symphony No.3 in F major, Op.90","Romantic","Orchestra","Symphony_No.3_(Brahms,_Johannes)",false],
+  ["Brahms","Symphony No.4 in E minor, Op.98","Romantic","Orchestra","Symphony_No.4_(Brahms,_Johannes)",false],
+  ["Brahms","Hungarian Dances, WoO 1","Romantic","Piano","Hungarian_Dances_(Brahms,_Johannes)",true],
+  ["Brahms","Piano Concerto No.1 in D minor, Op.15","Romantic","Piano","Piano_Concerto_No.1_(Brahms,_Johannes)",false],
+  ["Brahms","Piano Concerto No.2 in B-flat major, Op.83","Romantic","Piano","Piano_Concerto_No.2_(Brahms,_Johannes)",false],
+  ["Brahms","Violin Concerto in D major, Op.77","Romantic","Violin","Violin_Concerto_(Brahms,_Johannes)",false],
+  ["Brahms","A German Requiem, Op.45","Romantic","Vocal/Opera","Ein_deutsches_Requiem,_Op.45_(Brahms,_Johannes)",false],
+  ["Brahms","Intermezzo in A major, Op.118 No.2","Romantic","Piano","6_Klavierst%C3%BCcke,_Op.118_(Brahms,_Johannes)",true],
+
+  // ── Saint-Saens (1835-1921) ──
+  ["Saint-Saens","The Carnival of the Animals","Romantic","Orchestra","Le_carnaval_des_animaux_(Saint-Sa%C3%ABns,_Camille)",false],
+  ["Saint-Saens","Symphony No.3 in C minor, Op.78 'Organ'","Romantic","Orchestra","Symphony_No.3_(Saint-Sa%C3%ABns,_Camille)",false],
+  ["Saint-Saens","Danse Macabre, Op.40","Romantic","Orchestra","Danse_macabre,_Op.40_(Saint-Sa%C3%ABns,_Camille)",false],
+  ["Saint-Saens","Introduction and Rondo Capriccioso, Op.28","Romantic","Violin","Introduction_and_Rondo_Capriccioso_(Saint-Sa%C3%ABns,_Camille)",false],
+
+  // ── Mussorgsky (1839-1881) ──
+  ["Mussorgsky","Pictures at an Exhibition","Romantic","Piano","Pictures_at_an_Exhibition_(Mussorgsky,_Modest)",true],
+  ["Mussorgsky","Night on Bald Mountain","Romantic","Orchestra","Night_on_Bald_Mountain_(Mussorgsky,_Modest)",false],
+
+  // ── Tchaikovsky (1840-1893) ──
+  ["Tchaikovsky","Swan Lake, Op.20","Romantic","Orchestra","Swan_Lake_(Tchaikovsky,_Pyotr)",false],
+  ["Tchaikovsky","The Nutcracker, Op.71","Romantic","Orchestra","The_Nutcracker_(Tchaikovsky,_Pyotr)",false],
+  ["Tchaikovsky","1812 Overture, Op.49","Romantic","Orchestra","1812_Overture_(Tchaikovsky,_Pyotr)",false],
+  ["Tchaikovsky","Piano Concerto No.1 in B-flat minor, Op.23","Romantic","Piano","Piano_Concerto_No.1_(Tchaikovsky,_Pyotr)",false],
+  ["Tchaikovsky","Symphony No.4 in F minor, Op.36","Romantic","Orchestra","Symphony_No.4_(Tchaikovsky,_Pyotr)",false],
+  ["Tchaikovsky","Symphony No.5 in E minor, Op.64","Romantic","Orchestra","Symphony_No.5_(Tchaikovsky,_Pyotr)",false],
+  ["Tchaikovsky","Symphony No.6 in B minor, Op.74 'Pathetique'","Romantic","Orchestra","Symphony_No.6_(Tchaikovsky,_Pyotr)",false],
+  ["Tchaikovsky","Violin Concerto in D major, Op.35","Romantic","Violin","Violin_Concerto_(Tchaikovsky,_Pyotr)",false],
+
+  // ── Dvorak (1841-1904) ──
+  ["Dvorak","Symphony No.9 in E minor, Op.95 'From the New World'","Romantic","Orchestra","Symphony_No.9_(Dvo%C5%99%C3%A1k,_Anton%C3%ADn)",false],
+  ["Dvorak","Cello Concerto in B minor, Op.104","Romantic","Cello","Cello_Concerto_(Dvo%C5%99%C3%A1k,_Anton%C3%ADn)",false],
+  ["Dvorak","Slavonic Dances, Op.46","Romantic","Orchestra","Slavonic_Dances,_Op.46_(Dvo%C5%99%C3%A1k,_Anton%C3%ADn)",false],
+  ["Dvorak","Slavonic Dances, Op.72","Romantic","Orchestra","Slavonic_Dances,_Op.72_(Dvo%C5%99%C3%A1k,_Anton%C3%ADn)",false],
+  ["Dvorak","String Quartet No.12 in F major, Op.96 'American'","Romantic","Chamber","String_Quartet_No.12_(Dvo%C5%99%C3%A1k,_Anton%C3%ADn)",false],
+
+  // ── Grieg (1843-1907) ──
+  ["Grieg","Peer Gynt Suites, Op.46 & Op.55","Romantic","Orchestra","Peer_Gynt_Suite_No.1,_Op.46_(Grieg,_Edvard)",false],
+  ["Grieg","Piano Concerto in A minor, Op.16","Romantic","Piano","Piano_Concerto_(Grieg,_Edvard)",false],
+  ["Grieg","Lyric Pieces (Complete)","Romantic","Piano","Lyric_Pieces_(Grieg,_Edvard)",true],
+  ["Grieg","Holberg Suite, Op.40","Romantic","Orchestra","Holberg_Suite,_Op.40_(Grieg,_Edvard)",false],
+
+  // ── Rimsky-Korsakov (1844-1908) ──
+  ["Rimsky-Korsakov","Scheherazade, Op.35","Romantic","Orchestra","Scheherazade,_Op.35_(Rimsky-Korsakov,_Nikolay)",false],
+  ["Rimsky-Korsakov","Flight of the Bumblebee","Romantic","Orchestra","The_Tale_of_Tsar_Saltan_(Rimsky-Korsakov,_Nikolay)",false],
+
+  // ── Paganini (1782-1840) ──
+  ["Paganini","24 Caprices for Solo Violin, Op.1","Romantic","Violin","24_Caprices_(Paganini,_Niccol%C3%B2)",true],
+  ["Paganini","Violin Concerto No.1 in D major, Op.6","Romantic","Violin","Violin_Concerto_No.1_(Paganini,_Niccol%C3%B2)",false],
+  ["Paganini","Violin Concerto No.2 in B minor, Op.7 (La Campanella)","Romantic","Violin","Violin_Concerto_No.2_(Paganini,_Niccol%C3%B2)",false],
+
+  // ── Satie (1866-1925) ──
+  ["Satie","3 Gymnopedies","20th Century","Piano","3_Gymnop%C3%A9dies_(Satie,_Erik)",true],
+  ["Satie","3 Gnossiennes","20th Century","Piano","3_Gnossiennes_(Satie,_Erik)",true],
+  ["Satie","Je te veux","20th Century","Piano","Je_te_veux_(Satie,_Erik)",true],
+
+  // ── Debussy (1862-1918) ──
+  ["Debussy","Suite Bergamasque (Clair de Lune)","20th Century","Piano","Suite_bergamasque_(Debussy,_Claude)",true],
+  ["Debussy","2 Arabesques","20th Century","Piano","2_Arabesques_(Debussy,_Claude)",true],
+  ["Debussy","Prelude a l'apres-midi d'un faune","20th Century","Orchestra","Pr%C3%A9lude_%C3%A0_l%27apr%C3%A8s-midi_d%27un_faune_(Debussy,_Claude)",false],
+  ["Debussy","La Mer","20th Century","Orchestra","La_mer_(Debussy,_Claude)",false],
+  ["Debussy","Reverie","20th Century","Piano","R%C3%AAverie_(Debussy,_Claude)",true],
+  ["Debussy","Preludes, Book 1","20th Century","Piano","Pr%C3%A9ludes,_Livre_1_(Debussy,_Claude)",true],
+  ["Debussy","Children's Corner","20th Century","Piano","Children%27s_Corner_(Debussy,_Claude)",true],
+
+  // ── Rachmaninoff (1873-1943) ──
+  ["Rachmaninoff","Piano Concerto No.2 in C minor, Op.18","Romantic","Piano","Piano_Concerto_No.2_(Rachmaninoff,_Sergei)",false],
+  ["Rachmaninoff","Piano Concerto No.3 in D minor, Op.30","Romantic","Piano","Piano_Concerto_No.3_(Rachmaninoff,_Sergei)",false],
+  ["Rachmaninoff","Prelude in C-sharp minor, Op.3 No.2","Romantic","Piano","Prelude_in_C-sharp_minor,_Op.3_No.2_(Rachmaninoff,_Sergei)",true],
+  ["Rachmaninoff","Rhapsody on a Theme of Paganini, Op.43","Romantic","Piano","Rhapsody_on_a_Theme_of_Paganini_(Rachmaninoff,_Sergei)",false],
+  ["Rachmaninoff","Prelude in G minor, Op.23 No.5","Romantic","Piano","Preludes,_Op.23_(Rachmaninoff,_Sergei)",false],
+  ["Rachmaninoff","Vocalise, Op.34 No.14","Romantic","Vocal/Opera","Vocalise,_Op.34_No.14_(Rachmaninoff,_Sergei)",true],
+
+  // ── Ravel (1875-1937) ──
+  ["Ravel","Bolero","20th Century","Orchestra","Bol%C3%A9ro_(Ravel,_Maurice)",false],
+  ["Ravel","Pavane pour une infante defunte","20th Century","Piano","Pavane_pour_une_infante_d%C3%A9funte_(Ravel,_Maurice)",true],
+  ["Ravel","Daphnis et Chloe","20th Century","Orchestra","Daphnis_et_Chlo%C3%A9_(Ravel,_Maurice)",false],
+  ["Ravel","Piano Concerto in G major","20th Century","Piano","Piano_Concerto_in_G_major_(Ravel,_Maurice)",false],
+  ["Ravel","Jeux d'eau","20th Century","Piano","Jeux_d%27eau_(Ravel,_Maurice)",true],
+  ["Ravel","Gaspard de la nuit","20th Century","Piano","Gaspard_de_la_nuit_(Ravel,_Maurice)",false],
+
+  // ── Prokofiev (1891-1953) ──
+  ["Prokofiev","Romeo and Juliet, Op.64","20th Century","Orchestra","Romeo_and_Juliet_(Prokofiev,_Sergei)",false],
+  ["Prokofiev","Peter and the Wolf, Op.67","20th Century","Orchestra","Peter_and_the_Wolf,_Op.67_(Prokofiev,_Sergei)",false],
+  ["Prokofiev","Piano Sonata No.7 in B-flat major, Op.83","20th Century","Piano","Piano_Sonata_No.7_(Prokofiev,_Sergei)",false],
+  ["Prokofiev","Piano Concerto No.3 in C major, Op.26","20th Century","Piano","Piano_Concerto_No.3_(Prokofiev,_Sergei)",false],
+  ["Prokofiev","Symphony No.1 in D major, Op.25 'Classical'","20th Century","Orchestra","Symphony_No.1_(Prokofiev,_Sergei)",false],
+];
+
+// ── Build structured data ────────────────────────────────────────────────
+const works = CATALOG.map(([composer, title, era, instrument, slug, mutopia]) => ({
+  composer, title, era, instrument, slug, mutopia,
+  imslpUrl: `https://imslp.org/wiki/${slug}`,
+  mutopiaUrl: mutopia ? `https://www.mutopiaproject.org/cgibin/make-table.cgi?searchingfor=${encodeURIComponent(title.split(',')[0].split(' Op.')[0].split(' BWV')[0].split(' D.')[0].split(' S.')[0].split(' K.')[0].split(' HWV')[0].split(' WoO')[0].split(' RV')[0].trim())}&startat=0&Ede=` : null,
+  search: `${composer} ${title} ${era} ${instrument}`.toLowerCase()
+}));
+
+// ── State ────────────────────────────────────────────────────────────────
+let activeEra = 'all';
+let activeInst = 'all';
+let activeComposer = null;
+let searchTerm = '';
+
+// ── Composers list ───────────────────────────────────────────────────────
+const composerCounts = {};
+works.forEach(w => { composerCounts[w.composer] = (composerCounts[w.composer] || 0) + 1; });
+const composers = Object.entries(composerCounts).sort((a, b) => a[0].localeCompare(b[0]));
+
+// ── Stats ────────────────────────────────────────────────────────────────
+document.getElementById('stats').innerHTML = `
+  <div class="stat"><span class="num">${works.length}</span><span class="label">Works</span></div>
+  <div class="stat"><span class="num">${composers.length}</span><span class="label">Composers</span></div>
+  <div class="stat"><span class="num">100%</span><span class="label">Public Domain</span></div>
+  <div class="stat"><span class="num">Free</span><span class="label">Forever</span></div>
+`;
+
+// ── Render composers sidebar ─────────────────────────────────────────────
+function renderComposerList(containerId) {
+  const el = document.getElementById(containerId);
+  let html = `<li><button class="${activeComposer === null ? 'active' : ''}" data-composer="all">
+    <span>All Composers</span><span class="count">${works.length}</span>
+  </button></li>`;
+  composers.forEach(([name, count]) => {
+    html += `<li><button class="${activeComposer === name ? 'active' : ''}" data-composer="${name}">
+      <span>${name}</span><span class="count">${count}</span>
+    </button></li>`;
+  });
+  el.innerHTML = html;
+  el.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const c = btn.dataset.composer;
+      activeComposer = c === 'all' ? null : c;
+      render();
+    });
+  });
+}
+
+// ── Render cards ─────────────────────────────────────────────────────────
+function getEraBadgeClass(era) {
+  const map = { 'Baroque': 'badge-baroque', 'Classical': 'badge-classical', 'Romantic': 'badge-romantic', '20th Century': 'badge-modern' };
+  return map[era] || '';
+}
+
+function render() {
+  const filtered = works.filter(w => {
+    if (activeEra !== 'all' && w.era !== activeEra) return false;
+    if (activeInst !== 'all' && w.instrument !== activeInst) return false;
+    if (activeComposer && w.composer !== activeComposer) return false;
+    if (searchTerm && !w.search.includes(searchTerm)) return false;
+    return true;
+  });
+
+  // Update results info
+  const info = document.getElementById('resultsInfo');
+  if (searchTerm || activeEra !== 'all' || activeInst !== 'all' || activeComposer) {
+    info.textContent = `Showing ${filtered.length} of ${works.length} works`;
+  } else {
+    info.textContent = `${works.length} works from ${composers.length} composers — all public domain, free forever`;
+  }
+
+  // Update grid
+  const grid = document.getElementById('grid');
+  if (filtered.length === 0) {
+    grid.innerHTML = `<div class="empty">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 19V6l12-3v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="15" r="3"/></svg>
+      <h3>No works found</h3>
+      <p>Try adjusting your search or filters</p>
+    </div>`;
+    return;
+  }
+
+  grid.innerHTML = filtered.map(w => `
+    <div class="card">
+      <div class="card-top">
+        <div>
+          <div class="card-composer">${w.composer}</div>
+          <div class="card-title">${w.title}</div>
+        </div>
+      </div>
+      <div class="card-meta">
+        <span class="badge ${getEraBadgeClass(w.era)}">${w.era}</span>
+        <span class="badge badge-instrument">${w.instrument}</span>
+      </div>
+      <div class="card-links">
+        <a href="${w.imslpUrl}" target="_blank" rel="noopener" class="card-link imslp">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          IMSLP
+        </a>
+        ${w.mutopiaUrl ? `<a href="${w.mutopiaUrl}" target="_blank" rel="noopener" class="card-link mutopia">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          Mutopia
+        </a>` : ''}
+      </div>
+    </div>
+  `).join('');
+
+  // Update composer sidebars
+  renderComposerList('composerList');
+  renderComposerList('mobileComposerList');
+}
+
+// ── Event listeners ──────────────────────────────────────────────────────
+
+// Search
+document.getElementById('searchInput').addEventListener('input', e => {
+  searchTerm = e.target.value.toLowerCase().trim();
+  render();
+});
+
+// Era filter buttons
+document.querySelectorAll('[data-era]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-era]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeEra = btn.dataset.era;
+    render();
+  });
+});
+
+// Instrument filter buttons
+document.querySelectorAll('[data-inst]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-inst]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeInst = btn.dataset.inst;
+    render();
+  });
+});
+
+// Mobile composer toggle
+document.getElementById('mobileComposerToggle').addEventListener('click', () => {
+  const sidebar = document.getElementById('mobileSidebar');
+  const arrow = document.getElementById('mobileToggleArrow');
+  sidebar.classList.toggle('open');
+  arrow.innerHTML = sidebar.classList.contains('open') ? '&#9652;' : '&#9662;';
+});
+
+// ── Initial render ───────────────────────────────────────────────────────
+render();
+</script>
+<script src="/related.js"></script>
+</body>
+</html>

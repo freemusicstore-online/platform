@@ -188,6 +188,42 @@
       "iconBg": "#06b6d4",
       "category": "utilities",
       "section": "utilities"
+    },
+    {
+      "id": "sheet-music",
+      "name": "Sheet Music Library",
+      "description": "150+ free classical scores. Browse by composer, era, instrument. Links to IMSLP and Mutopia.",
+      "icon": "📜",
+      "iconBg": "#d97706",
+      "category": "library",
+      "section": "library"
+    },
+    {
+      "id": "abc-player",
+      "name": "ABC Music Player",
+      "description": "Render ABC notation as sheet music and play it back. 40 classical pieces built in. Edit, transpose, export.",
+      "icon": "🎵",
+      "iconBg": "#d97706",
+      "category": "library",
+      "section": "library"
+    },
+    {
+      "id": "score-reader",
+      "name": "Score Reader",
+      "description": "Upload sheet music images. Auto-scroll with tempo control, metronome sync, annotations. Practice companion.",
+      "icon": "📖",
+      "iconBg": "#b45309",
+      "category": "library",
+      "section": "library"
+    },
+    {
+      "id": "midi-player",
+      "name": "MIDI Player",
+      "description": "Play MIDI files with piano roll visualization. Per-track mute/solo, tempo control, loop sections.",
+      "icon": "🎹",
+      "iconBg": "#b45309",
+      "category": "library",
+      "section": "library"
     }
   ]
 }
