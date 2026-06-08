@@ -1,0 +1,2382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<title>Sample Library - FreeMusicStore</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --accent: #8b5cf6;
+  --accent-hover: #7c3aed;
+  --accent-dim: #8b5cf630;
+  --bg: #0a0a0b;
+  --surface: #141416;
+  --surface-2: #1e1e22;
+  --border: #2a2a2e;
+  --text: #f0f0f2;
+  --text-dim: #8a8a8e;
+  --green: #22c55e;
+  --red: #ef4444;
+}
+body {
+  font-family: 'Manrope', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.5;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* Back link */
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 16px 24px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-dim);
+}
+.back:hover { color: var(--accent); text-decoration: none; }
+
+/* Header */
+header {
+  text-align: center;
+  padding: 0 24px 28px;
+}
+header h1 {
+  font-size: 30px;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 6px;
+}
+header p { color: var(--text-dim); font-size: 15px; }
+.stats {
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+.stat {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+.stat strong {
+  color: var(--accent);
+  font-weight: 800;
+}
+
+/* Layout */
+.app-layout {
+  display: flex;
+  min-height: calc(100vh - 180px);
+}
+
+/* Sidebar */
+.sidebar {
+  width: 260px;
+  min-width: 260px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.sidebar-header {
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+}
+.sidebar-header h3 {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 10px;
+}
+.sidebar-search {
+  width: 100%;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-size: 13px;
+  font-family: 'Manrope', sans-serif;
+}
+.sidebar-search:focus { outline: none; border-color: var(--accent); }
+.sidebar-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+}
+.sidebar-list::-webkit-scrollbar { width: 6px; }
+.sidebar-list::-webkit-scrollbar-track { background: transparent; }
+.sidebar-list::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+.pack-item {
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #bbb;
+  transition: all 0.15s;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.pack-item:hover { background: var(--surface-2); color: #fff; }
+.pack-item.active { background: var(--accent-dim); color: var(--accent); }
+.pack-name { font-weight: 600; }
+.pack-count {
+  font-size: 11px;
+  font-weight: 700;
+  background: var(--surface-2);
+  padding: 2px 7px;
+  border-radius: 10px;
+  color: var(--text-dim);
+  min-width: 24px;
+  text-align: center;
+}
+.pack-item.active .pack-count {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* Main panel */
+.main-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}
+
+/* Toolbar */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+.toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.toolbar-group label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  white-space: nowrap;
+}
+.toolbar-separator {
+  width: 1px;
+  height: 26px;
+  background: var(--border);
+}
+
+/* Volume slider */
+.volume-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--border);
+  outline: none;
+  cursor: pointer;
+}
+.volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+}
+
+/* Buttons */
+.btn {
+  font-family: 'Manrope', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+}
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-secondary {
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.btn-secondary:hover { background: var(--border); }
+.btn-danger {
+  background: var(--red);
+  color: #fff;
+}
+.btn-danger:hover { background: #dc2626; }
+.btn-sm {
+  font-size: 12px;
+  padding: 5px 10px;
+  border-radius: 6px;
+}
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Pack header */
+.pack-header {
+  padding: 20px 24px 16px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.pack-header h2 {
+  font-size: 22px;
+  font-weight: 800;
+  color: #fff;
+}
+.pack-header .pack-desc {
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-top: 4px;
+}
+
+/* Sample grid */
+.samples-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 24px 32px;
+}
+.samples-container::-webkit-scrollbar { width: 6px; }
+.samples-container::-webkit-scrollbar-track { background: transparent; }
+.samples-container::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+
+.samples-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.sample-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  transition: border-color 0.15s, background 0.15s;
+}
+.sample-card:hover {
+  border-color: #3a3a3e;
+  background: var(--surface-2);
+}
+.sample-card.playing {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+.sample-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.sample-duration {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+.waveform-container {
+  width: 100%;
+  height: 48px;
+  margin: 8px 0;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--bg);
+  cursor: pointer;
+  position: relative;
+}
+.waveform-container canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.waveform-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-dim);
+  font-size: 11px;
+}
+.sample-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+.sample-actions .btn {
+  flex: 1;
+  justify-content: center;
+}
+.loading-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Empty / search state */
+.empty-state {
+  text-align: center;
+  padding: 60px 24px;
+  color: var(--text-dim);
+}
+.empty-state h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 8px;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .app-layout { flex-direction: column; }
+  .sidebar {
+    width: 100%;
+    min-width: 100%;
+    max-height: none;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar-list {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    gap: 4px;
+    padding: 8px;
+  }
+  .pack-item { white-space: nowrap; flex-shrink: 0; }
+  .samples-grid { grid-template-columns: 1fr; }
+  .pack-header { padding: 16px; }
+  .samples-container { padding: 0 16px 24px; }
+}
+</style>
+</head>
+<body>
+
+<a href="/" class="back">&larr; Back to Store</a>
+
+<header>
+  <h1>Sample Library</h1>
+  <p>Free synthesized audio samples. Preview, download, and use royalty-free forever.</p>
+  <div class="stats">
+    <span class="stat"><strong id="totalCount">64</strong> free samples</span>
+    <span class="stat"><strong>100%</strong> synthesized</span>
+    <span class="stat"><strong>Royalty-free</strong> forever</span>
+    <span class="stat"><strong>WAV</strong> 16-bit / 44.1kHz</span>
+  </div>
+</header>
+
+<div class="app-layout">
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <h3>Sample Packs</h3>
+      <input type="text" class="sidebar-search" id="searchInput" placeholder="Search samples...">
+    </div>
+    <div class="sidebar-list" id="packList"></div>
+  </div>
+
+  <div class="main-panel">
+    <div class="toolbar">
+      <div class="toolbar-group">
+        <label>Volume</label>
+        <input type="range" class="volume-slider" id="volumeSlider" min="0" max="1" step="0.01" value="0.75">
+      </div>
+      <div class="toolbar-separator"></div>
+      <button class="btn btn-secondary btn-sm" id="stopAllBtn" title="Stop all playback">Stop All</button>
+      <div style="flex:1"></div>
+      <button class="btn btn-primary btn-sm" id="downloadAllBtn">Download All</button>
+    </div>
+
+    <div id="packHeader" class="pack-header">
+      <div>
+        <h2 id="packTitle">TR-808 Drum Kit</h2>
+        <div class="pack-desc" id="packDesc"></div>
+      </div>
+    </div>
+
+    <div class="samples-container">
+      <div class="samples-grid" id="samplesGrid"></div>
+      <div class="empty-state" id="emptyState" style="display:none">
+        <h3>No samples found</h3>
+        <p>Try a different search term.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── Audio engine ───────────────────────────────────────────────────
+const SAMPLE_RATE = 44100;
+let audioCtx = null;
+let masterGain = null;
+let currentSource = null;
+let currentPlayingId = null;
+
+function getAudioCtx() {
+  if (!audioCtx) {
+    audioCtx = new AudioContext({ sampleRate: SAMPLE_RATE });
+    masterGain = audioCtx.createGain();
+    masterGain.gain.value = 0.75;
+    masterGain.connect(audioCtx.destination);
+  }
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+// ─── Sample cache ───────────────────────────────────────────────────
+const bufferCache = {};
+const generating = {};
+
+async function getBuffer(sample) {
+  const id = sample.id;
+  if (bufferCache[id]) return bufferCache[id];
+  if (generating[id]) return generating[id];
+  generating[id] = (async () => {
+    const buf = await sample.generate();
+    bufferCache[id] = buf;
+    delete generating[id];
+    return buf;
+  })();
+  return generating[id];
+}
+
+// ─── WAV encoder ────────────────────────────────────────────────────
+function encodeWAV(audioBuffer) {
+  const numCh = audioBuffer.numberOfChannels;
+  const length = audioBuffer.length;
+  const sr = audioBuffer.sampleRate;
+  const bitsPerSample = 16;
+  const bytesPerSample = bitsPerSample / 8;
+  const blockAlign = numCh * bytesPerSample;
+  const dataSize = length * blockAlign;
+  const buffer = new ArrayBuffer(44 + dataSize);
+  const view = new DataView(buffer);
+
+  function writeStr(offset, str) {
+    for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+  }
+
+  writeStr(0, 'RIFF');
+  view.setUint32(4, 36 + dataSize, true);
+  writeStr(8, 'WAVE');
+  writeStr(12, 'fmt ');
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, numCh, true);
+  view.setUint32(24, sr, true);
+  view.setUint32(28, sr * blockAlign, true);
+  view.setUint16(32, blockAlign, true);
+  view.setUint16(34, bitsPerSample, true);
+  writeStr(36, 'data');
+  view.setUint32(40, dataSize, true);
+
+  const channels = [];
+  for (let c = 0; c < numCh; c++) channels.push(audioBuffer.getChannelData(c));
+
+  let offset = 44;
+  for (let i = 0; i < length; i++) {
+    for (let c = 0; c < numCh; c++) {
+      let s = Math.max(-1, Math.min(1, channels[c][i]));
+      s = s < 0 ? s * 0x8000 : s * 0x7FFF;
+      view.setInt16(offset, s, true);
+      offset += 2;
+    }
+  }
+  return buffer;
+}
+
+// ─── Waveform rendering ─────────────────────────────────────────────
+function drawWaveform(canvas, audioBuffer, isPlaying) {
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = canvas.clientWidth;
+  const h = canvas.clientHeight;
+  canvas.width = w * dpr;
+  canvas.height = h * dpr;
+  ctx.scale(dpr, dpr);
+
+  const data = audioBuffer.getChannelData(0);
+  const step = Math.max(1, Math.floor(data.length / w));
+  const color = isPlaying ? '#8b5cf6' : '#4a4a50';
+  const colorPeak = isPlaying ? '#a78bfa' : '#5a5a60';
+
+  ctx.clearRect(0, 0, w, h);
+  const mid = h / 2;
+
+  for (let x = 0; x < w; x++) {
+    const start = x * step;
+    let min = 0, max = 0;
+    for (let j = 0; j < step; j++) {
+      const val = data[start + j] || 0;
+      if (val < min) min = val;
+      if (val > max) max = val;
+    }
+    const top = mid + min * mid * 0.9;
+    const bottom = mid + max * mid * 0.9;
+    ctx.fillStyle = color;
+    ctx.fillRect(x, top, 1, bottom - top || 1);
+    // Peak line
+    ctx.fillStyle = colorPeak;
+    ctx.fillRect(x, top, 1, 1);
+    ctx.fillRect(x, bottom - 1, 1, 1);
+  }
+}
+
+// ─── Synthesis helpers ──────────────────────────────────────────────
+function createOffline(duration) {
+  return new OfflineAudioContext(1, Math.ceil(SAMPLE_RATE * duration), SAMPLE_RATE);
+}
+
+function noiseBuffer(ctx, duration) {
+  const len = Math.ceil(ctx.sampleRate * duration);
+  const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+  return buf;
+}
+
+function bitcrush(audioBuffer, bits, downsample) {
+  const data = audioBuffer.getChannelData(0);
+  const levels = Math.pow(2, bits);
+  let hold = 0;
+  for (let i = 0; i < data.length; i++) {
+    if (i % downsample === 0) {
+      hold = Math.round(data[i] * levels) / levels;
+    }
+    data[i] = hold;
+  }
+  return audioBuffer;
+}
+
+function softClip(audioBuffer, amount) {
+  const data = audioBuffer.getChannelData(0);
+  for (let i = 0; i < data.length; i++) {
+    data[i] = Math.tanh(data[i] * amount);
+  }
+  return audioBuffer;
+}
+
+// ─── TR-808 Drum Kit ────────────────────────────────────────────────
+const pack808 = {
+  id: '808', name: 'TR-808 Drum Kit', desc: 'Classic analog drum machine sounds, synthesized',
+  samples: [
+    {
+      id: '808-kick', name: 'Kick', duration: 0.8,
+      async generate() {
+        const ctx = createOffline(0.8);
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const dist = ctx.createWaveShaper();
+        const curve = new Float32Array(256);
+        for (let i = 0; i < 256; i++) { const x = (i / 128) - 1; curve[i] = (Math.PI + 3) * x / (Math.PI + 3 * Math.abs(x)); }
+        dist.curve = curve;
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(150, 0);
+        osc.frequency.exponentialRampToValueAtTime(40, 0.12);
+        gain.gain.setValueAtTime(1, 0);
+        gain.gain.exponentialRampToValueAtTime(0.001, 0.75);
+        osc.connect(dist);
+        dist.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(0);
+        osc.stop(0.8);
+        return ctx.startRendering();
+      }
+    },
+    {
+      id: '808-snare', name: 'Snare', duration: 0.4,
+      async generate() {
+        const ctx = createOffline(0.4);
+        // Tone
+        const osc = ctx.createOscillator();
+        const oscGain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = 200;
+        oscGain.gain.setValueAtTime(0.7, 0);
+        oscGain.gain.exponentialRampToValueAtTime(0.001, 0.15);
+        osc.connect(oscGain);
+        oscGain.connect(ctx.destination);
+        osc.start(0); osc.stop(0.4);
+        // Noise
+        const noiseSrc = ctx.createBufferSource();
+        noiseSrc.buffer = noiseBuffer(ctx, 0.4);
+        const nGain = ctx.createGain();
+        const hpf = ctx.createBiquadFilter();
+        hpf.type = 'highpass';
+        hpf.frequency.value = 2000;
+        nGain.gain.setValueAtTime(0.6, 0);
+        nGain.gain.exponentialRampToValueAtTime(0.001, 0.3);
+        noiseSrc.connect(hpf);
+        hpf.connect(nGain);
+        nGain.connect(ctx.destination);
+        noiseSrc.start(0); noiseSrc.stop(0.4);
+        return ctx.startRendering();
+      }
+    },
+    {
+      id: '808-clap', name: 'Clap', duration: 0.3,
+      async generate() {
+        const ctx = createOffline(0.3);
+        const bpf = ctx.createBiquadFilter();
+        bpf.type = 'bandpass';
+        bpf.frequency.value = 1200;
+        bpf.Q.value = 1.5;
+        bpf.connect(ctx.destination);
+        for (let i = 0; i < 4; i++) {
+          const src = ctx.createBufferSource();
+          src.buffer = noiseBuffer(ctx, 0.015);
+          const g = ctx.createGain();
+          g.gain.setValueAtTime(0.8, 0);
+          g.gain.exponentialRampToValueAtTime(0.001, 0.25);
+          src.connect(g);
+          g.connect(bpf);
+          src.start(i * 0.012);
+        }
+        // Tail
+        const tail = ctx.createBufferSource();
+        tail.buffer = noiseBuffer(ctx, 0.3);
+        const tGain = ctx.createGain();
+        tGain.gain.setValueAtTime(0.5, 0.04);
+        tGain.gain.exponentialRampToValueAtTime(0.001, 0.28);
+        tail.connect(tGain);
+        tGain.connect(bpf);
+        tail.start(0.04);
+        return ctx.startRendering();
+      }
+    },
+    {
+      id: '808-chh', name: 'Closed HiHat', duration: 0.08,
+      async generate() {
+        const ctx = createOffline(0.08);
+        const src = ctx.createBufferSource();
+        src.buffer = noiseBuffer(ctx, 0.08);
+        const hpf = ctx.createBiquadFilter();
+        hpf.type = 'highpass';
+        hpf.frequency.value = 7000;
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.6, 0);
+        gain.gain.exponentialRampToValueAtTime(0.001, 0.06);
+        src.connect(hpf);
+        hpf.connect(gain);
+        gain.connect(ctx.destination);
+        src.start(0);
+        return ctx.startRendering();
+      }
+    },
+    {
+      id: '808-ohh', name: 'Open HiHat', duration: 0.4,
+      async generate() {
+        const ctx = createOffline(0.4);
+        const src = ctx.createBufferSource();
+        src.buffer = noiseBuffer(ctx, 0.4);
+        const hpf = ctx.createBiquadFilter();
+        hpf.type = 'highpass';
+        hpf.frequency.value = 7000;
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.5, 0);
+        gain.gain.exponentialRampToValueAtTime(0.001, 0.35);
+        src.connect(hpf);
+        hpf.connect(gain);
+        gain.connect(ctx.destination);
+        src.start(0);
+        return ctx.startRendering();
+      }
+    },
+    {
+      id: '808-tom-lo', name: 'Tom Low', duration: 0.5,
+      async generate() {
+        const ctx = createOffline(0.5);
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(120, 0);
+        osc.frequency.exponentialRampToValueAtTime(60, 0.1);
+        gain.gain.setValueAtTime(0.8, 0);
+        gain.gain.exponentialRampToValueAtTime(0.001, 0.45);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(0); osc.stop(0.5);
+        return ctx.startRendering();
+      }
+    },
+    {
+      id: '808-tom-mid', name: 'Tom Mid', duration: 0.45,
+      async generate() {
+        const ctx = createOffline(0.45);
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(180, 0);
+        osc.frequency.exponentialRampToValueAtTime(100, 0.08);
+        gain.gain.setValueAtTime(0.8, 0);
+        gain.gain.exponentialRampToValueAtTime(0.001, 0.4);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(0); osc.stop(0.45);
+        return ctx.startRendering();
+      }
+    },
+    {
+      id: '808-tom-hi', name: 'Tom High', duration: 0.4,
+      async generate() {
+        const ctx = createOffline(0.4);
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(250, 0);
+        osc.frequency.exponentialRampToValueAtTime(150, 0.06);
+        gain.gain.setValueAtTime(0.8, 0);
+        gain.gain.exponentialRampToValueAtTime(0.001, 0.35);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(0); osc.stop(0.4);
+        return ctx.startRendering();
+      }
+    },
+    {
+      id: '808-rimshot', name: 'Rimshot', duration: 0.1,
+      async generate() {
+        const ctx = createOffline(0.1);
+        const osc = ctx.createOscillator();
+        const oscG = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = 800;
+        oscG.gain.setValueAtTime(0.8, 0);
+        oscG.gain.exponentialRampToValueAtTime(0.001, 0.05);
+        osc.connect(oscG);
+        oscG.connect(ctx.destination);
+        osc.start(0); osc.stop(0.1);
+        const ns = ctx.createBufferSource();
+        ns.buffer = noiseBuffer(ctx, 0.03);
+        const nG = ctx.createGain();
+        nG.gain.setValueAtTime(0.6, 0);
+        nG.gain.exponentialRampToValueAtTime(0.001, 0.025);
+        const bpf = ctx.createBiquadFilter();
+        bpf.type = 'bandpass';
+        bpf.frequency.value = 3000;
+        bpf.Q.value = 2;
+        ns.connect(bpf);
+        bpf.connect(nG);
+        nG.connect(ctx.destination);
+        ns.start(0);
+        return ctx.startRendering();
+      }
+    },
+    {
+      id: '808-cowbell', name: 'Cowbell', duration: 0.35,
+      async generate() {
+        const ctx = createOffline(0.35);
+        const bpf = ctx.createBiquadFilter();
+        bpf.type = 'bandpass';
+        bpf.frequency.value = 700;
+        bpf.Q.value = 3;
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.6, 0);
+        gain.gain.exponentialRampToValueAtTime(0.001, 0.3);
+        bpf.connect(gain);
+        gain.connect(ctx.destination);
+        [587, 845].forEach(f => {
+          const osc = ctx.createOscillator();
+          osc.type = 'square';
+          osc.frequency.value = f;
+          osc.connect(bpf);
+          osc.start(0); osc.stop(0.35);
+        });
+        return ctx.startRendering();
+      }
+    },
+    {
+      id: '808-clave', name: 'Clave', duration: 0.06,
+      async generate() {
+        const ctx = createOffline(0.06);
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = 2500;
+        gain.gain.setValueAtTime(0.7, 0);
+        gain.gain.exponentialRampToValueAtTime(0.001, 0.04);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(0); osc.stop(0.06);
+        return ctx.startRendering();
+      }
+    },
+    {
+      id: '808-maracas', name: 'Maracas', duration: 0.05,
+      async generate() {
+        const ctx = createOffline(0.05);
+        const src = ctx.createBufferSource();
+        src.buffer = noiseBuffer(ctx, 0.05);
+        const hpf = ctx.createBiquadFilter();
+        hpf.type = 'highpass';
+        hpf.frequency.value = 5000;
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.5, 0);
+        gain.gain.exponentialRampToValueAtTime(0.001, 0.035);
+        src.connect(hpf);
+        hpf.connect(gain);
+        gain.connect(ctx.destination);
+        src.start(0);
+        return ctx.startRendering();
+      }
+    }
+  ]
+};
+
+// ─── TR-909 Drum Kit ────────────────────────────────────────────────
+const pack909 = {
+  id: '909', name: 'TR-909 Drum Kit', desc: 'Punchy dance music drum sounds',
+  samples: [
+    {
+      id: '909-kick', name: 'Kick', duration: 0.8,
+      async generate() {
+        const ctx = createOffline(0.8);
+        // Click transient
+        const click = ctx.createOscillator();
+        const clickG = ctx.createGain();
+        click.type = 'sine';
+        click.frequency.setValueAtTime(4000, 0);
+        click.frequency.exponentialRampToValueAtTime(200, 0.005);
+        clickG.gain.setValueAtTime(0.8, 0);
+        clickG.gain.exponentialRampToValueAtTime(0.001, 0.01);
+        click.connect(clickG);
+        clickG.connect(ctx.destination);
+        click.start(0); click.stop(0.02);
+        // Body
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(300, 0);
+        osc.frequency.exponentialRampToValueAtTime(50, 0.08);
+        gain.gain.setValueAtTime(1, 0);
+        gain.gain.exponentialRampToValueAtTime(0.001, 0.7);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(0); osc.stop(0.8);
+        return ctx.startRendering();
+      }
+    },
+    {
+      id: '909-snare', name: 'Snare', duration: 0.5,
+      async generate() {
+        const ctx = createOffline(0.5);
+        const osc = ctx.createOscillator();
+        const oscG = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = 180;
+        oscG.gain.setValueAtTime(0.6, 0);
+        oscG.gain.exponentialRampToValueAtTime(0.001, 0.12);
+        osc.connect(oscG);
+        oscG.connect(ctx.destination);
+        osc.start(0); osc.stop(0.5);
+        const ns = ctx.createBufferSource();
+        ns.buffer = noiseBuffer(ctx, 0.5);
+        const nG = ctx.createGain();
+        const hpf = ctx.createBiquadFilter();
+        hpf.type = 'highpass';
+        hpf.frequency.value = 1500;
+        nG.gain.setValueAtTime(0.65, 0);
+        nG.gain.exponentialRampToValueAtTime(0.001, 0.45);
+        ns.connect(hpf);
+        hpf.connect(nG);
+        nG.connect(ctx.destination);
+        ns.start(0);
+        return ctx.startRendering();
+      }
+    },
+    {
+      id: '909-clap', name: 'Clap', duration: 0.45,
+      async generate() {
+        const ctx = createOffline(0.45);
+        const bpf = ctx.createBiquadFilter();
+        bpf.type = 'bandpass';
+        bpf.frequency.value = 1500;
+        bpf.Q.value = 1;
+        bpf.connect(ctx.destination);
+        for (let i = 0; i < 5; i++) {
+          const src = ctx.createBufferSource();
+          src.buffer = noiseBuffer(ctx, 0.012);
+          const g = ctx.createGain();
+          g.gain.setValueAtTime(0.7, 0);
+          g.gain.exponentialRampToValueAtTime(0.001, 0.3);
+          src.connect(g);
+          g.connect(bpf);
+          src.start(i * 0.01);
+        }
+        // Reverb tail
+        const tail = ctx.createBufferSource();
+        tail.buffer = noiseBuffer(ctx, 0.45);
+        const tG = ctx.createGain();
+        tG.gain.setValueAtTime(0.3, 0.05);
+        tG.gain.exponentialRampToValueAtTime(0.001, 0.42);
+        tail.connect(tG);
+        tG.connect(bpf);
+        tail.start(0.05);
+        return ctx.startRendering();
+      }
+    },
+    {
+      id: '909-chh', name: 'Closed HiHat', duration: 0.06,
+      async generate() {
+        const ctx = createOffline(0.06);
+        const src = ctx.createBufferSource();
+        src.buffer = noiseBuffer(ctx, 0.06);
+        const bpf = ctx.createBiquadFilter();
+        bpf.type = 'bandpass';
+        bpf.frequency.value = 8000;
+        bpf.Q.value = 2;
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.5, 0);
+        gain.gain.exponentialRampToValueAtTime(0.001, 0.04);
+        src.connect(bpf);
+        bpf.connect(gain);
+        gain.connect(ctx.destination);
+        src.start(0);
+        return ctx.startRendering();
+      }
+    },
+    {
+      id: '909-ohh', name: 'Open HiHat', duration: 0.6,
+      async generate() {
+        const ctx = createOffline(0.6);
+        const src = ctx.createBufferSource();
+        src.buffer = noiseBuffer(ctx, 0.6);
+        const bpf = ctx.createBiquadFilter();
+        bpf.type = 'bandpass';
+        bpf.frequency.value = 8000;
+        bpf.Q.value = 1.5;
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.5, 0);
+        gain.gain.exponentialRampToValueAtTime(0.001, 0.55);
+        src.connect(bpf);
+        bpf.connect(gain);
+        gain.connect(ctx.destination);
+        src.start(0);
+        return ctx.startRendering();
+      }
+    },
+    {
+      id: '909-ride', name: 'Ride', duration: 1.5,
+      async generate() {
+        const ctx = createOffline(1.5);
+        // Metallic shimmer — noise + high sines
+        const ns = ctx.createBufferSource();
+        ns.buffer = noiseBuffer(ctx, 1.5);
+        const bpf = ctx.createBiquadFilter();
+        bpf.type = 'bandpass';
+        bpf.frequency.value = 6000;
+        bpf.Q.value = 1;
+        const nG = ctx.createGain();
+        nG.gain.setValueAtTime(0.3, 0);
+        nG.gain.exponentialRampToValueAtTime(0.001, 1.4);
+        ns.connect(bpf);
+        bpf.connect(nG);
+        nG.connect(ctx.destination);
+        ns.start(0);
+        [5200, 7400, 9800].forEach(f => {
+          const osc = ctx.createOscillator();
+          const g = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.value = f;
+          g.gain.setValueAtTime(0.08, 0);
+          g.gain.exponentialRampToValueAtTime(0.001, 1.2);
+          osc.connect(g);
+          g.connect(ctx.destination);
+          osc.start(0); osc.stop(1.5);
+        });
+        return ctx.startRendering();
+      }
+    },
+    {
+      id: '909-crash', name: 'Crash', duration: 2.0,
+      async generate() {
+        const ctx = createOffline(2.0);
+        const ns = ctx.createBufferSource();
+        ns.buffer = noiseBuffer(ctx, 2.0);
+        const bpf = ctx.createBiquadFilter();
+        bpf.type = 'bandpass';
+        bpf.frequency.value = 5000;
+        bpf.Q.value = 0.5;
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.5, 0);
+        gain.gain.exponentialRampToValueAtTime(0.001, 1.8);
+        ns.connect(bpf);
+        bpf.connect(gain);
+        gain.connect(ctx.destination);
+        ns.start(0);
+        return ctx.startRendering();
+      }
+    },
+    {
+      id: '909-tom-lo', name: 'Tom Low', duration: 0.5,
+      async generate() {
+        const ctx = createOffline(0.5);
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(130, 0);
+        osc.frequency.exponentialRampToValueAtTime(65, 0.12);
+        gain.gain.setValueAtTime(0.85, 0);
+        gain.gain.exponentialRampToValueAtTime(0.001, 0.45);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(0); osc.stop(0.5);
+        // Body noise
+        const ns = ctx.createBufferSource();
+        ns.buffer = noiseBuffer(ctx, 0.1);
+        const nG = ctx.createGain();
+        nG.gain.setValueAtTime(0.1, 0);
+        nG.gain.exponentialRampToValueAtTime(0.001, 0.05);
+        const lpf = ctx.createBiquadFilter();
+        lpf.type = 'lowpass';
+        lpf.frequency.value = 300;
+        ns.connect(lpf);
+        lpf.connect(nG);
+        nG.connect(ctx.destination);
+        ns.start(0);
+        return ctx.startRendering();
+      }
+    },
+    {
+      id: '909-tom-mid', name: 'Tom Mid', duration: 0.45,
+      async generate() {
+        const ctx = createOffline(0.45);
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(190, 0);
+        osc.frequency.exponentialRampToValueAtTime(105, 0.1);
+        gain.gain.setValueAtTime(0.85, 0);
+        gain.gain.exponentialRampToValueAtTime(0.001, 0.4);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(0); osc.stop(0.45);
+        const ns = ctx.createBufferSource();
+        ns.buffer = noiseBuffer(ctx, 0.08);
+        const nG = ctx.createGain();
+        nG.gain.setValueAtTime(0.1, 0);
+        nG.gain.exponentialRampToValueAtTime(0.001, 0.04);
+        const lpf = ctx.createBiquadFilter();
+        lpf.type = 'lowpass';
+        lpf.frequency.value = 500;
+        ns.connect(lpf);
+        lpf.connect(nG);
+        nG.connect(ctx.destination);
+        ns.start(0);
+        return ctx.startRendering();
+      }
+    },
+    {
+      id: '909-tom-hi', name: 'Tom High', duration: 0.4,
+      async generate() {
+        const ctx = createOffline(0.4);
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(260, 0);
+        osc.frequency.exponentialRampToValueAtTime(155, 0.08);
+        gain.gain.setValueAtTime(0.85, 0);
+        gain.gain.exponentialRampToValueAtTime(0.001, 0.35);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(0); osc.stop(0.4);
+        const ns = ctx.createBufferSource();
+        ns.buffer = noiseBuffer(ctx, 0.06);
+        const nG = ctx.createGain();
+        nG.gain.setValueAtTime(0.12, 0);
+        nG.gain.exponentialRampToValueAtTime(0.001, 0.03);
+        const lpf = ctx.createBiquadFilter();
+        lpf.type = 'lowpass';
+        lpf.frequency.value = 700;
+        ns.connect(lpf);
+        lpf.connect(nG);
+        nG.connect(ctx.destination);
+        ns.start(0);
+        return ctx.startRendering();
+      }
+    }
+  ]
+};
+
+// ─── Acoustic Drum Kit ──────────────────────────────────────────────
+const packAcoustic = {
+  id: 'acoustic', name: 'Acoustic Drum Kit', desc: 'Realistic acoustic drum synthesis',
+  samples: [
+    {
+      id: 'ac-kick', name: 'Kick', duration: 0.6,
+      async generate() {
+        const ctx = createOffline(0.6);
+        // Click
+        const ns = ctx.createBufferSource();
+        ns.buffer = noiseBuffer(ctx, 0.01);
+        const nsG = ctx.createGain();
+        nsG.gain.setValueAtTime(0.6, 0);
+        nsG.gain.exponentialRampToValueAtTime(0.001, 0.008);
+        ns.connect(nsG);
+        nsG.connect(ctx.destination);
+        ns.start(0);
+        // Body
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const resonance = ctx.createBiquadFilter();
+        resonance.type = 'peaking';
+        resonance.frequency.value = 70;
+        resonance.gain.value = 6;
+        resonance.Q.value = 3;
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(130, 0);
+        osc.frequency.exponentialRampToValueAtTime(55, 0.06);
+        gain.gain.setValueAtTime(1, 0);
+        gain.gain.exponentialRampToValueAtTime(0.001, 0.5);
+        osc.connect(resonance);
+        resonance.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(0); osc.stop(0.6);
+        return ctx.startRendering();
+      }
+    },
+    {
+      id: 'ac-snare', name: 'Snare', duration: 0.5,
+      async generate() {
+        const ctx = createOffline(0.5);
+        // Tone
+        const osc = ctx.createOscillator();
+        const oscG = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(220, 0);
+        osc.frequency.exponentialRampToValueAtTime(150, 0.05);
+        oscG.gain.setValueAtTime(0.5, 0);
+        oscG.gain.exponentialRampToValueAtTime(0.001, 0.15);
+        osc.connect(oscG);
+        oscG.connect(ctx.destination);
+        osc.start(0); osc.stop(0.5);
+        // Wire rattle
+        const ns = ctx.createBufferSource();
+        ns.buffer = noiseBuffer(ctx, 0.5);
+        const nG = ctx.createGain();
+        nG.gain.setValueAtTime(0.55, 0);
+        nG.gain.exponentialRampToValueAtTime(0.001, 0.4);
+        const bpf = ctx.createBiquadFilter();
+        bpf.type = 'bandpass';
+        bpf.frequency.value = 3500;
+        bpf.Q.value = 0.8;
+        ns.connect(bpf);
+        bpf.connect(nG);
+        nG.connect(ctx.destination);
+        ns.start(0);
+        return ctx.startRendering();
+      }
+    },
+    {
+      id: 'ac-chh', name: 'HiHat Closed', duration: 0.1,
+      async generate() {
+        const ctx = createOffline(0.1);
+        // Metallic partials
+        [3500, 5040, 7200, 9800].forEach(f => {
+          const osc = ctx.createOscillator();
+          const g = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.value = f;
+          g.gain.setValueAtTime(0.12, 0);
+          g.gain.exponentialRampToValueAtTime(0.001, 0.06);
+          osc.connect(g);
+          g.connect(ctx.destination);
+          osc.start(0); osc.stop(0.1);
+        });
+        // Noise
+        const ns = ctx.createBufferSource();
+        ns.buffer = noiseBuffer(ctx, 0.1);
+        const hpf = ctx.createBiquadFilter();
+        hpf.type = 'highpass';
+        hpf.frequency.value = 8000;
+        const nG = ctx.createGain();
+        nG.gain.setValueAtTime(0.3, 0);
+        nG.gain.exponentialRampToValueAtTime(0.001, 0.05);
+        ns.connect(hpf);
+        hpf.connect(nG);
+        nG.connect(ctx.destination);
+        ns.start(0);
+        return ctx.startRendering();
+      }
+    },
+    {
+      id: 'ac-ohh', name: 'HiHat Open', duration: 0.6,
+      async generate() {
+        const ctx = createOffline(0.6);
+        [3500, 5040, 7200, 9800].forEach(f => {
+          const osc = ctx.createOscillator();
+          const g = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.value = f;
+          g.gain.setValueAtTime(0.1, 0);
+          g.gain.exponentialRampToValueAtTime(0.001, 0.45);
+          osc.connect(g);
+          g.connect(ctx.destination);
+          osc.start(0); osc.stop(0.6);
+        });
+        const ns = ctx.createBufferSource();
+        ns.buffer = noiseBuffer(ctx, 0.6);
+        const hpf = ctx.createBiquadFilter();
+        hpf.type = 'highpass';
+        hpf.frequency.value = 7000;
+        const nG = ctx.createGain();
+        nG.gain.setValueAtTime(0.25, 0);
+        nG.gain.exponentialRampToValueAtTime(0.001, 0.5);
+        ns.connect(hpf);
+        hpf.connect(nG);
+        nG.connect(ctx.destination);
+        ns.start(0);
+        return ctx.startRendering();
+      }
+    },
+    {
+      id: 'ac-ride', name: 'Ride', duration: 2.5,
+      async generate() {
+        const ctx = createOffline(2.5);
+        [2800, 4200, 5800, 8500, 11000].forEach(f => {
+          const osc = ctx.createOscillator();
+          const g = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.value = f;
+          g.gain.setValueAtTime(0.06, 0);
+          g.gain.exponentialRampToValueAtTime(0.001, 2.2);
+          osc.connect(g);
+          g.connect(ctx.destination);
+          osc.start(0); osc.stop(2.5);
+        });
+        const ns = ctx.createBufferSource();
+        ns.buffer = noiseBuffer(ctx, 2.5);
+        const bpf = ctx.createBiquadFilter();
+        bpf.type = 'bandpass';
+        bpf.frequency.value = 6000;
+        bpf.Q.value = 0.5;
+        const nG = ctx.createGain();
+        nG.gain.setValueAtTime(0.15, 0);
+        nG.gain.exponentialRampToValueAtTime(0.001, 2.0);
+        ns.connect(bpf);
+        bpf.connect(nG);
+        nG.connect(ctx.destination);
+        ns.start(0);
+        return ctx.startRendering();
+      }
+    },
+    {
+      id: 'ac-crash', name: 'Crash', duration: 2.5,
+      async generate() {
+        const ctx = createOffline(2.5);
+        const ns = ctx.createBufferSource();
+        ns.buffer = noiseBuffer(ctx, 2.5);
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.6, 0);
+        gain.gain.exponentialRampToValueAtTime(0.001, 2.2);
+        // Multiple resonant peaks
+        const bp1 = ctx.createBiquadFilter();
+        bp1.type = 'peaking'; bp1.frequency.value = 3000; bp1.gain.value = 8; bp1.Q.value = 2;
+        const bp2 = ctx.createBiquadFilter();
+        bp2.type = 'peaking'; bp2.frequency.value = 6000; bp2.gain.value = 6; bp2.Q.value = 2;
+        ns.connect(bp1);
+        bp1.connect(bp2);
+        bp2.connect(gain);
+        gain.connect(ctx.destination);
+        ns.start(0);
+        return ctx.startRendering();
+      }
+    },
+    {
+      id: 'ac-floor-tom', name: 'Floor Tom', duration: 0.7,
+      async generate() {
+        const ctx = createOffline(0.7);
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(110, 0);
+        osc.frequency.exponentialRampToValueAtTime(55, 0.12);
+        gain.gain.setValueAtTime(0.85, 0);
+        gain.gain.exponentialRampToValueAtTime(0.001, 0.6);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(0); osc.stop(0.7);
+        // Body noise
+        const ns = ctx.createBufferSource();
+        ns.buffer = noiseBuffer(ctx, 0.15);
+        const nG = ctx.createGain();
+        nG.gain.setValueAtTime(0.15, 0);
+        nG.gain.exponentialRampToValueAtTime(0.001, 0.1);
+        const lpf = ctx.createBiquadFilter();
+        lpf.type = 'lowpass'; lpf.frequency.value = 250;
+        ns.connect(lpf);
+        lpf.connect(nG);
+        nG.connect(ctx.destination);
+        ns.start(0);
+        return ctx.startRendering();
+      }
+    },
+    {
+      id: 'ac-rack-tom', name: 'Rack Tom', duration: 0.5,
+      async generate() {
+        const ctx = createOffline(0.5);
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(220, 0);
+        osc.frequency.exponentialRampToValueAtTime(130, 0.08);
+        gain.gain.setValueAtTime(0.85, 0);
+        gain.gain.exponentialRampToValueAtTime(0.001, 0.4);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(0); osc.stop(0.5);
+        const ns = ctx.createBufferSource();
+        ns.buffer = noiseBuffer(ctx, 0.1);
+        const nG = ctx.createGain();
+        nG.gain.setValueAtTime(0.12, 0);
+        nG.gain.exponentialRampToValueAtTime(0.001, 0.06);
+        const lpf = ctx.createBiquadFilter();
+        lpf.type = 'lowpass'; lpf.frequency.value = 500;
+        ns.connect(lpf);
+        lpf.connect(nG);
+        nG.connect(ctx.destination);
+        ns.start(0);
+        return ctx.startRendering();
+      }
+    }
+  ]
+};
+
+// ─── Lo-Fi Kit ──────────────────────────────────────────────────────
+const packLofi = {
+  id: 'lofi', name: 'Lo-Fi Kit', desc: 'Bitcrushed, filtered 808-style drums',
+  samples: [
+    {
+      id: 'lofi-kick', name: 'Kick', duration: 0.8,
+      async generate() {
+        const buf = await pack808.samples[0].generate();
+        bitcrush(buf, 8, 4);
+        softClip(buf, 1.5);
+        return buf;
+      }
+    },
+    {
+      id: 'lofi-snare', name: 'Snare', duration: 0.4,
+      async generate() {
+        const buf = await pack808.samples[1].generate();
+        bitcrush(buf, 10, 3);
+        softClip(buf, 1.3);
+        return buf;
+      }
+    },
+    {
+      id: 'lofi-clap', name: 'Clap', duration: 0.3,
+      async generate() {
+        const buf = await pack808.samples[2].generate();
+        bitcrush(buf, 8, 3);
+        return buf;
+      }
+    },
+    {
+      id: 'lofi-chh', name: 'Closed HiHat', duration: 0.08,
+      async generate() {
+        const buf = await pack808.samples[3].generate();
+        bitcrush(buf, 6, 5);
+        return buf;
+      }
+    },
+    {
+      id: 'lofi-ohh', name: 'Open HiHat', duration: 0.4,
+      async generate() {
+        const buf = await pack808.samples[4].generate();
+        bitcrush(buf, 7, 4);
+        return buf;
+      }
+    },
+    {
+      id: 'lofi-tom-lo', name: 'Tom Low', duration: 0.5,
+      async generate() {
+        const buf = await pack808.samples[5].generate();
+        bitcrush(buf, 8, 4);
+        softClip(buf, 1.4);
+        return buf;
+      }
+    },
+    {
+      id: 'lofi-rimshot', name: 'Rimshot', duration: 0.1,
+      async generate() {
+        const buf = await pack808.samples[8].generate();
+        bitcrush(buf, 8, 3);
+        return buf;
+      }
+    },
+    {
+      id: 'lofi-cowbell', name: 'Cowbell', duration: 0.35,
+      async generate() {
+        const buf = await pack808.samples[9].generate();
+        bitcrush(buf, 7, 5);
+        softClip(buf, 1.6);
+        return buf;
+      }
+    }
+  ]
+};
+
+// ─── Synth One-Shots ────────────────────────────────────────────────
+const packSynth = {
+  id: 'synth', name: 'Synth One-Shots', desc: 'Synthesizer hits, stabs, sweeps, and textures',
+  samples: [
+    {
+      id: 'synth-bass-hit', name: 'Bass Hit', duration: 0.5,
+      async generate() {
+        const ctx = createOffline(0.5);
+        const osc1 = ctx.createOscillator();
+        const osc2 = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc1.type = 'sine'; osc1.frequency.value = 55;
+        osc2.type = 'square'; osc2.frequency.value = 55;
+        const g2 = ctx.createGain(); g2.gain.value = 0.3;
+        gain.gain.setValueAtTime(0.8, 0);
+        gain.gain.exponentialRampToValueAtTime(0.001, 0.45);
+        osc1.connect(gain);
+        osc2.connect(g2); g2.connect(gain);
+        gain.connect(ctx.destination);
+        osc1.start(0); osc2.start(0);
+        osc1.stop(0.5); osc2.stop(0.5);
+        return ctx.startRendering();
+      }
+    },
+    {
+      id: 'synth-pluck', name: 'Pluck', duration: 0.4,
+      async generate() {
+        const ctx = createOffline(0.4);
+        const osc = ctx.createOscillator();
+        const filter = ctx.createBiquadFilter();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.value = 440;
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(8000, 0);
+        filter.frequency.exponentialRampToValueAtTime(200, 0.25);
+        filter.Q.value = 5;
+        gain.gain.setValueAtTime(0.7, 0);
+        gain.gain.exponentialRampToValueAtTime(0.001, 0.35);
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(0); osc.stop(0.4);
+        return ctx.startRendering();
+      }
+    },
+    {
+      id: 'synth-stab', name: 'Stab', duration: 0.35,
+      async generate() {
+        const ctx = createOffline(0.35);
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.4, 0);
+        gain.gain.exponentialRampToValueAtTime(0.001, 0.3);
+        // Minor chord: root + minor 3rd + 5th, detuned saws
+        const freqs = [220, 220 * Math.pow(2, 3/12), 220 * 1.5];
+        freqs.forEach(f => {
+          [-3, 0, 3].forEach(det => {
+            const osc = ctx.createOscillator();
+            osc.type = 'sawtooth';
+            osc.frequency.value = f;
+            osc.detune.value = det;
+            const g = ctx.createGain();
+            g.gain.value = 0.12;
+            osc.connect(g);
+            g.connect(gain);
+            osc.start(0); osc.stop(0.35);
+          });
+        });
+        const lpf = ctx.createBiquadFilter();
+        lpf.type = 'lowpass';
+        lpf.frequency.setValueAtTime(4000, 0);
+        lpf.frequency.exponentialRampToValueAtTime(500, 0.25);
+        gain.connect(lpf);
+        lpf.connect(ctx.destination);
+        return ctx.startRendering();
+      }
+    },
+    {
+      id: 'synth-pad-swell', name: 'Pad Swell', duration: 2.0,
+      async generate() {
+        const ctx = createOffline(2.0);
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.001, 0);
+        gain.gain.linearRampToValueAtTime(0.35, 1.0);
+        gain.gain.linearRampToValueAtTime(0.001, 2.0);
+        const lpf = ctx.createBiquadFilter();
+        lpf.type = 'lowpass';
+        lpf.frequency.setValueAtTime(200, 0);
+        lpf.frequency.linearRampToValueAtTime(4000, 1.0);
+        lpf.frequency.linearRampToValueAtTime(300, 2.0);
+        lpf.Q.value = 2;
+        [220, 220.5, 219.5].forEach(f => {
+          const osc = ctx.createOscillator();
+          osc.type = 'sawtooth';
+          osc.frequency.value = f;
+          osc.connect(gain);
+          osc.start(0); osc.stop(2.0);
+        });
+        gain.connect(lpf);
+        lpf.connect(ctx.destination);
+        return ctx.startRendering();
+      }
+    },
+    {
+      id: 'synth-lead-zap', name: 'Lead Zap', duration: 0.25,
+      async generate() {
+        const ctx = createOffline(0.25);
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(1000, 0);
+        osc.frequency.exponentialRampToValueAtTime(200, 0.15);
+        gain.gain.setValueAtTime(0.7, 0);
+        gain.gain.exponentialRampToValueAtTime(0.001, 0.22);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(0); osc.stop(0.25);
+        return ctx.startRendering();
+      }
+    },
+    {
+      id: 'synth-chord-major', name: 'Chord Major', duration: 0.8,
+      async generate() {
+        const ctx = createOffline(0.8);
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.35, 0);
+        gain.gain.exponentialRampToValueAtTime(0.001, 0.7);
+        const lpf = ctx.createBiquadFilter();
+        lpf.type = 'lowpass';
+        lpf.frequency.setValueAtTime(5000, 0);
+        lpf.frequency.exponentialRampToValueAtTime(800, 0.6);
+        // Major: root + major 3rd + 5th
+        [261.63, 261.63 * Math.pow(2, 4/12), 261.63 * 1.5].forEach(f => {
+          [-4, 0, 4].forEach(det => {
+            const osc = ctx.createOscillator();
+            osc.type = 'sawtooth';
+            osc.frequency.value = f;
+            osc.detune.value = det;
+            const g = ctx.createGain(); g.gain.value = 0.1;
+            osc.connect(g); g.connect(gain);
+            osc.start(0); osc.stop(0.8);
+          });
+        });
+        gain.connect(lpf);
+        lpf.connect(ctx.destination);
+        return ctx.startRendering();
+      }
+    },
+    {
+      id: 'synth-chord-minor', name: 'Chord Minor', duration: 0.8,
+      async generate() {
+        const ctx = createOffline(0.8);
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.35, 0);
+        gain.gain.exponentialRampToValueAtTime(0.001, 0.7);
+        const lpf = ctx.createBiquadFilter();
+        lpf.type = 'lowpass';
+        lpf.frequency.setValueAtTime(5000, 0);
+        lpf.frequency.exponentialRampToValueAtTime(800, 0.6);
+        // Minor: root + minor 3rd + 5th
+        [261.63, 261.63 * Math.pow(2, 3/12), 261.63 * 1.5].forEach(f => {
+          [-4, 0, 4].forEach(det => {
+            const osc = ctx.createOscillator();
+            osc.type = 'sawtooth';
+            osc.frequency.value = f;
+            osc.detune.value = det;
+            const g = ctx.createGain(); g.gain.value = 0.1;
+            osc.connect(g); g.connect(gain);
+            osc.start(0); osc.stop(0.8);
+          });
+        });
+        gain.connect(lpf);
+        lpf.connect(ctx.destination);
+        return ctx.startRendering();
+      }
+    },
+    {
+      id: 'synth-sub-drop', name: 'Sub Drop', duration: 1.0,
+      async generate() {
+        const ctx = createOffline(1.0);
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(200, 0);
+        osc.frequency.exponentialRampToValueAtTime(20, 0.9);
+        gain.gain.setValueAtTime(0.8, 0);
+        gain.gain.exponentialRampToValueAtTime(0.001, 0.95);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(0); osc.stop(1.0);
+        return ctx.startRendering();
+      }
+    },
+    {
+      id: 'synth-noise-riser', name: 'Noise Riser', duration: 2.0,
+      async generate() {
+        const ctx = createOffline(2.0);
+        const ns = ctx.createBufferSource();
+        ns.buffer = noiseBuffer(ctx, 2.0);
+        const hpf = ctx.createBiquadFilter();
+        hpf.type = 'highpass';
+        hpf.frequency.setValueAtTime(100, 0);
+        hpf.frequency.exponentialRampToValueAtTime(12000, 1.8);
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.01, 0);
+        gain.gain.linearRampToValueAtTime(0.6, 1.8);
+        gain.gain.linearRampToValueAtTime(0.001, 2.0);
+        ns.connect(hpf);
+        hpf.connect(gain);
+        gain.connect(ctx.destination);
+        ns.start(0);
+        return ctx.startRendering();
+      }
+    },
+    {
+      id: 'synth-impact', name: 'Impact', duration: 1.2,
+      async generate() {
+        const ctx = createOffline(1.2);
+        // Low thump
+        const osc = ctx.createOscillator();
+        const oscG = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(80, 0);
+        osc.frequency.exponentialRampToValueAtTime(30, 0.3);
+        oscG.gain.setValueAtTime(0.9, 0);
+        oscG.gain.exponentialRampToValueAtTime(0.001, 1.0);
+        osc.connect(oscG);
+        oscG.connect(ctx.destination);
+        osc.start(0); osc.stop(1.2);
+        // Noise burst
+        const ns = ctx.createBufferSource();
+        ns.buffer = noiseBuffer(ctx, 0.6);
+        const nG = ctx.createGain();
+        nG.gain.setValueAtTime(0.5, 0);
+        nG.gain.exponentialRampToValueAtTime(0.001, 0.5);
+        ns.connect(nG);
+        nG.connect(ctx.destination);
+        ns.start(0);
+        return ctx.startRendering();
+      }
+    },
+    {
+      id: 'synth-sweep-up', name: 'Sweep Up', duration: 2.0,
+      async generate() {
+        const ctx = createOffline(2.0);
+        const osc = ctx.createOscillator();
+        const lpf = ctx.createBiquadFilter();
+        const gain = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.value = 220;
+        lpf.type = 'lowpass';
+        lpf.frequency.setValueAtTime(200, 0);
+        lpf.frequency.exponentialRampToValueAtTime(10000, 1.8);
+        lpf.Q.value = 5;
+        gain.gain.setValueAtTime(0.01, 0);
+        gain.gain.linearRampToValueAtTime(0.4, 1.0);
+        gain.gain.linearRampToValueAtTime(0.001, 2.0);
+        osc.connect(lpf);
+        lpf.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(0); osc.stop(2.0);
+        return ctx.startRendering();
+      }
+    },
+    {
+      id: 'synth-sweep-down', name: 'Sweep Down', duration: 2.0,
+      async generate() {
+        const ctx = createOffline(2.0);
+        const osc = ctx.createOscillator();
+        const lpf = ctx.createBiquadFilter();
+        const gain = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.value = 220;
+        lpf.type = 'lowpass';
+        lpf.frequency.setValueAtTime(10000, 0);
+        lpf.frequency.exponentialRampToValueAtTime(100, 1.8);
+        lpf.Q.value = 5;
+        gain.gain.setValueAtTime(0.4, 0);
+        gain.gain.linearRampToValueAtTime(0.001, 2.0);
+        osc.connect(lpf);
+        lpf.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(0); osc.stop(2.0);
+        return ctx.startRendering();
+      }
+    }
+  ]
+};
+
+// ─── FX & Transitions ───────────────────────────────────────────────
+const packFX = {
+  id: 'fx', name: 'FX & Transitions', desc: 'Risers, impacts, and transition effects',
+  samples: [
+    {
+      id: 'fx-riser', name: 'Riser', duration: 3.0,
+      async generate() {
+        const ctx = createOffline(3.0);
+        const ns = ctx.createBufferSource();
+        ns.buffer = noiseBuffer(ctx, 3.0);
+        const bpf = ctx.createBiquadFilter();
+        bpf.type = 'bandpass';
+        bpf.frequency.setValueAtTime(200, 0);
+        bpf.frequency.exponentialRampToValueAtTime(12000, 2.8);
+        bpf.Q.value = 3;
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.01, 0);
+        gain.gain.linearRampToValueAtTime(0.6, 2.8);
+        gain.gain.linearRampToValueAtTime(0.001, 3.0);
+        ns.connect(bpf);
+        bpf.connect(gain);
+        gain.connect(ctx.destination);
+        ns.start(0);
+        return ctx.startRendering();
+      }
+    },
+    {
+      id: 'fx-downlifter', name: 'Downlifter', duration: 2.0,
+      async generate() {
+        const ctx = createOffline(2.0);
+        const ns = ctx.createBufferSource();
+        ns.buffer = noiseBuffer(ctx, 2.0);
+        const bpf = ctx.createBiquadFilter();
+        bpf.type = 'bandpass';
+        bpf.frequency.setValueAtTime(10000, 0);
+        bpf.frequency.exponentialRampToValueAtTime(100, 1.8);
+        bpf.Q.value = 3;
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.5, 0);
+        gain.gain.linearRampToValueAtTime(0.001, 2.0);
+        ns.connect(bpf);
+        bpf.connect(gain);
+        gain.connect(ctx.destination);
+        ns.start(0);
+        return ctx.startRendering();
+      }
+    },
+    {
+      id: 'fx-impact-hit', name: 'Impact Hit', duration: 1.5,
+      async generate() {
+        const ctx = createOffline(1.5);
+        // Boom
+        const osc = ctx.createOscillator();
+        const oscG = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(100, 0);
+        osc.frequency.exponentialRampToValueAtTime(25, 0.5);
+        oscG.gain.setValueAtTime(1, 0);
+        oscG.gain.exponentialRampToValueAtTime(0.001, 1.3);
+        osc.connect(oscG);
+        oscG.connect(ctx.destination);
+        osc.start(0); osc.stop(1.5);
+        // Crack
+        const ns = ctx.createBufferSource();
+        ns.buffer = noiseBuffer(ctx, 0.05);
+        const nG = ctx.createGain();
+        nG.gain.setValueAtTime(0.8, 0);
+        nG.gain.exponentialRampToValueAtTime(0.001, 0.04);
+        ns.connect(nG);
+        nG.connect(ctx.destination);
+        ns.start(0);
+        return ctx.startRendering();
+      }
+    },
+    {
+      id: 'fx-reverse-cymbal', name: 'Reverse Cymbal', duration: 2.0,
+      async generate() {
+        const ctx = createOffline(2.0);
+        const ns = ctx.createBufferSource();
+        ns.buffer = noiseBuffer(ctx, 2.0);
+        const bpf = ctx.createBiquadFilter();
+        bpf.type = 'bandpass';
+        bpf.frequency.value = 5000;
+        bpf.Q.value = 0.5;
+        const gain = ctx.createGain();
+        // Rising envelope
+        gain.gain.setValueAtTime(0.001, 0);
+        gain.gain.exponentialRampToValueAtTime(0.6, 1.8);
+        gain.gain.linearRampToValueAtTime(0.001, 2.0);
+        ns.connect(bpf);
+        bpf.connect(gain);
+        gain.connect(ctx.destination);
+        ns.start(0);
+        return ctx.startRendering();
+      }
+    },
+    {
+      id: 'fx-tape-stop', name: 'Tape Stop', duration: 1.5,
+      async generate() {
+        const ctx = createOffline(1.5);
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(440, 0);
+        osc.frequency.exponentialRampToValueAtTime(20, 1.3);
+        const lpf = ctx.createBiquadFilter();
+        lpf.type = 'lowpass';
+        lpf.frequency.setValueAtTime(8000, 0);
+        lpf.frequency.exponentialRampToValueAtTime(200, 1.3);
+        gain.gain.setValueAtTime(0.4, 0);
+        gain.gain.linearRampToValueAtTime(0.001, 1.4);
+        osc.connect(lpf);
+        lpf.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(0); osc.stop(1.5);
+        return ctx.startRendering();
+      }
+    },
+    {
+      id: 'fx-vinyl-crackle', name: 'Vinyl Crackle', duration: 3.0,
+      async generate() {
+        const dur = 3.0;
+        const ctx = createOffline(dur);
+        // Continuous low noise
+        const ns = ctx.createBufferSource();
+        ns.buffer = noiseBuffer(ctx, dur);
+        const lpf = ctx.createBiquadFilter();
+        lpf.type = 'lowpass'; lpf.frequency.value = 2000;
+        const nG = ctx.createGain(); nG.gain.value = 0.05;
+        ns.connect(lpf); lpf.connect(nG); nG.connect(ctx.destination);
+        ns.start(0);
+        // Random clicks
+        const clickBuf = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * dur), ctx.sampleRate);
+        const clickData = clickBuf.getChannelData(0);
+        for (let i = 0; i < clickData.length; i++) {
+          if (Math.random() < 0.0003) {
+            clickData[i] = (Math.random() - 0.5) * 0.5;
+          }
+        }
+        const clickSrc = ctx.createBufferSource();
+        clickSrc.buffer = clickBuf;
+        const clickG = ctx.createGain(); clickG.gain.value = 0.6;
+        clickSrc.connect(clickG); clickG.connect(ctx.destination);
+        clickSrc.start(0);
+        return ctx.startRendering();
+      }
+    },
+    {
+      id: 'fx-white-noise', name: 'White Noise Burst', duration: 0.5,
+      async generate() {
+        const ctx = createOffline(0.5);
+        const ns = ctx.createBufferSource();
+        ns.buffer = noiseBuffer(ctx, 0.5);
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.6, 0);
+        gain.gain.exponentialRampToValueAtTime(0.001, 0.45);
+        ns.connect(gain);
+        gain.connect(ctx.destination);
+        ns.start(0);
+        return ctx.startRendering();
+      }
+    },
+    {
+      id: 'fx-sub-boom', name: 'Sub Boom', duration: 2.0,
+      async generate() {
+        const ctx = createOffline(2.0);
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = 30;
+        gain.gain.setValueAtTime(0.9, 0);
+        gain.gain.exponentialRampToValueAtTime(0.001, 1.8);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(0); osc.stop(2.0);
+        return ctx.startRendering();
+      }
+    }
+  ]
+};
+
+// ─── Impulse Responses ──────────────────────────────────────────────
+const packIR = {
+  id: 'ir', name: 'Impulse Responses', desc: 'Synthetic reverb impulse responses for convolution',
+  samples: [
+    {
+      id: 'ir-small-room', name: 'Small Room', duration: 0.5,
+      async generate() {
+        const dur = 0.5;
+        const ctx = createOffline(dur);
+        const len = Math.ceil(ctx.sampleRate * dur);
+        const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+        const data = buf.getChannelData(0);
+        // Initial impulse
+        data[0] = 1.0;
+        // Early reflections
+        const reflections = [0.008, 0.013, 0.019, 0.027, 0.035];
+        reflections.forEach((t, i) => {
+          const idx = Math.floor(t * ctx.sampleRate);
+          if (idx < len) data[idx] = 0.5 * Math.pow(0.7, i);
+        });
+        // Diffuse tail
+        for (let i = 0; i < len; i++) {
+          data[i] += (Math.random() * 2 - 1) * 0.4 * Math.exp(-i / (ctx.sampleRate * 0.12));
+        }
+        const src = ctx.createBufferSource();
+        src.buffer = buf;
+        src.connect(ctx.destination);
+        src.start(0);
+        return ctx.startRendering();
+      }
+    },
+    {
+      id: 'ir-large-room', name: 'Large Room', duration: 1.2,
+      async generate() {
+        const dur = 1.2;
+        const ctx = createOffline(dur);
+        const len = Math.ceil(ctx.sampleRate * dur);
+        const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+        const data = buf.getChannelData(0);
+        data[0] = 1.0;
+        const reflections = [0.015, 0.028, 0.042, 0.058, 0.075, 0.095];
+        reflections.forEach((t, i) => {
+          const idx = Math.floor(t * ctx.sampleRate);
+          if (idx < len) data[idx] = 0.45 * Math.pow(0.7, i);
+        });
+        for (let i = 0; i < len; i++) {
+          data[i] += (Math.random() * 2 - 1) * 0.3 * Math.exp(-i / (ctx.sampleRate * 0.35));
+        }
+        const src = ctx.createBufferSource();
+        src.buffer = buf;
+        src.connect(ctx.destination);
+        src.start(0);
+        return ctx.startRendering();
+      }
+    },
+    {
+      id: 'ir-concert-hall', name: 'Concert Hall', duration: 2.5,
+      async generate() {
+        const dur = 2.5;
+        const ctx = createOffline(dur);
+        const len = Math.ceil(ctx.sampleRate * dur);
+        const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+        const data = buf.getChannelData(0);
+        data[0] = 1.0;
+        const reflections = [0.025, 0.048, 0.07, 0.1, 0.14, 0.18, 0.23, 0.29];
+        reflections.forEach((t, i) => {
+          const idx = Math.floor(t * ctx.sampleRate);
+          if (idx < len) data[idx] = 0.35 * Math.pow(0.75, i);
+        });
+        for (let i = 0; i < len; i++) {
+          data[i] += (Math.random() * 2 - 1) * 0.25 * Math.exp(-i / (ctx.sampleRate * 0.85));
+        }
+        const src = ctx.createBufferSource();
+        src.buffer = buf;
+        src.connect(ctx.destination);
+        src.start(0);
+        return ctx.startRendering();
+      }
+    },
+    {
+      id: 'ir-cathedral', name: 'Cathedral', duration: 4.5,
+      async generate() {
+        const dur = 4.5;
+        const ctx = createOffline(dur);
+        const len = Math.ceil(ctx.sampleRate * dur);
+        const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+        const data = buf.getChannelData(0);
+        data[0] = 1.0;
+        const reflections = [0.04, 0.08, 0.13, 0.19, 0.26, 0.34, 0.43, 0.53, 0.65, 0.78];
+        reflections.forEach((t, i) => {
+          const idx = Math.floor(t * ctx.sampleRate);
+          if (idx < len) data[idx] = 0.3 * Math.pow(0.8, i);
+        });
+        for (let i = 0; i < len; i++) {
+          data[i] += (Math.random() * 2 - 1) * 0.2 * Math.exp(-i / (ctx.sampleRate * 1.8));
+        }
+        const src = ctx.createBufferSource();
+        src.buffer = buf;
+        src.connect(ctx.destination);
+        src.start(0);
+        return ctx.startRendering();
+      }
+    },
+    {
+      id: 'ir-plate', name: 'Plate Reverb', duration: 2.0,
+      async generate() {
+        const dur = 2.0;
+        const ctx = createOffline(dur);
+        const len = Math.ceil(ctx.sampleRate * dur);
+        const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+        const data = buf.getChannelData(0);
+        data[0] = 1.0;
+        // Dense, bright — plate character
+        for (let i = 0; i < len; i++) {
+          const t = i / ctx.sampleRate;
+          const decay = Math.exp(-t / 0.6);
+          // Plate has very dense early buildup
+          const density = i < ctx.sampleRate * 0.05 ? 0.5 : 0.35;
+          data[i] += (Math.random() * 2 - 1) * density * decay;
+        }
+        // Add bright character via filtering
+        const src = ctx.createBufferSource();
+        src.buffer = buf;
+        const hpf = ctx.createBiquadFilter();
+        hpf.type = 'highpass';
+        hpf.frequency.value = 300;
+        const peak = ctx.createBiquadFilter();
+        peak.type = 'peaking';
+        peak.frequency.value = 4000;
+        peak.gain.value = 4;
+        src.connect(hpf);
+        hpf.connect(peak);
+        peak.connect(ctx.destination);
+        src.start(0);
+        return ctx.startRendering();
+      }
+    },
+    {
+      id: 'ir-spring', name: 'Spring Reverb', duration: 1.0,
+      async generate() {
+        const dur = 1.0;
+        const ctx = createOffline(dur);
+        const len = Math.ceil(ctx.sampleRate * dur);
+        const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+        const data = buf.getChannelData(0);
+        data[0] = 1.0;
+        // Spring character: initial hit + delayed dense cluster + boing reflections
+        for (let i = 0; i < len; i++) {
+          const t = i / ctx.sampleRate;
+          // Main decay
+          data[i] += (Math.random() * 2 - 1) * 0.3 * Math.exp(-t / 0.25);
+          // Boing reflections at ~30ms intervals
+          if (t > 0.02) {
+            const boingPhase = (t - 0.02) * 33; // ~33 Hz boing rate
+            const boingAmp = 0.15 * Math.exp(-t / 0.3) * Math.sin(boingPhase * Math.PI * 2);
+            data[i] += boingAmp;
+          }
+        }
+        const src = ctx.createBufferSource();
+        src.buffer = buf;
+        const bpf = ctx.createBiquadFilter();
+        bpf.type = 'bandpass';
+        bpf.frequency.value = 2500;
+        bpf.Q.value = 0.8;
+        src.connect(bpf);
+        bpf.connect(ctx.destination);
+        src.start(0);
+        return ctx.startRendering();
+      }
+    }
+  ]
+};
+
+// ─── All packs ──────────────────────────────────────────────────────
+const allPacks = [pack808, pack909, packAcoustic, packLofi, packSynth, packFX, packIR];
+let activePack = allPacks[0];
+let searchTerm = '';
+
+// Count total
+const totalSamples = allPacks.reduce((s, p) => s + p.samples.length, 0);
+document.getElementById('totalCount').textContent = totalSamples;
+
+// ─── Render sidebar ─────────────────────────────────────────────────
+function renderSidebar() {
+  const list = document.getElementById('packList');
+  list.innerHTML = '';
+  allPacks.forEach(pack => {
+    const visibleCount = getFilteredSamples(pack).length;
+    const el = document.createElement('div');
+    el.className = 'pack-item' + (pack.id === activePack.id ? ' active' : '');
+    el.innerHTML = `
+      <span class="pack-name">${pack.name}</span>
+      <span class="pack-count">${visibleCount}</span>
+    `;
+    el.onclick = () => {
+      activePack = pack;
+      renderSidebar();
+      renderSamples();
+    };
+    if (visibleCount > 0 || !searchTerm) list.appendChild(el);
+  });
+}
+
+// ─── Filter samples ─────────────────────────────────────────────────
+function getFilteredSamples(pack) {
+  if (!searchTerm) return pack.samples;
+  const q = searchTerm.toLowerCase();
+  return pack.samples.filter(s =>
+    s.name.toLowerCase().includes(q) || s.id.toLowerCase().includes(q) || pack.name.toLowerCase().includes(q)
+  );
+}
+
+// ─── Render samples ─────────────────────────────────────────────────
+function renderSamples() {
+  const grid = document.getElementById('samplesGrid');
+  const empty = document.getElementById('emptyState');
+  const title = document.getElementById('packTitle');
+  const desc = document.getElementById('packDesc');
+
+  title.textContent = activePack.name;
+  desc.textContent = activePack.desc;
+
+  const samples = getFilteredSamples(activePack);
+  grid.innerHTML = '';
+
+  if (samples.length === 0) {
+    empty.style.display = '';
+    return;
+  }
+  empty.style.display = 'none';
+
+  samples.forEach(sample => {
+    const card = document.createElement('div');
+    card.className = 'sample-card';
+    card.id = 'card-' + sample.id;
+    card.innerHTML = `
+      <div class="sample-name">
+        <span>${sample.name}</span>
+        <span class="sample-duration">${sample.duration.toFixed(2)}s</span>
+      </div>
+      <div class="waveform-container" data-id="${sample.id}">
+        ${bufferCache[sample.id]
+          ? '<canvas></canvas>'
+          : '<div class="waveform-placeholder">Click to generate</div>'}
+      </div>
+      <div class="sample-actions">
+        <button class="btn btn-secondary btn-sm play-btn" data-id="${sample.id}">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><polygon points="2,0 12,6 2,12"/></svg>
+          Play
+        </button>
+        <button class="btn btn-primary btn-sm dl-btn" data-id="${sample.id}">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 1v7M3 6l3 3 3-3M1 11h10"/></svg>
+          WAV
+        </button>
+      </div>
+    `;
+    grid.appendChild(card);
+
+    // Draw cached waveform if available
+    if (bufferCache[sample.id]) {
+      const canvas = card.querySelector('canvas');
+      if (canvas) {
+        requestAnimationFrame(() => drawWaveform(canvas, bufferCache[sample.id], sample.id === currentPlayingId));
+      }
+    }
+
+    // Waveform click → play
+    card.querySelector('.waveform-container').addEventListener('click', () => playSample(sample));
+    card.querySelector('.play-btn').addEventListener('click', () => playSample(sample));
+    card.querySelector('.dl-btn').addEventListener('click', () => downloadSample(sample));
+  });
+}
+
+// ─── Playback ───────────────────────────────────────────────────────
+async function playSample(sample) {
+  const ctx = getAudioCtx();
+
+  // If already playing this sample, stop it
+  if (currentPlayingId === sample.id && currentSource) {
+    stopCurrent();
+    return;
+  }
+
+  stopCurrent();
+
+  // Show loading state
+  const playBtn = document.querySelector(`.play-btn[data-id="${sample.id}"]`);
+  if (playBtn) playBtn.innerHTML = '<span class="loading-spinner"></span> ...';
+
+  try {
+    const buffer = await getBuffer(sample);
+    // Update waveform
+    updateWaveformForSample(sample.id, buffer, true);
+
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(masterGain);
+    currentSource = source;
+    currentPlayingId = sample.id;
+
+    const card = document.getElementById('card-' + sample.id);
+    if (card) card.classList.add('playing');
+
+    if (playBtn) playBtn.innerHTML = `
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><rect x="1" y="0" width="4" height="12"/><rect x="7" y="0" width="4" height="12"/></svg>
+      Stop
+    `;
+
+    source.onended = () => {
+      if (currentPlayingId === sample.id) {
+        currentPlayingId = null;
+        currentSource = null;
+        if (card) card.classList.remove('playing');
+        updateWaveformForSample(sample.id, buffer, false);
+        if (playBtn) playBtn.innerHTML = `
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><polygon points="2,0 12,6 2,12"/></svg>
+          Play
+        `;
+      }
+    };
+
+    source.start(0);
+  } catch(e) {
+    console.error('Generation error:', e);
+    if (playBtn) playBtn.innerHTML = 'Error';
+  }
+}
+
+function stopCurrent() {
+  if (currentSource) {
+    try { currentSource.stop(); } catch(e) {}
+    const card = document.getElementById('card-' + currentPlayingId);
+    if (card) card.classList.remove('playing');
+    const playBtn = document.querySelector(`.play-btn[data-id="${currentPlayingId}"]`);
+    if (playBtn) playBtn.innerHTML = `
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><polygon points="2,0 12,6 2,12"/></svg>
+      Play
+    `;
+    if (currentPlayingId && bufferCache[currentPlayingId]) {
+      updateWaveformForSample(currentPlayingId, bufferCache[currentPlayingId], false);
+    }
+    currentSource = null;
+    currentPlayingId = null;
+  }
+}
+
+function updateWaveformForSample(id, buffer, playing) {
+  const container = document.querySelector(`.waveform-container[data-id="${id}"]`);
+  if (!container) return;
+  let canvas = container.querySelector('canvas');
+  if (!canvas) {
+    container.innerHTML = '<canvas></canvas>';
+    canvas = container.querySelector('canvas');
+  }
+  requestAnimationFrame(() => drawWaveform(canvas, buffer, playing));
+}
+
+// ─── Download ───────────────────────────────────────────────────────
+async function downloadSample(sample) {
+  const dlBtn = document.querySelector(`.dl-btn[data-id="${sample.id}"]`);
+  if (dlBtn) dlBtn.innerHTML = '<span class="loading-spinner"></span>';
+
+  try {
+    const buffer = await getBuffer(sample);
+    // Update waveform if not yet rendered
+    updateWaveformForSample(sample.id, buffer, sample.id === currentPlayingId);
+
+    const wav = encodeWAV(buffer);
+    const blob = new Blob([wav], { type: 'audio/wav' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = sample.id + '.wav';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch(e) {
+    console.error('Download error:', e);
+  }
+
+  if (dlBtn) dlBtn.innerHTML = `
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 1v7M3 6l3 3 3-3M1 11h10"/></svg>
+    WAV
+  `;
+}
+
+// ─── Download All ───────────────────────────────────────────────────
+document.getElementById('downloadAllBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('downloadAllBtn');
+  const samples = getFilteredSamples(activePack);
+  btn.disabled = true;
+  btn.textContent = `Generating 0/${samples.length}...`;
+
+  for (let i = 0; i < samples.length; i++) {
+    btn.textContent = `Generating ${i + 1}/${samples.length}...`;
+    await downloadSample(samples[i]);
+    // Small delay so downloads don't get throttled
+    await new Promise(r => setTimeout(r, 200));
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Download All';
+});
+
+// ─── Volume ─────────────────────────────────────────────────────────
+document.getElementById('volumeSlider').addEventListener('input', (e) => {
+  if (masterGain) masterGain.gain.value = parseFloat(e.target.value);
+});
+
+// ─── Stop All ───────────────────────────────────────────────────────
+document.getElementById('stopAllBtn').addEventListener('click', stopCurrent);
+
+// ─── Search ─────────────────────────────────────────────────────────
+document.getElementById('searchInput').addEventListener('input', (e) => {
+  searchTerm = e.target.value.trim();
+  // Auto-switch to a pack with results if current is empty
+  const currentFiltered = getFilteredSamples(activePack);
+  if (currentFiltered.length === 0 && searchTerm) {
+    const packWithResults = allPacks.find(p => getFilteredSamples(p).length > 0);
+    if (packWithResults) activePack = packWithResults;
+  }
+  renderSidebar();
+  renderSamples();
+});
+
+// ─── Init ───────────────────────────────────────────────────────────
+renderSidebar();
+renderSamples();
+
+// Handle window resize for waveform re-rendering
+let resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    document.querySelectorAll('.waveform-container canvas').forEach(canvas => {
+      const id = canvas.parentElement.dataset.id;
+      if (bufferCache[id]) {
+        drawWaveform(canvas, bufferCache[id], id === currentPlayingId);
+      }
+    });
+  }, 150);
+});
+</script>
+<script src="/related.js"></script>
+</body>
+</html>

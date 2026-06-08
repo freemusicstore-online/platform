@@ -226,6 +226,15 @@
       "section": "library"
     },
     {
+      "id": "sample-library",
+      "name": "Sample Library",
+      "description": "64 free synthesized samples: 808, 909, acoustic, lo-fi kits, synth one-shots, FX, impulse responses. Preview and download WAV.",
+      "icon": "🎵",
+      "iconBg": "#d97706",
+      "category": "library",
+      "section": "library"
+    },
+    {
       "id": "page-turner",
       "name": "Smart Page Turner",
       "description": "Auto-turn sheet music pages by counting bars at your tempo. Beat indicator, metronome, rehearsal controls, performance mode.",
