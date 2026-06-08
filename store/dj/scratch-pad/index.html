@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<title>Scratch Pad - FreeMusicStore</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --accent: #8b5cf6;
+  --accent-hover: #7c3aed;
+  --bg: #0a0a0b;
+  --surface: #141416;
+  --surface-2: #1e1e22;
+  --border: #2a2a2e;
+  --text: #f0f0f2;
+  --text-dim: #8a8a8e;
+}
+body {
+  font-family: 'Manrope', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+.topbar .back { font-size: 14px; font-weight: 500; }
+.topbar h1 { font-size: 18px; font-weight: 700; }
+
+.main {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+/* Drop zone */
+.drop-zone {
+  border: 2px dashed var(--border);
+  border-radius: 16px;
+  padding: 48px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  margin-bottom: 24px;
+}
+.drop-zone:hover, .drop-zone.dragover {
+  border-color: var(--accent);
+  background: rgba(139,92,246,0.05);
+}
+.drop-zone p { color: var(--text-dim); font-size: 15px; margin-bottom: 8px; }
+.drop-zone .hint { font-size: 13px; color: var(--text-dim); opacity: 0.6; }
+.drop-zone.loaded { padding: 16px 24px; }
+.drop-zone.loaded .track-name {
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+/* Turntable layout */
+.turntable-wrap {
+  display: none;
+  flex-direction: column;
+  gap: 24px;
+}
+.turntable-wrap.visible { display: flex; }
+
+.deck {
+  display: flex;
+  gap: 32px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* Platter */
+.platter-container {
+  position: relative;
+  width: 360px;
+  height: 360px;
+  flex-shrink: 0;
+}
+.platter-container canvas {
+  width: 360px;
+  height: 360px;
+  cursor: grab;
+  border-radius: 50%;
+}
+.platter-container canvas:active { cursor: grabbing; }
+
+/* Tonearm */
+.tonearm-wrap {
+  position: absolute;
+  top: -10px;
+  right: -30px;
+  width: 60px;
+  height: 200px;
+  pointer-events: none;
+}
+.tonearm-wrap svg {
+  transform-origin: 30px 10px;
+  transition: transform 0.3s ease;
+}
+
+/* RPM display */
+.rpm-display {
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 4px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+/* Side controls */
+.side-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 240px;
+}
+
+.control-group {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+}
+.control-group h3 {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  margin-bottom: 12px;
+}
+
+.btn {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn:hover { background: var(--accent-hover); }
+.btn.secondary {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+.btn.secondary:hover { background: var(--border); }
+.btn.active { background: #ef4444; }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.transport-btns {
+  display: flex;
+  gap: 8px;
+}
+.transport-btns .btn { flex: 1; text-align: center; }
+
+/* Sliders */
+.slider-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.slider-row:last-child { margin-bottom: 0; }
+.slider-row label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-dim);
+  min-width: 60px;
+}
+.slider-row input[type="range"] {
+  flex: 1;
+  accent-color: var(--accent);
+  height: 6px;
+}
+.slider-row .val {
+  font-size: 12px;
+  font-weight: 700;
+  min-width: 44px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Crossfader */
+.crossfader-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+}
+.crossfader-section h3 {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  margin-bottom: 12px;
+}
+.crossfader-track {
+  position: relative;
+  height: 40px;
+  background: var(--surface-2);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 4px;
+}
+.crossfader-track input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+.crossfader-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--text-dim);
+  font-weight: 600;
+}
+.crossfader-hint {
+  font-size: 12px;
+  color: var(--text-dim);
+  opacity: 0.6;
+  margin-top: 10px;
+  line-height: 1.5;
+}
+
+/* Waveform */
+.waveform-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  overflow: hidden;
+}
+.waveform-section h3 {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+}
+.waveform-canvas {
+  width: 100%;
+  height: 64px;
+  border-radius: 6px;
+  display: block;
+}
+
+/* Responsive */
+@media (max-width: 800px) {
+  .deck { flex-direction: column; align-items: center; }
+  .platter-container { width: 300px; height: 300px; }
+  .platter-container canvas { width: 300px; height: 300px; }
+  .side-controls { min-width: 300px; width: 100%; }
+}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <a href="/" class="back">&larr; Back to Store</a>
+  <h1>Scratch Pad</h1>
+</div>
+
+<div class="main">
+  <div class="drop-zone" id="dropZone">
+    <p>Drop an audio file here or click to load a track</p>
+    <span class="hint">MP3, WAV, OGG, FLAC supported</span>
+    <input type="file" id="fileInput" accept="audio/*" hidden>
+  </div>
+
+  <div class="turntable-wrap" id="turntableWrap">
+    <div class="deck">
+      <div class="platter-container">
+        <canvas id="platter" width="720" height="720"></canvas>
+        <div class="tonearm-wrap" id="tonearmWrap">
+          <svg width="60" height="200" viewBox="0 0 60 200" id="tonearmSvg">
+            <circle cx="30" cy="10" r="8" fill="#333" stroke="#555" stroke-width="1.5"/>
+            <line x1="30" y1="18" x2="18" y2="170" stroke="#888" stroke-width="3" stroke-linecap="round"/>
+            <ellipse cx="16" cy="174" rx="5" ry="3" fill="#aaa"/>
+          </svg>
+        </div>
+        <div class="rpm-display" id="rpmDisplay">0.0 RPM</div>
+      </div>
+
+      <div class="side-controls">
+        <div class="control-group">
+          <h3>Transport</h3>
+          <div class="transport-btns">
+            <button class="btn" id="playBtn">Play</button>
+            <button class="btn secondary" id="stopBtn">Stop</button>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <h3>Pitch / Speed</h3>
+          <div class="slider-row">
+            <label>Pitch</label>
+            <input type="range" id="pitchSlider" min="-8" max="8" step="0.1" value="0">
+            <span class="val" id="pitchVal">0.0%</span>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <h3>Volume</h3>
+          <div class="slider-row">
+            <label>Level</label>
+            <input type="range" id="volumeSlider" min="0" max="100" value="80">
+            <span class="val" id="volumeVal">80%</span>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <h3>Record</h3>
+          <div class="transport-btns">
+            <button class="btn secondary" id="recBtn">Record</button>
+            <button class="btn secondary" id="downloadBtn" disabled>Download WAV</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="crossfader-section">
+      <h3>Crossfader</h3>
+      <div class="crossfader-track">
+        <input type="range" id="crossfader" min="0" max="100" value="100">
+      </div>
+      <div class="crossfader-labels">
+        <span>CUT</span>
+        <span>CENTER</span>
+        <span>OPEN</span>
+      </div>
+      <div class="crossfader-hint">
+        Practice baby scratches: drag the record back and forth while cutting with the crossfader.
+        Move the fader to the left (CUT) to mute, right (OPEN) to let sound through.
+      </div>
+    </div>
+
+    <div class="waveform-section">
+      <h3>Waveform</h3>
+      <canvas class="waveform-canvas" id="waveformCanvas" height="128"></canvas>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── State ──
+let audioCtx = null;
+let decodedBuffer = null;    // original AudioBuffer
+let monoSamples = null;      // Float32Array — mono mix for scratch engine
+let sampleRate = 44100;
+let needlePos = 0;           // current sample position (float)
+let playing = false;
+let scratching = false;
+let scratchStartAngle = 0;
+let scratchStartNeedlePos = 0;
+let lastScratchAngle = 0;
+let currentRPM = 0;
+let pitchOffset = 0;         // -8 to +8 percent
+let volumeLevel = 0.8;
+let crossfaderValue = 1;     // 0=cut, 1=open
+
+// Record state
+let recording = false;
+let recordedChunks = [];
+
+// Platter visual
+let platterAngle = 0;        // radians for drawing
+const BASE_RPM = 33.33;
+
+// Canvas refs
+const platterCanvas = document.getElementById('platter');
+const platterCtx = platterCanvas.getContext('2d');
+const waveformCanvas = document.getElementById('waveformCanvas');
+const waveformCtx = waveformCanvas.getContext('2d');
+
+// DOM refs
+const dropZone = document.getElementById('dropZone');
+const turntableWrap = document.getElementById('turntableWrap');
+const playBtn = document.getElementById('playBtn');
+const stopBtn = document.getElementById('stopBtn');
+const pitchSlider = document.getElementById('pitchSlider');
+const pitchVal = document.getElementById('pitchVal');
+const volumeSlider = document.getElementById('volumeSlider');
+const volumeVal = document.getElementById('volumeVal');
+const crossfader = document.getElementById('crossfader');
+const recBtn = document.getElementById('recBtn');
+const downloadBtn = document.getElementById('downloadBtn');
+const rpmDisplay = document.getElementById('rpmDisplay');
+const tonearmSvg = document.getElementById('tonearmSvg');
+
+// ── Audio engine (ScriptProcessor based for sample-accurate scratch) ──
+let scriptNode = null;
+let gainNode = null;
+let crossfaderGain = null;
+let destNode = null;
+let recorderDest = null;
+let mediaRecorder = null;
+
+function initAudio() {
+  if (audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  sampleRate = audioCtx.sampleRate;
+
+  // Script processor: outputs samples from our manual needle position
+  scriptNode = audioCtx.createScriptProcessor(2048, 0, 2);
+  gainNode = audioCtx.createGain();
+  crossfaderGain = audioCtx.createGain();
+  gainNode.gain.value = volumeLevel;
+  crossfaderGain.gain.value = crossfaderValue;
+
+  scriptNode.connect(gainNode);
+  gainNode.connect(crossfaderGain);
+  crossfaderGain.connect(audioCtx.destination);
+
+  // For recording
+  recorderDest = audioCtx.createMediaStreamDestination();
+  crossfaderGain.connect(recorderDest);
+
+  scriptNode.onaudioprocess = processAudio;
+}
+
+// Smooth rate for non-scratch playback
+let targetRate = 1.0;
+let currentRate = 0;
+
+function processAudio(e) {
+  const outL = e.outputBuffer.getChannelData(0);
+  const outR = e.outputBuffer.getChannelData(1);
+
+  if (!monoSamples || (!playing && !scratching)) {
+    outL.fill(0);
+    outR.fill(0);
+    return;
+  }
+
+  const len = monoSamples.length;
+  const leftChannel = decodedBuffer.getChannelData(0);
+  const rightChannel = decodedBuffer.numberOfChannels > 1
+    ? decodedBuffer.getChannelData(1)
+    : leftChannel;
+
+  for (let i = 0; i < outL.length; i++) {
+    if (!scratching) {
+      // Smooth interpolation back to target rate
+      currentRate += (targetRate - currentRate) * 0.005;
+    }
+
+    needlePos += currentRate;
+
+    // Clamp / loop
+    if (needlePos >= len) {
+      needlePos = 0;
+      if (!scratching) {
+        playing = false;
+        outL.fill(0, i);
+        outR.fill(0, i);
+        updatePlayButton();
+        return;
+      }
+    }
+    if (needlePos < 0) needlePos = 0;
+
+    // Linear interpolation for smooth output
+    const idx = Math.floor(needlePos);
+    const frac = needlePos - idx;
+    if (idx >= 0 && idx < len - 1) {
+      outL[i] = leftChannel[idx] * (1 - frac) + leftChannel[idx + 1] * frac;
+      outR[i] = rightChannel[idx] * (1 - frac) + rightChannel[idx + 1] * frac;
+    } else if (idx >= 0 && idx < len) {
+      outL[i] = leftChannel[idx];
+      outR[i] = rightChannel[idx];
+    } else {
+      outL[i] = 0;
+      outR[i] = 0;
+    }
+  }
+}
+
+// ── File loading ──
+function escapeHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+dropZone.addEventListener('click', () => {
+  const fi = document.getElementById('fileInput');
+  if (fi) fi.click();
+});
+document.getElementById('fileInput').addEventListener('change', (e) => {
+  if (e.target.files[0]) loadFile(e.target.files[0]);
+});
+dropZone.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  dropZone.classList.add('dragover');
+});
+dropZone.addEventListener('dragleave', () => {
+  dropZone.classList.remove('dragover');
+});
+dropZone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+  if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
+});
+
+async function loadFile(file) {
+  initAudio();
+  if (audioCtx.state === 'suspended') await audioCtx.resume();
+
+  const arrayBuffer = await file.arrayBuffer();
+  decodedBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+
+  // Build mono mix for calculations
+  const ch0 = decodedBuffer.getChannelData(0);
+  if (decodedBuffer.numberOfChannels > 1) {
+    const ch1 = decodedBuffer.getChannelData(1);
+    monoSamples = new Float32Array(ch0.length);
+    for (let i = 0; i < ch0.length; i++) {
+      monoSamples[i] = (ch0[i] + ch1[i]) * 0.5;
+    }
+  } else {
+    monoSamples = ch0;
+  }
+
+  sampleRate = decodedBuffer.sampleRate;
+  needlePos = 0;
+  playing = false;
+  currentRate = 0;
+  targetRate = 1 + pitchOffset / 100;
+
+  // Update UI
+  dropZone.classList.add('loaded');
+  dropZone.innerHTML = `<p class="track-name">${escapeHtml(file.name)}</p><span class="hint">Click or drop to load a different track</span><input type="file" id="fileInput" accept="audio/*" hidden>`;
+  // Re-bind file input since innerHTML destroyed the old one
+  document.getElementById('fileInput').addEventListener('change', (ev) => {
+    if (ev.target.files[0]) loadFile(ev.target.files[0]);
+  });
+  turntableWrap.classList.add('visible');
+  updatePlayButton();
+  drawWaveform();
+}
+
+// ── Platter drawing ──
+function drawPlatter() {
+  const w = platterCanvas.width;
+  const h = platterCanvas.height;
+  const cx = w / 2;
+  const cy = h / 2;
+  const r = w / 2 - 4;
+
+  platterCtx.clearRect(0, 0, w, h);
+
+  // Outer shadow
+  platterCtx.save();
+  platterCtx.shadowColor = 'rgba(139,92,246,0.12)';
+  platterCtx.shadowBlur = 30;
+  platterCtx.beginPath();
+  platterCtx.arc(cx, cy, r, 0, Math.PI * 2);
+  platterCtx.fillStyle = '#111';
+  platterCtx.fill();
+  platterCtx.restore();
+
+  // Vinyl base
+  const vinylGrad = platterCtx.createRadialGradient(cx, cy, 30, cx, cy, r);
+  vinylGrad.addColorStop(0, '#1a1a1e');
+  vinylGrad.addColorStop(0.15, '#0d0d10');
+  vinylGrad.addColorStop(0.85, '#0d0d10');
+  vinylGrad.addColorStop(1, '#1a1a1e');
+  platterCtx.beginPath();
+  platterCtx.arc(cx, cy, r, 0, Math.PI * 2);
+  platterCtx.fillStyle = vinylGrad;
+  platterCtx.fill();
+
+  // Outer rim
+  platterCtx.beginPath();
+  platterCtx.arc(cx, cy, r, 0, Math.PI * 2);
+  platterCtx.strokeStyle = '#2a2a30';
+  platterCtx.lineWidth = 2;
+  platterCtx.stroke();
+
+  // Grooves (rotate with platter)
+  platterCtx.save();
+  platterCtx.translate(cx, cy);
+  platterCtx.rotate(platterAngle);
+
+  for (let gr = 50; gr < r - 20; gr += 6) {
+    platterCtx.beginPath();
+    platterCtx.arc(0, 0, gr, 0, Math.PI * 2);
+    const alpha = 0.06 + Math.sin(gr * 0.3 + platterAngle * 2) * 0.03;
+    platterCtx.strokeStyle = `rgba(255,255,255,${alpha})`;
+    platterCtx.lineWidth = 0.5;
+    platterCtx.stroke();
+  }
+
+  // Highlight streak (simulates light reflection on grooves)
+  platterCtx.save();
+  const streakGrad = platterCtx.createLinearGradient(-r, -r * 0.3, r, r * 0.3);
+  streakGrad.addColorStop(0, 'rgba(255,255,255,0)');
+  streakGrad.addColorStop(0.45, 'rgba(255,255,255,0)');
+  streakGrad.addColorStop(0.5, 'rgba(255,255,255,0.04)');
+  streakGrad.addColorStop(0.55, 'rgba(255,255,255,0)');
+  streakGrad.addColorStop(1, 'rgba(255,255,255,0)');
+  platterCtx.beginPath();
+  platterCtx.arc(0, 0, r - 2, 0, Math.PI * 2);
+  platterCtx.fillStyle = streakGrad;
+  platterCtx.fill();
+  platterCtx.restore();
+
+  // Label circle (center)
+  const labelR = 45;
+  const labelGrad = platterCtx.createRadialGradient(0, 0, 5, 0, 0, labelR);
+  labelGrad.addColorStop(0, '#8b5cf6');
+  labelGrad.addColorStop(0.6, '#6d28d9');
+  labelGrad.addColorStop(1, '#4c1d95');
+  platterCtx.beginPath();
+  platterCtx.arc(0, 0, labelR, 0, Math.PI * 2);
+  platterCtx.fillStyle = labelGrad;
+  platterCtx.fill();
+
+  // Label text
+  platterCtx.fillStyle = 'rgba(255,255,255,0.85)';
+  platterCtx.font = 'bold 11px Manrope, sans-serif';
+  platterCtx.textAlign = 'center';
+  platterCtx.textBaseline = 'middle';
+  platterCtx.fillText('FMS', 0, -6);
+  platterCtx.font = '8px Manrope, sans-serif';
+  platterCtx.fillStyle = 'rgba(255,255,255,0.55)';
+  platterCtx.fillText('SCRATCH PAD', 0, 8);
+
+  // Spindle hole
+  platterCtx.beginPath();
+  platterCtx.arc(0, 0, 4, 0, Math.PI * 2);
+  platterCtx.fillStyle = '#0a0a0b';
+  platterCtx.fill();
+
+  platterCtx.restore();
+
+  // Position marker dot (on outer edge, rotates)
+  const markerAngle = platterAngle;
+  const markerR = r - 14;
+  const mx = cx + Math.cos(markerAngle) * markerR;
+  const my = cy + Math.sin(markerAngle) * markerR;
+  platterCtx.beginPath();
+  platterCtx.arc(mx, my, 3, 0, Math.PI * 2);
+  platterCtx.fillStyle = var_accent;
+  platterCtx.fill();
+}
+
+const var_accent = '#8b5cf6';
+
+// ── Tonearm ──
+function updateTonearm() {
+  if (!monoSamples) return;
+  const progress = needlePos / monoSamples.length;
+  // Arm swings from ~15deg to ~35deg
+  const angle = 15 + progress * 20;
+  tonearmSvg.style.transform = `rotate(${angle}deg)`;
+}
+
+// ── Waveform ──
+function drawWaveform() {
+  if (!waveformCanvas.parentElement) return;
+  const dpr = window.devicePixelRatio || 1;
+  const rect = waveformCanvas.getBoundingClientRect();
+  waveformCanvas.width = rect.width * dpr;
+  waveformCanvas.height = 128 * dpr;
+  waveformCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  const w = rect.width;
+  const h = 128;
+
+  waveformCtx.clearRect(0, 0, w, h);
+
+  if (!monoSamples) return;
+
+  const len = monoSamples.length;
+  const samplesPerPixel = Math.floor(len / w);
+  const mid = h / 2;
+
+  // Draw waveform bars
+  for (let x = 0; x < w; x++) {
+    const start = x * samplesPerPixel;
+    let min = 0, max = 0;
+    for (let s = start; s < start + samplesPerPixel && s < len; s += 4) {
+      const v = monoSamples[s];
+      if (v < min) min = v;
+      if (v > max) max = v;
+    }
+    const top = mid + min * mid;
+    const bot = mid + max * mid;
+
+    // Color based on position relative to needle
+    const samplePos = needlePos / len;
+    const xRatio = x / w;
+    if (xRatio < samplePos) {
+      waveformCtx.fillStyle = 'rgba(139,92,246,0.5)';
+    } else {
+      waveformCtx.fillStyle = 'rgba(139,92,246,0.2)';
+    }
+    waveformCtx.fillRect(x, top, 1, bot - top || 1);
+  }
+
+  // Playhead line
+  if (monoSamples) {
+    const px = (needlePos / len) * w;
+    waveformCtx.fillStyle = '#fff';
+    waveformCtx.fillRect(Math.round(px), 0, 2, h);
+  }
+}
+
+// ── Scratch interaction ──
+let isDragging = false;
+let prevMouseAngle = 0;
+let dragVelocity = 0;
+let lastDragTime = 0;
+let velocityHistory = [];
+
+function getAngleFromCenter(clientX, clientY) {
+  const rect = platterCanvas.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+  return Math.atan2(clientY - cy, clientX - cx);
+}
+
+function normalizeAngleDelta(delta) {
+  // Keep delta in [-PI, PI] to handle wrapping
+  while (delta > Math.PI) delta -= 2 * Math.PI;
+  while (delta < -Math.PI) delta += 2 * Math.PI;
+  return delta;
+}
+
+// Samples per radian for scratch — one full revolution = ~0.5 seconds of audio
+const SAMPLES_PER_RADIAN = () => sampleRate * 0.5 / (2 * Math.PI);
+
+function handlePointerDown(e) {
+  if (!monoSamples) return;
+  e.preventDefault();
+  initAudio();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+
+  isDragging = true;
+  scratching = true;
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  prevMouseAngle = getAngleFromCenter(clientX, clientY);
+  scratchStartAngle = prevMouseAngle;
+  scratchStartNeedlePos = needlePos;
+  lastDragTime = performance.now();
+  velocityHistory = [];
+  currentRate = 0; // stop moving immediately when grabbed
+}
+
+function handlePointerMove(e) {
+  if (!isDragging || !monoSamples) return;
+  e.preventDefault();
+
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  const angle = getAngleFromCenter(clientX, clientY);
+  const delta = normalizeAngleDelta(angle - prevMouseAngle);
+
+  const now = performance.now();
+  const dt = Math.max(now - lastDragTime, 1);
+
+  // Move needle based on drag
+  const sampleDelta = delta * SAMPLES_PER_RADIAN();
+  needlePos += sampleDelta;
+
+  // Clamp
+  if (needlePos < 0) needlePos = 0;
+  if (needlePos >= monoSamples.length) needlePos = monoSamples.length - 1;
+
+  // Calculate angular velocity (radians per ms) -> map to playback rate
+  const angVel = delta / dt; // rad/ms
+  // Map: ~0.01 rad/ms = normal speed (roughly one revolution per 628ms ~ 96 RPM, but we scale for feel)
+  const rateFromDrag = angVel * 100; // scale factor for feel
+  currentRate = Math.max(-3, Math.min(3, rateFromDrag));
+
+  // Track velocity for release momentum
+  velocityHistory.push({ v: rateFromDrag, t: now });
+  if (velocityHistory.length > 8) velocityHistory.shift();
+
+  // Rotate platter visually
+  platterAngle += delta;
+
+  prevMouseAngle = angle;
+  lastDragTime = now;
+}
+
+function handlePointerUp(e) {
+  if (!isDragging) return;
+  isDragging = false;
+  scratching = false;
+
+  // Resume normal playback if was playing
+  if (playing) {
+    targetRate = 1 + pitchOffset / 100;
+    // Start from near zero and ramp up for a smooth resume
+    // Use average recent velocity for a brief glide
+    if (velocityHistory.length > 0) {
+      const recent = velocityHistory.slice(-4);
+      const avgV = recent.reduce((s, x) => s + x.v, 0) / recent.length;
+      currentRate = Math.max(-0.5, Math.min(0.5, avgV));
+    } else {
+      currentRate = 0;
+    }
+  } else {
+    currentRate = 0;
+  }
+}
+
+platterCanvas.addEventListener('mousedown', handlePointerDown);
+window.addEventListener('mousemove', handlePointerMove);
+window.addEventListener('mouseup', handlePointerUp);
+platterCanvas.addEventListener('touchstart', handlePointerDown, { passive: false });
+window.addEventListener('touchmove', handlePointerMove, { passive: false });
+window.addEventListener('touchend', handlePointerUp);
+
+// ── Transport ──
+playBtn.addEventListener('click', () => {
+  if (!monoSamples) return;
+  initAudio();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+
+  if (playing) {
+    playing = false;
+    currentRate = 0;
+    targetRate = 0;
+  } else {
+    playing = true;
+    targetRate = 1 + pitchOffset / 100;
+    currentRate = targetRate;
+  }
+  updatePlayButton();
+});
+
+stopBtn.addEventListener('click', () => {
+  playing = false;
+  needlePos = 0;
+  currentRate = 0;
+  targetRate = 0;
+  platterAngle = 0;
+  updatePlayButton();
+});
+
+function updatePlayButton() {
+  playBtn.textContent = playing ? 'Pause' : 'Play';
+  if (playing) {
+    playBtn.style.background = '#7c3aed';
+  } else {
+    playBtn.style.background = '';
+  }
+}
+
+// ── Pitch slider ──
+pitchSlider.addEventListener('input', () => {
+  pitchOffset = parseFloat(pitchSlider.value);
+  pitchVal.textContent = (pitchOffset >= 0 ? '+' : '') + pitchOffset.toFixed(1) + '%';
+  if (playing && !scratching) {
+    targetRate = 1 + pitchOffset / 100;
+  }
+});
+
+// ── Volume slider ──
+volumeSlider.addEventListener('input', () => {
+  volumeLevel = volumeSlider.value / 100;
+  volumeVal.textContent = Math.round(volumeLevel * 100) + '%';
+  if (gainNode) gainNode.gain.value = volumeLevel;
+});
+
+// ── Crossfader ──
+crossfader.addEventListener('input', () => {
+  crossfaderValue = crossfader.value / 100;
+  if (crossfaderGain) {
+    // Quick cut: use a curve that's silent below ~10%
+    let vol;
+    if (crossfaderValue < 0.05) {
+      vol = 0;
+    } else {
+      vol = crossfaderValue;
+    }
+    crossfaderGain.gain.value = vol;
+  }
+});
+
+// ── Recording ──
+recBtn.addEventListener('click', () => {
+  if (!audioCtx) return;
+  if (!recording) {
+    startRecording();
+  } else {
+    stopRecording();
+  }
+});
+
+function startRecording() {
+  recordedChunks = [];
+  mediaRecorder = new MediaRecorder(recorderDest.stream, { mimeType: 'audio/webm' });
+  mediaRecorder.ondataavailable = (e) => {
+    if (e.data.size > 0) recordedChunks.push(e.data);
+  };
+  mediaRecorder.onstop = () => {
+    downloadBtn.disabled = false;
+  };
+  mediaRecorder.start();
+  recording = true;
+  recBtn.textContent = 'Stop Rec';
+  recBtn.classList.add('active');
+  downloadBtn.disabled = true;
+}
+
+function stopRecording() {
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+    mediaRecorder.stop();
+  }
+  recording = false;
+  recBtn.textContent = 'Record';
+  recBtn.classList.remove('active');
+}
+
+downloadBtn.addEventListener('click', async () => {
+  if (recordedChunks.length === 0) return;
+
+  // Decode webm to AudioBuffer, then encode as WAV
+  const blob = new Blob(recordedChunks, { type: 'audio/webm' });
+  const arrayBuffer = await blob.arrayBuffer();
+
+  try {
+    const tmpCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const audioBuf = await tmpCtx.decodeAudioData(arrayBuffer);
+    const wavBlob = audioBufferToWav(audioBuf);
+    const url = URL.createObjectURL(wavBlob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'scratch-recording.wav';
+    a.click();
+    URL.revokeObjectURL(url);
+    tmpCtx.close();
+  } catch {
+    // Fallback: download as webm
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'scratch-recording.webm';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+});
+
+function audioBufferToWav(buffer) {
+  const numCh = buffer.numberOfChannels;
+  const sr = buffer.sampleRate;
+  const length = buffer.length * numCh * 2;
+  const out = new ArrayBuffer(44 + length);
+  const view = new DataView(out);
+
+  function writeStr(offset, str) {
+    for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+  }
+
+  writeStr(0, 'RIFF');
+  view.setUint32(4, 36 + length, true);
+  writeStr(8, 'WAVE');
+  writeStr(12, 'fmt ');
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, numCh, true);
+  view.setUint32(24, sr, true);
+  view.setUint32(28, sr * numCh * 2, true);
+  view.setUint16(32, numCh * 2, true);
+  view.setUint16(34, 16, true);
+  writeStr(36, 'data');
+  view.setUint32(40, length, true);
+
+  const channels = [];
+  for (let c = 0; c < numCh; c++) channels.push(buffer.getChannelData(c));
+
+  let offset = 44;
+  for (let i = 0; i < buffer.length; i++) {
+    for (let c = 0; c < numCh; c++) {
+      const s = Math.max(-1, Math.min(1, channels[c][i]));
+      view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+      offset += 2;
+    }
+  }
+
+  return new Blob([out], { type: 'audio/wav' });
+}
+
+// ── Animation loop ──
+let lastFrameTime = 0;
+
+function animate(ts) {
+  const dt = Math.min(ts - (lastFrameTime || ts), 50); // ms, cap at 50
+  lastFrameTime = ts;
+
+  // Update platter rotation during playback (when not scratching — scratch handles its own rotation)
+  if (playing && !scratching && monoSamples) {
+    const rpm = BASE_RPM * (1 + pitchOffset / 100);
+    const radiansPerMs = (rpm * 2 * Math.PI) / 60000;
+    platterAngle += radiansPerMs * dt;
+    currentRPM = rpm * Math.abs(currentRate / (1 + pitchOffset / 100 || 1));
+  } else if (scratching) {
+    // RPM from drag velocity
+    const angVelRPM = Math.abs(currentRate) * BASE_RPM;
+    currentRPM = angVelRPM;
+  } else {
+    currentRPM *= 0.95; // spin down
+    if (currentRPM < 0.1) currentRPM = 0;
+  }
+
+  drawPlatter();
+  updateTonearm();
+  rpmDisplay.textContent = currentRPM.toFixed(1) + ' RPM';
+
+  // Update waveform position indicator (throttled)
+  if (Math.floor(ts / 100) !== Math.floor((ts - dt) / 100)) {
+    drawWaveform();
+  }
+
+  requestAnimationFrame(animate);
+}
+
+requestAnimationFrame(animate);
+
+// Resize waveform
+window.addEventListener('resize', () => {
+  if (monoSamples) drawWaveform();
+});
+</script>
+<script src="/related.js"></script>
+</body>
+</html>

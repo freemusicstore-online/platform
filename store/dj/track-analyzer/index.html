@@ -1,0 +1,1286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<title>Track Analyzer - FreeMusicStore</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --accent: #8b5cf6;
+  --accent-hover: #7c3aed;
+  --bg: #0a0a0b;
+  --surface: #141416;
+  --surface-2: #1e1e22;
+  --text: #f0f0f2;
+  --text-dim: #8a8a8e;
+  --border: #2a2a2e;
+  --radius: 10px;
+  --blue: #3b82f6;
+  --green: #22c55e;
+  --orange: #f97316;
+  --red: #ef4444;
+}
+body {
+  font-family: 'Manrope', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.5;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.back {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 16px 24px; font-size: 14px; font-weight: 500; color: var(--text-dim);
+}
+.back:hover { color: var(--accent); text-decoration: none; }
+header { text-align: center; padding: 0 24px 32px; }
+header h1 { font-size: 28px; font-weight: 800; color: #fff; margin-bottom: 6px; }
+header p { color: var(--text-dim); font-size: 15px; }
+.container { max-width: 1100px; margin: 0 auto; padding: 0 24px 64px; }
+
+/* Upload zone */
+.upload-zone {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 48px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  margin-bottom: 32px;
+}
+.upload-zone:hover, .upload-zone.dragover {
+  border-color: var(--accent);
+  background: rgba(139, 92, 246, 0.05);
+}
+.upload-zone .icon { font-size: 32px; margin-bottom: 8px; color: var(--text-dim); }
+.upload-zone p { color: var(--text-dim); font-size: 14px; }
+.upload-zone .hint { font-size: 12px; color: #555; margin-top: 4px; }
+input[type="file"] { display: none; }
+
+/* Tabs */
+.tabs {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--surface); border-radius: 8px; padding: 4px;
+}
+.tab-btn {
+  font-family: 'Manrope', sans-serif;
+  flex: 1; padding: 10px 16px; border: none; border-radius: 6px;
+  background: transparent; color: var(--text-dim);
+  font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s;
+}
+.tab-btn:hover { color: var(--text); }
+.tab-btn.active { background: var(--accent); color: #fff; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* Single analysis view */
+.analysis-panel { display: none; }
+.analysis-panel.active { display: block; }
+
+/* Hero stats */
+.hero-stats {
+  display: flex; gap: 24px; margin-bottom: 32px;
+  flex-wrap: wrap; justify-content: center;
+}
+.hero-stat {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px 32px;
+  text-align: center;
+  flex: 1; min-width: 200px; max-width: 280px;
+}
+.hero-stat .value {
+  font-size: 56px; font-weight: 800; color: #fff; line-height: 1;
+}
+.hero-stat .value .unit {
+  font-size: 20px; font-weight: 600; color: var(--text-dim); margin-left: 4px;
+}
+.hero-stat .label {
+  font-size: 12px; font-weight: 600; color: var(--text-dim);
+  text-transform: uppercase; letter-spacing: 0.5px; margin-top: 8px;
+}
+.hero-stat .sub {
+  font-size: 13px; color: var(--accent); margin-top: 4px; font-weight: 600;
+}
+.hero-stat.accent { border-color: var(--accent); background: rgba(139, 92, 246, 0.06); }
+
+/* Info grid */
+.info-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px; margin-bottom: 32px;
+}
+.info-item {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 14px 18px;
+}
+.info-item .label {
+  font-size: 11px; font-weight: 600; color: var(--text-dim);
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+.info-item .value {
+  font-size: 18px; font-weight: 700; color: #fff; margin-top: 2px;
+}
+
+/* Canvas sections */
+.canvas-section {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px; margin-bottom: 24px;
+}
+.canvas-section h3 {
+  font-size: 13px; font-weight: 700; color: var(--accent);
+  text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;
+}
+.canvas-section canvas {
+  width: 100%; border-radius: 6px; display: block;
+}
+.canvas-legend {
+  display: flex; gap: 16px; margin-top: 10px; justify-content: center;
+}
+.canvas-legend span {
+  font-size: 11px; color: var(--text-dim); display: flex; align-items: center; gap: 5px;
+}
+.canvas-legend .dot {
+  width: 8px; height: 8px; border-radius: 50%; display: inline-block;
+}
+
+/* Camelot wheel */
+.camelot-section {
+  display: flex; gap: 24px; flex-wrap: wrap; margin-bottom: 24px;
+}
+.camelot-svg-wrap {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px; flex: 1; min-width: 320px;
+  display: flex; flex-direction: column; align-items: center;
+}
+.camelot-svg-wrap h3 {
+  font-size: 13px; font-weight: 700; color: var(--accent);
+  text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;
+  align-self: flex-start;
+}
+.compatible-keys {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px; flex: 1; min-width: 260px;
+}
+.compatible-keys h3 {
+  font-size: 13px; font-weight: 700; color: var(--accent);
+  text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;
+}
+.compat-list { list-style: none; }
+.compat-list li {
+  padding: 8px 12px; border-radius: 6px; margin-bottom: 4px;
+  font-size: 13px; font-weight: 600; color: var(--text);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.compat-list li .cam { color: var(--accent); font-weight: 700; }
+.compat-list li.highlight { background: rgba(139, 92, 246, 0.12); }
+.compat-list li .relation { font-size: 11px; color: var(--text-dim); }
+
+/* Export buttons */
+.export-bar {
+  display: flex; gap: 8px; margin-bottom: 32px;
+}
+.btn {
+  font-family: 'Manrope', sans-serif;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 10px 20px; border: none; border-radius: 8px;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  transition: opacity 0.15s, background 0.15s;
+}
+.btn:hover { opacity: 0.85; }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-secondary { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); }
+.btn-secondary:hover { background: var(--border); }
+.btn.copied { background: var(--green); }
+
+/* Batch table */
+.batch-table-wrap {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden;
+}
+.batch-table {
+  width: 100%; border-collapse: collapse;
+}
+.batch-table th {
+  background: var(--surface-2); color: var(--text-dim);
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.5px; padding: 12px 16px; text-align: left;
+  cursor: pointer; user-select: none; white-space: nowrap;
+}
+.batch-table th:hover { color: var(--accent); }
+.batch-table th .sort-arrow { margin-left: 4px; font-size: 10px; }
+.batch-table td {
+  padding: 12px 16px; border-top: 1px solid var(--border);
+  font-size: 13px; font-weight: 500;
+}
+.batch-table tr:hover td { background: rgba(139, 92, 246, 0.04); }
+.batch-table .bpm-cell { font-weight: 800; color: var(--accent); }
+.batch-table .key-cell { font-weight: 700; }
+
+/* Progress */
+.progress-wrap {
+  margin-bottom: 24px; display: none;
+}
+.progress-wrap.active { display: block; }
+.progress-label {
+  font-size: 13px; font-weight: 600; color: var(--text-dim); margin-bottom: 8px;
+}
+.progress-bar-bg {
+  height: 6px; background: var(--surface-2); border-radius: 3px; overflow: hidden;
+}
+.progress-bar {
+  height: 100%; background: var(--accent); border-radius: 3px;
+  transition: width 0.3s;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .hero-stat .value { font-size: 40px; }
+  .hero-stat { padding: 16px 20px; min-width: 140px; }
+  .hero-stats { gap: 12px; }
+  .camelot-section { flex-direction: column; }
+  .batch-table-wrap { overflow-x: auto; }
+}
+</style>
+</head>
+<body>
+<a href="/" class="back">&larr; Back to Store</a>
+<header>
+  <h1>Track Analyzer</h1>
+  <p>Analyze BPM, key, energy, and waveform of audio tracks</p>
+</header>
+<div class="container">
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="single">Single Track</button>
+    <button class="tab-btn" data-tab="batch">Batch Analysis</button>
+  </div>
+
+  <!-- Single Track Tab -->
+  <div class="tab-content active" id="tab-single">
+    <div class="upload-zone" id="dropZone">
+      <div class="icon">&#9835;</div>
+      <p>Drag & drop an audio file here, or click to browse</p>
+      <p class="hint">MP3, WAV, OGG, FLAC, M4A supported</p>
+      <input type="file" id="fileInput" accept="audio/*">
+    </div>
+
+    <div class="progress-wrap" id="progressWrap">
+      <div class="progress-label" id="progressLabel">Analyzing...</div>
+      <div class="progress-bar-bg"><div class="progress-bar" id="progressBar"></div></div>
+    </div>
+
+    <div class="analysis-panel" id="analysisPanel">
+      <!-- Hero: BPM + Key -->
+      <div class="hero-stats">
+        <div class="hero-stat accent" id="heroStat-bpm">
+          <div class="value"><span id="bpmValue">--</span><span class="unit">BPM</span></div>
+          <div class="label">Tempo</div>
+          <div class="sub" id="bpmConf">--</div>
+        </div>
+        <div class="hero-stat accent" id="heroStat-key">
+          <div class="value" id="keyValue" style="font-size:40px;">--</div>
+          <div class="label">Musical Key</div>
+          <div class="sub" id="keyConf">--</div>
+        </div>
+      </div>
+
+      <!-- Info grid -->
+      <div class="info-grid">
+        <div class="info-item"><div class="label">Duration</div><div class="value" id="infoDuration">--</div></div>
+        <div class="info-item"><div class="label">Sample Rate</div><div class="value" id="infoSampleRate">--</div></div>
+        <div class="info-item"><div class="label">Channels</div><div class="value" id="infoChannels">--</div></div>
+        <div class="info-item"><div class="label">File Size</div><div class="value" id="infoFileSize">--</div></div>
+        <div class="info-item"><div class="label">Avg Loudness (RMS)</div><div class="value" id="infoLoudness">--</div></div>
+        <div class="info-item"><div class="label">Dynamic Range</div><div class="value" id="infoDynamic">--</div></div>
+      </div>
+
+      <!-- Three-band waveform -->
+      <div class="canvas-section">
+        <h3>Three-Band Waveform</h3>
+        <canvas id="waveformCanvas" height="180"></canvas>
+        <div class="canvas-legend">
+          <span><span class="dot" style="background:var(--blue)"></span> Bass</span>
+          <span><span class="dot" style="background:var(--green)"></span> Mids</span>
+          <span><span class="dot" style="background:var(--orange)"></span> Highs</span>
+        </div>
+      </div>
+
+      <!-- Energy graph -->
+      <div class="canvas-section">
+        <h3>Energy Over Time</h3>
+        <canvas id="energyCanvas" height="140"></canvas>
+      </div>
+
+      <!-- Camelot wheel + compatible keys -->
+      <div class="camelot-section" id="camelotSection">
+        <div class="camelot-svg-wrap">
+          <h3>Camelot Wheel</h3>
+          <svg id="camelotWheel" viewBox="0 0 400 400" width="360" height="360"></svg>
+        </div>
+        <div class="compatible-keys">
+          <h3>Compatible Keys (Harmonic Mixing)</h3>
+          <ul class="compat-list" id="compatList"></ul>
+        </div>
+      </div>
+
+      <!-- Export -->
+      <div class="export-bar">
+        <button class="btn btn-primary" id="copyBtn">Copy Results</button>
+        <button class="btn btn-secondary" id="downloadBtn">Download JSON</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Batch Tab -->
+  <div class="tab-content" id="tab-batch">
+    <div class="upload-zone" id="batchDropZone">
+      <div class="icon">&#9835;&#9835;</div>
+      <p>Drag & drop multiple audio files for batch analysis</p>
+      <p class="hint">All files will be analyzed in sequence</p>
+      <input type="file" id="batchFileInput" accept="audio/*" multiple>
+    </div>
+
+    <div class="progress-wrap" id="batchProgressWrap">
+      <div class="progress-label" id="batchProgressLabel">Analyzing...</div>
+      <div class="progress-bar-bg"><div class="progress-bar" id="batchProgressBar"></div></div>
+    </div>
+
+    <div id="batchResults" style="display:none;">
+      <div class="export-bar" style="margin-bottom:16px;">
+        <button class="btn btn-primary" id="batchCopyBtn">Copy Table</button>
+        <button class="btn btn-secondary" id="batchDownloadBtn">Download JSON</button>
+      </div>
+      <div class="batch-table-wrap">
+        <table class="batch-table" id="batchTable">
+          <thead>
+            <tr>
+              <th data-col="name">Filename <span class="sort-arrow"></span></th>
+              <th data-col="bpm">BPM <span class="sort-arrow"></span></th>
+              <th data-col="key">Key <span class="sort-arrow"></span></th>
+              <th data-col="camelot">Camelot <span class="sort-arrow"></span></th>
+              <th data-col="duration">Duration <span class="sort-arrow"></span></th>
+              <th data-col="energy">Energy <span class="sort-arrow"></span></th>
+            </tr>
+          </thead>
+          <tbody id="batchBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+'use strict';
+
+// ─── Constants ───────────────────────────────────────────────────
+
+const NOTE_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+
+// Krumhansl-Kessler key profiles
+const MAJOR_PROFILE = [6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88];
+const MINOR_PROFILE = [6.33, 2.68, 3.52, 5.38, 2.60, 3.53, 2.54, 4.75, 3.98, 2.69, 3.34, 3.17];
+
+// Camelot wheel mapping: [camelotNumber, letter] for each key
+// Index by root*2 + mode (0=major, 1=minor)
+const CAMELOT_MAP = {
+  'C Major': '8B', 'A Minor': '8A',
+  'G Major': '9B', 'E Minor': '9A',
+  'D Major': '10B', 'B Minor': '10A',
+  'A Major': '11B', 'F# Minor': '11A',
+  'E Major': '12B', 'C# Minor': '12A',
+  'B Major': '1B', 'G# Minor': '1A',
+  'F# Major': '2B', 'D# Minor': '2A',
+  'C# Major': '3B', 'A# Minor': '3A',
+  'G# Major': '4B', 'F Minor': '4A',
+  'D# Major': '5B', 'C Minor': '5A',
+  'A# Major': '6B', 'G Minor': '6A',
+  'F Major': '7B', 'D Minor': '7A',
+};
+
+// Camelot wheel ordered segments for drawing (1A through 12A, 1B through 12B)
+const CAMELOT_INNER = [ // A (minor) ring
+  { code: '1A', key: 'G# Minor' }, { code: '2A', key: 'D# Minor' },
+  { code: '3A', key: 'A# Minor' }, { code: '4A', key: 'F Minor' },
+  { code: '5A', key: 'C Minor' },  { code: '6A', key: 'G Minor' },
+  { code: '7A', key: 'D Minor' },  { code: '8A', key: 'A Minor' },
+  { code: '9A', key: 'E Minor' },  { code: '10A', key: 'B Minor' },
+  { code: '11A', key: 'F# Minor' },{ code: '12A', key: 'C# Minor' },
+];
+const CAMELOT_OUTER = [ // B (major) ring
+  { code: '1B', key: 'B Major' },  { code: '2B', key: 'F# Major' },
+  { code: '3B', key: 'C# Major' }, { code: '4B', key: 'G# Major' },
+  { code: '5B', key: 'D# Major' }, { code: '6B', key: 'A# Major' },
+  { code: '7B', key: 'F Major' },  { code: '8B', key: 'C Major' },
+  { code: '9B', key: 'G Major' },  { code: '10B', key: 'D Major' },
+  { code: '11B', key: 'A Major' }, { code: '12B', key: 'E Major' },
+];
+
+// ─── Utility ─────────────────────────────────────────────────────
+
+function formatDuration(s) {
+  const m = Math.floor(s / 60);
+  const sec = Math.floor(s % 60);
+  return m + ':' + String(sec).padStart(2, '0');
+}
+
+function formatFileSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / 1048576).toFixed(1) + ' MB';
+}
+
+function pearsonCorrelation(x, y) {
+  const n = x.length;
+  let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0, sumY2 = 0;
+  for (let i = 0; i < n; i++) {
+    sumX += x[i]; sumY += y[i];
+    sumXY += x[i] * y[i];
+    sumX2 += x[i] * x[i]; sumY2 += y[i] * y[i];
+  }
+  const num = n * sumXY - sumX * sumY;
+  const den = Math.sqrt((n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY));
+  return den === 0 ? 0 : num / den;
+}
+
+// ─── Audio Decode ────────────────────────────────────────────────
+
+async function decodeFile(file) {
+  const ctx = new OfflineAudioContext(1, 1, 44100);
+  const arrayBuf = await file.arrayBuffer();
+  const audioBuf = await ctx.decodeAudioData(arrayBuf);
+  return audioBuf;
+}
+
+// ─── BPM Detection (onset + autocorrelation) ────────────────────
+
+function detectBPM(audioBuffer) {
+  const sampleRate = audioBuffer.sampleRate;
+  const rawData = audioBuffer.getChannelData(0);
+
+  // Downsample for performance: take every N samples
+  const dsRate = 8;
+  const dsLen = Math.floor(rawData.length / dsRate);
+  const data = new Float32Array(dsLen);
+  for (let i = 0; i < dsLen; i++) data[i] = rawData[i * dsRate];
+  const effectiveRate = sampleRate / dsRate;
+
+  // Low-pass via running average (simple smoothing)
+  const smoothWindow = Math.max(1, Math.floor(effectiveRate * 0.005));
+  const smoothed = new Float32Array(dsLen);
+  let runSum = 0;
+  for (let i = 0; i < dsLen; i++) {
+    runSum += Math.abs(data[i]);
+    if (i >= smoothWindow) runSum -= Math.abs(data[i - smoothWindow]);
+    smoothed[i] = runSum / Math.min(i + 1, smoothWindow);
+  }
+
+  // Compute energy envelope in windows
+  const windowSize = Math.floor(effectiveRate * 0.02); // 20ms windows
+  const hopSize = Math.floor(windowSize / 2);
+  const numFrames = Math.floor((dsLen - windowSize) / hopSize);
+  const energy = new Float32Array(numFrames);
+  for (let f = 0; f < numFrames; f++) {
+    let sum = 0;
+    const start = f * hopSize;
+    for (let i = start; i < start + windowSize; i++) {
+      sum += smoothed[i] * smoothed[i];
+    }
+    energy[f] = sum / windowSize;
+  }
+
+  // First-order difference (onset strength)
+  const onset = new Float32Array(numFrames);
+  for (let i = 1; i < numFrames; i++) {
+    onset[i] = Math.max(0, energy[i] - energy[i - 1]);
+  }
+
+  // Autocorrelation of onset signal
+  // BPM range 60-200 -> periods
+  const frameRate = effectiveRate / hopSize;
+  const minLag = Math.floor(frameRate * 60 / 200); // 200 BPM
+  const maxLag = Math.floor(frameRate * 60 / 60);  // 60 BPM
+  const corrLen = Math.min(maxLag + 1, numFrames);
+
+  let bestLag = minLag;
+  let bestCorr = -Infinity;
+  const corrValues = [];
+
+  for (let lag = minLag; lag <= Math.min(maxLag, corrLen - 1); lag++) {
+    let corr = 0;
+    let count = 0;
+    for (let i = 0; i < numFrames - lag; i++) {
+      corr += onset[i] * onset[i + lag];
+      count++;
+    }
+    corr = count > 0 ? corr / count : 0;
+    corrValues.push({ lag, corr });
+    if (corr > bestCorr) {
+      bestCorr = corr;
+      bestLag = lag;
+    }
+  }
+
+  const bpm = Math.round(frameRate * 60 / bestLag);
+
+  // Confidence: ratio of best peak to mean correlation
+  const meanCorr = corrValues.reduce((s, c) => s + c.corr, 0) / corrValues.length;
+  const confidence = meanCorr > 0 ? Math.min(99, Math.round((bestCorr / meanCorr - 1) * 25 + 50)) : 50;
+
+  // Snap to common BPM: if within 3% of a common tempo, snap
+  const common = [60,70,80,85,90,95,100,105,110,115,120,125,128,130,135,140,145,150,155,160,170,174,175,180];
+  let snappedBpm = bpm;
+  for (const c of common) {
+    if (Math.abs(bpm - c) / c < 0.03) { snappedBpm = c; break; }
+  }
+
+  return { bpm: snappedBpm, confidence: Math.max(30, Math.min(99, confidence)) };
+}
+
+// ─── Key Detection (chromagram + KK profiles) ───────────────────
+
+function detectKey(audioBuffer) {
+  const sampleRate = audioBuffer.sampleRate;
+  const rawData = audioBuffer.getChannelData(0);
+
+  // Build chromagram using DFT at specific frequencies
+  const chroma = new Float64Array(12);
+  const segmentLen = Math.min(rawData.length, sampleRate * 30); // analyze up to 30s
+  const fftSize = 8192;
+  const numSegs = Math.floor(segmentLen / fftSize);
+
+  for (let seg = 0; seg < numSegs; seg++) {
+    const offset = seg * fftSize;
+    // Apply Hann window and compute magnitude for each chroma bin
+    const windowed = new Float64Array(fftSize);
+    for (let i = 0; i < fftSize; i++) {
+      const w = 0.5 * (1 - Math.cos(2 * Math.PI * i / (fftSize - 1)));
+      windowed[i] = (rawData[offset + i] || 0) * w;
+    }
+
+    // Simple DFT at specific frequencies for each pitch class
+    // We check octaves 2-7 for each note
+    for (let pc = 0; pc < 12; pc++) {
+      for (let oct = 2; oct <= 7; oct++) {
+        const midi = 12 * (oct + 1) + pc; // C2=36, C3=48, etc
+        const freq = 440 * Math.pow(2, (midi - 69) / 12);
+        if (freq > sampleRate / 2) continue;
+
+        // Goertzel algorithm for single frequency
+        const k = Math.round(freq * fftSize / sampleRate);
+        const w0 = 2 * Math.PI * k / fftSize;
+        const coeff = 2 * Math.cos(w0);
+        let s0 = 0, s1 = 0, s2 = 0;
+        for (let i = 0; i < fftSize; i++) {
+          s0 = windowed[i] + coeff * s1 - s2;
+          s2 = s1; s1 = s0;
+        }
+        const power = s1 * s1 + s2 * s2 - coeff * s1 * s2;
+        chroma[pc] += Math.max(0, power);
+      }
+    }
+  }
+
+  // Normalize chromagram
+  const maxC = Math.max(...chroma);
+  if (maxC > 0) for (let i = 0; i < 12; i++) chroma[i] /= maxC;
+
+  // Correlate with key profiles
+  const results = [];
+  for (let root = 0; root < 12; root++) {
+    const rotated = new Float64Array(12);
+    for (let i = 0; i < 12; i++) rotated[i] = chroma[(root + i) % 12];
+
+    const majorCorr = pearsonCorrelation(Array.from(rotated), MAJOR_PROFILE);
+    const keyNameMaj = NOTE_NAMES[root] + ' Major';
+    results.push({
+      root, mode: 'major', name: keyNameMaj,
+      camelot: CAMELOT_MAP[keyNameMaj] || '?',
+      correlation: majorCorr
+    });
+
+    const minorCorr = pearsonCorrelation(Array.from(rotated), MINOR_PROFILE);
+    const keyNameMin = NOTE_NAMES[root] + ' Minor';
+    results.push({
+      root, mode: 'minor', name: keyNameMin,
+      camelot: CAMELOT_MAP[keyNameMin] || '?',
+      correlation: minorCorr
+    });
+  }
+
+  results.sort((a, b) => b.correlation - a.correlation);
+  const best = results[0];
+  const second = results[1];
+  const gap = best.correlation - second.correlation;
+  const confidence = Math.max(25, Math.min(99, Math.round(gap * 200 + 50)));
+
+  return { key: best.name, camelot: best.camelot, confidence, allResults: results };
+}
+
+// ─── Three-band Waveform ────────────────────────────────────────
+
+function computeThreeBandWaveform(audioBuffer, numBins) {
+  const sampleRate = audioBuffer.sampleRate;
+  const rawData = audioBuffer.getChannelData(0);
+  const totalSamples = rawData.length;
+  const samplesPerBin = Math.floor(totalSamples / numBins);
+
+  // We'll use a simple approach: for each bin, compute FFT and split energy
+  const fftSize = 2048;
+  const bass = new Float32Array(numBins);  // 0-250 Hz
+  const mids = new Float32Array(numBins);  // 250-4000 Hz
+  const highs = new Float32Array(numBins); // 4000+ Hz
+
+  const bassCutoff = Math.floor(250 * fftSize / sampleRate);
+  const midCutoff = Math.floor(4000 * fftSize / sampleRate);
+
+  for (let bin = 0; bin < numBins; bin++) {
+    const start = bin * samplesPerBin;
+    const end = Math.min(start + samplesPerBin, totalSamples);
+    const len = Math.min(end - start, fftSize);
+
+    // Windowed segment
+    const real = new Float64Array(fftSize);
+    const imag = new Float64Array(fftSize);
+    for (let i = 0; i < len; i++) {
+      const w = 0.5 * (1 - Math.cos(2 * Math.PI * i / (len - 1)));
+      real[i] = (rawData[start + i] || 0) * w;
+    }
+
+    // Simple DFT (only need magnitude, so just do first half)
+    // For speed, use a reduced approach: compute energy in bands directly
+    // via time-domain band approximation using running averages
+    let bSum = 0, mSum = 0, hSum = 0;
+
+    // Time-domain approximation: difference filters
+    // Low: smooth heavily, Mid: medium smooth, High: residual
+    const bWindow = Math.max(1, Math.floor(sampleRate / 250));
+    const mWindow = Math.max(1, Math.floor(sampleRate / 4000));
+    const segLen = end - start;
+
+    // Compute RMS of low-pass (bass), band-pass (mid), high-pass (high)
+    let prevLow = 0, prevMid = 0;
+    const alpha_low = 1 / (1 + bWindow);
+    const alpha_mid = 1 / (1 + mWindow);
+    let bEnergy = 0, mEnergy = 0, hEnergy = 0;
+    for (let i = 0; i < segLen; i++) {
+      const s = rawData[start + i] || 0;
+      prevLow += alpha_low * (s - prevLow);
+      const low = prevLow;
+      const rest = s - low;
+      prevMid += alpha_mid * (rest - prevMid);
+      const mid = prevMid;
+      const high = rest - mid;
+      bEnergy += low * low;
+      mEnergy += mid * mid;
+      hEnergy += high * high;
+    }
+    bass[bin] = Math.sqrt(bEnergy / segLen);
+    mids[bin] = Math.sqrt(mEnergy / segLen);
+    highs[bin] = Math.sqrt(hEnergy / segLen);
+  }
+
+  return { bass, mids, highs };
+}
+
+function drawThreeBandWaveform(canvas, bands) {
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = canvas.clientWidth;
+  const h = canvas.clientHeight;
+  canvas.width = w * dpr;
+  canvas.height = h * dpr;
+  ctx.scale(dpr, dpr);
+
+  ctx.clearRect(0, 0, w, h);
+  const numBins = bands.bass.length;
+  const barW = w / numBins;
+  const mid = h / 2;
+
+  // Find max for normalization
+  let maxVal = 0;
+  for (let i = 0; i < numBins; i++) {
+    const total = bands.bass[i] + bands.mids[i] + bands.highs[i];
+    if (total > maxVal) maxVal = total;
+  }
+  if (maxVal === 0) maxVal = 1;
+  const scale = (mid - 4) / maxVal;
+
+  for (let i = 0; i < numBins; i++) {
+    const x = i * barW;
+    const bH = bands.bass[i] * scale;
+    const mH = bands.mids[i] * scale;
+    const hH = bands.highs[i] * scale;
+
+    // Draw stacked from center outward (mirrored)
+    // Bass (innermost/bottom)
+    ctx.fillStyle = '#3b82f6';
+    ctx.fillRect(x, mid - bH, barW - 0.5, bH);
+    ctx.fillRect(x, mid, barW - 0.5, bH);
+
+    // Mids
+    ctx.fillStyle = '#22c55e';
+    ctx.fillRect(x, mid - bH - mH, barW - 0.5, mH);
+    ctx.fillRect(x, mid + bH, barW - 0.5, mH);
+
+    // Highs (outermost)
+    ctx.fillStyle = '#f97316';
+    ctx.fillRect(x, mid - bH - mH - hH, barW - 0.5, hH);
+    ctx.fillRect(x, mid + bH + mH, barW - 0.5, hH);
+  }
+
+  // Center line
+  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(0, mid);
+  ctx.lineTo(w, mid);
+  ctx.stroke();
+}
+
+// ─── Energy Graph ────────────────────────────────────────────────
+
+function computeEnergy(audioBuffer, numBins) {
+  const data = audioBuffer.getChannelData(0);
+  const samplesPerBin = Math.floor(data.length / numBins);
+  const energy = new Float32Array(numBins);
+  for (let i = 0; i < numBins; i++) {
+    let sum = 0;
+    const start = i * samplesPerBin;
+    for (let j = start; j < start + samplesPerBin && j < data.length; j++) {
+      sum += data[j] * data[j];
+    }
+    energy[i] = Math.sqrt(sum / samplesPerBin);
+  }
+  return energy;
+}
+
+function drawEnergyGraph(canvas, energy, duration) {
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = canvas.clientWidth;
+  const h = canvas.clientHeight;
+  canvas.width = w * dpr;
+  canvas.height = h * dpr;
+  ctx.scale(dpr, dpr);
+
+  ctx.clearRect(0, 0, w, h);
+  const n = energy.length;
+  const maxE = Math.max(...energy) || 1;
+
+  // Gradient fill
+  const grad = ctx.createLinearGradient(0, 0, 0, h);
+  grad.addColorStop(0, 'rgba(139, 92, 246, 0.5)');
+  grad.addColorStop(1, 'rgba(139, 92, 246, 0.02)');
+
+  ctx.beginPath();
+  ctx.moveTo(0, h);
+  for (let i = 0; i < n; i++) {
+    const x = (i / (n - 1)) * w;
+    const y = h - (energy[i] / maxE) * (h - 8);
+    if (i === 0) ctx.lineTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.lineTo(w, h);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Line on top
+  ctx.beginPath();
+  for (let i = 0; i < n; i++) {
+    const x = (i / (n - 1)) * w;
+    const y = h - (energy[i] / maxE) * (h - 8);
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.strokeStyle = '#8b5cf6';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Time labels
+  ctx.fillStyle = '#555';
+  ctx.font = '10px Manrope, sans-serif';
+  const intervals = duration > 180 ? 60 : duration > 60 ? 30 : 10;
+  for (let t = 0; t <= duration; t += intervals) {
+    const x = (t / duration) * w;
+    ctx.fillText(formatDuration(t), x + 2, h - 2);
+  }
+}
+
+// ─── Loudness & Dynamic Range ────────────────────────────────────
+
+function computeLoudness(audioBuffer) {
+  const data = audioBuffer.getChannelData(0);
+  let sumSq = 0, peak = 0;
+  for (let i = 0; i < data.length; i++) {
+    const abs = Math.abs(data[i]);
+    sumSq += data[i] * data[i];
+    if (abs > peak) peak = abs;
+  }
+  const rms = Math.sqrt(sumSq / data.length);
+  const rmsDb = 20 * Math.log10(rms || 0.00001);
+  const peakDb = 20 * Math.log10(peak || 0.00001);
+  const dynamicRange = peakDb - rmsDb;
+
+  return {
+    rmsDb: rmsDb.toFixed(1),
+    peakDb: peakDb.toFixed(1),
+    dynamicRange: dynamicRange.toFixed(1)
+  };
+}
+
+// ─── Average Energy (for batch) ──────────────────────────────────
+
+function computeAvgEnergy(audioBuffer) {
+  const data = audioBuffer.getChannelData(0);
+  let sum = 0;
+  for (let i = 0; i < data.length; i++) sum += data[i] * data[i];
+  return Math.sqrt(sum / data.length);
+}
+
+// ─── Camelot Wheel SVG ──────────────────────────────────────────
+
+function drawCamelotWheel(svgEl, activeCamelot) {
+  const cx = 200, cy = 200;
+  const outerR = 180, innerR = 120, coreR = 55;
+  const segments = 12;
+  const angleStep = (2 * Math.PI) / segments;
+  const startOffset = -Math.PI / 2 - angleStep / 2; // start so "12" is at top
+
+  let svg = '';
+
+  function arcPath(r1, r2, a1, a2) {
+    const x1o = cx + r2 * Math.cos(a1), y1o = cy + r2 * Math.sin(a1);
+    const x2o = cx + r2 * Math.cos(a2), y2o = cy + r2 * Math.sin(a2);
+    const x1i = cx + r1 * Math.cos(a2), y1i = cy + r1 * Math.sin(a2);
+    const x2i = cx + r1 * Math.cos(a1), y2i = cy + r1 * Math.sin(a1);
+    return `M${x1o},${y1o} A${r2},${r2} 0 0,1 ${x2o},${y2o} L${x1i},${y1i} A${r1},${r1} 0 0,0 ${x2i},${y2i} Z`;
+  }
+
+  function getCompatible(code) {
+    if (!code) return [];
+    const num = parseInt(code);
+    const letter = code.slice(-1);
+    const compat = [];
+    // Same position
+    compat.push(code);
+    // +1 / -1
+    const prev = ((num - 2 + 12) % 12) + 1;
+    const next = (num % 12) + 1;
+    compat.push(prev + letter);
+    compat.push(next + letter);
+    // Switch A<->B
+    compat.push(num + (letter === 'A' ? 'B' : 'A'));
+    return compat;
+  }
+
+  const compatibles = getCompatible(activeCamelot);
+
+  // Outer ring (B = Major)
+  for (let i = 0; i < segments; i++) {
+    const a1 = startOffset + i * angleStep;
+    const a2 = a1 + angleStep;
+    const seg = CAMELOT_OUTER[i];
+    const isActive = seg.code === activeCamelot;
+    const isCompat = !isActive && compatibles.includes(seg.code);
+    const fill = isActive ? '#8b5cf6' : isCompat ? 'rgba(139,92,246,0.25)' : '#1e1e22';
+    const stroke = isActive ? '#a78bfa' : '#2a2a2e';
+    const textColor = isActive ? '#fff' : isCompat ? '#c4b5fd' : '#8a8a8e';
+    svg += `<path d="${arcPath(innerR, outerR, a1, a2)}" fill="${fill}" stroke="${stroke}" stroke-width="1.5"/>`;
+    const midA = (a1 + a2) / 2;
+    const tr = (innerR + outerR) / 2;
+    const tx = cx + tr * Math.cos(midA);
+    const ty = cy + tr * Math.sin(midA);
+    svg += `<text x="${tx}" y="${ty}" text-anchor="middle" dominant-baseline="central" fill="${textColor}" font-size="11" font-weight="700" font-family="Manrope,sans-serif">${seg.code}</text>`;
+  }
+
+  // Inner ring (A = Minor)
+  for (let i = 0; i < segments; i++) {
+    const a1 = startOffset + i * angleStep;
+    const a2 = a1 + angleStep;
+    const seg = CAMELOT_INNER[i];
+    const isActive = seg.code === activeCamelot;
+    const isCompat = !isActive && compatibles.includes(seg.code);
+    const fill = isActive ? '#8b5cf6' : isCompat ? 'rgba(139,92,246,0.25)' : '#141416';
+    const stroke = isActive ? '#a78bfa' : '#2a2a2e';
+    const textColor = isActive ? '#fff' : isCompat ? '#c4b5fd' : '#666';
+    svg += `<path d="${arcPath(coreR, innerR, a1, a2)}" fill="${fill}" stroke="${stroke}" stroke-width="1.5"/>`;
+    const midA = (a1 + a2) / 2;
+    const tr = (coreR + innerR) / 2;
+    const tx = cx + tr * Math.cos(midA);
+    const ty = cy + tr * Math.sin(midA);
+    svg += `<text x="${tx}" y="${ty}" text-anchor="middle" dominant-baseline="central" fill="${textColor}" font-size="10" font-weight="600" font-family="Manrope,sans-serif">${seg.code}</text>`;
+  }
+
+  // Center circle
+  svg += `<circle cx="${cx}" cy="${cy}" r="${coreR}" fill="#0a0a0b" stroke="#2a2a2e" stroke-width="1.5"/>`;
+  if (activeCamelot) {
+    svg += `<text x="${cx}" y="${cy - 8}" text-anchor="middle" dominant-baseline="central" fill="#8b5cf6" font-size="22" font-weight="800" font-family="Manrope,sans-serif">${activeCamelot}</text>`;
+    // Find key name
+    const allSegs = [...CAMELOT_INNER, ...CAMELOT_OUTER];
+    const found = allSegs.find(s => s.code === activeCamelot);
+    if (found) {
+      svg += `<text x="${cx}" y="${cy + 14}" text-anchor="middle" dominant-baseline="central" fill="#8a8a8e" font-size="10" font-weight="600" font-family="Manrope,sans-serif">${found.key}</text>`;
+    }
+  } else {
+    svg += `<text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="central" fill="#555" font-size="11" font-weight="600" font-family="Manrope,sans-serif">Camelot</text>`;
+  }
+
+  // Ring labels
+  svg += `<text x="${cx}" y="12" text-anchor="middle" fill="#555" font-size="9" font-weight="600" font-family="Manrope,sans-serif">MAJOR (B) = Outer &middot; MINOR (A) = Inner</text>`;
+
+  svgEl.innerHTML = svg;
+}
+
+function showCompatibleKeys(camelotCode) {
+  const list = document.getElementById('compatList');
+  if (!camelotCode) { list.innerHTML = '<li style="color:#555;">Analyze a track first</li>'; return; }
+
+  const num = parseInt(camelotCode);
+  const letter = camelotCode.slice(-1);
+  const prev = ((num - 2 + 12) % 12) + 1;
+  const next = (num % 12) + 1;
+
+  const allSegs = [...CAMELOT_INNER, ...CAMELOT_OUTER];
+  function keyForCode(c) { const s = allSegs.find(x => x.code === c); return s ? s.key : '?'; }
+
+  const pairs = [
+    { code: camelotCode, relation: 'Current key', highlight: true },
+    { code: prev + letter, relation: 'Energy down (-1)' },
+    { code: next + letter, relation: 'Energy up (+1)' },
+    { code: num + (letter === 'A' ? 'B' : 'A'), relation: letter === 'A' ? 'Relative major' : 'Relative minor' },
+  ];
+
+  list.innerHTML = pairs.map(p =>
+    `<li class="${p.highlight ? 'highlight' : ''}">
+      <span>${keyForCode(p.code)}</span>
+      <span class="cam">${p.code}</span>
+      <span class="relation">${p.relation}</span>
+    </li>`
+  ).join('');
+}
+
+// ─── Full Analysis ───────────────────────────────────────────────
+
+async function analyzeTrack(file, progressCb) {
+  progressCb && progressCb(0.1, 'Decoding audio...');
+  const audioBuf = await decodeFile(file);
+
+  progressCb && progressCb(0.3, 'Detecting BPM...');
+  const bpmResult = detectBPM(audioBuf);
+
+  progressCb && progressCb(0.5, 'Detecting key...');
+  const keyResult = detectKey(audioBuf);
+
+  progressCb && progressCb(0.7, 'Computing waveform...');
+  const numBins = Math.min(800, Math.floor(audioBuf.duration * 4));
+  const bands = computeThreeBandWaveform(audioBuf, numBins);
+
+  progressCb && progressCb(0.85, 'Computing energy...');
+  const energyBins = Math.min(400, Math.floor(audioBuf.duration * 2));
+  const energy = computeEnergy(audioBuf, energyBins);
+  const loudness = computeLoudness(audioBuf);
+  const avgEnergy = computeAvgEnergy(audioBuf);
+
+  progressCb && progressCb(1.0, 'Done');
+
+  return {
+    filename: file.name,
+    fileSize: file.size,
+    duration: audioBuf.duration,
+    sampleRate: audioBuf.sampleRate,
+    channels: audioBuf.numberOfChannels,
+    bpm: bpmResult.bpm,
+    bpmConfidence: bpmResult.confidence,
+    key: keyResult.key,
+    camelot: keyResult.camelot,
+    keyConfidence: keyResult.confidence,
+    rmsDb: loudness.rmsDb,
+    peakDb: loudness.peakDb,
+    dynamicRange: loudness.dynamicRange,
+    avgEnergy,
+    bands,
+    energy,
+    audioBuf
+  };
+}
+
+// ─── Display Single Analysis ─────────────────────────────────────
+
+let currentResult = null;
+
+function displayAnalysis(result) {
+  currentResult = result;
+  const panel = document.getElementById('analysisPanel');
+  panel.classList.add('active');
+
+  document.getElementById('bpmValue').textContent = result.bpm;
+  document.getElementById('bpmConf').textContent = result.bpmConfidence + '% confidence';
+  document.getElementById('keyValue').textContent = result.key;
+  document.getElementById('keyConf').textContent = result.camelot + ' | ' + result.keyConfidence + '% confidence';
+
+  document.getElementById('infoDuration').textContent = formatDuration(result.duration);
+  document.getElementById('infoSampleRate').textContent = (result.sampleRate / 1000).toFixed(1) + ' kHz';
+  document.getElementById('infoChannels').textContent = result.channels === 1 ? 'Mono' : result.channels === 2 ? 'Stereo' : result.channels + 'ch';
+  document.getElementById('infoFileSize').textContent = formatFileSize(result.fileSize);
+  document.getElementById('infoLoudness').textContent = result.rmsDb + ' dB';
+  document.getElementById('infoDynamic').textContent = result.dynamicRange + ' dB';
+
+  drawThreeBandWaveform(document.getElementById('waveformCanvas'), result.bands);
+  drawEnergyGraph(document.getElementById('energyCanvas'), result.energy, result.duration);
+  drawCamelotWheel(document.getElementById('camelotWheel'), result.camelot);
+  showCompatibleKeys(result.camelot);
+}
+
+function getResultText(r) {
+  return [
+    `File: ${r.filename}`,
+    `BPM: ${r.bpm} (${r.bpmConfidence}% confidence)`,
+    `Key: ${r.key} (Camelot: ${r.camelot}, ${r.keyConfidence}% confidence)`,
+    `Duration: ${formatDuration(r.duration)}`,
+    `Sample Rate: ${(r.sampleRate/1000).toFixed(1)} kHz`,
+    `Channels: ${r.channels}`,
+    `File Size: ${formatFileSize(r.fileSize)}`,
+    `Avg Loudness: ${r.rmsDb} dB RMS`,
+    `Dynamic Range: ${r.dynamicRange} dB`,
+  ].join('\n');
+}
+
+function getResultJSON(r) {
+  return {
+    filename: r.filename, bpm: r.bpm, bpmConfidence: r.bpmConfidence,
+    key: r.key, camelot: r.camelot, keyConfidence: r.keyConfidence,
+    duration: +r.duration.toFixed(2), sampleRate: r.sampleRate,
+    channels: r.channels, fileSize: r.fileSize,
+    rmsDb: +r.rmsDb, dynamicRange: +r.dynamicRange,
+  };
+}
+
+// ─── Tab switching ───────────────────────────────────────────────
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+// ─── Single file upload ──────────────────────────────────────────
+
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+const progressWrap = document.getElementById('progressWrap');
+const progressBar = document.getElementById('progressBar');
+const progressLabel = document.getElementById('progressLabel');
+
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+  const files = e.dataTransfer.files;
+  if (files.length > 0) handleSingleFile(files[0]);
+});
+fileInput.addEventListener('change', () => {
+  if (fileInput.files.length > 0) handleSingleFile(fileInput.files[0]);
+});
+
+async function handleSingleFile(file) {
+  progressWrap.classList.add('active');
+  document.getElementById('analysisPanel').classList.remove('active');
+  progressBar.style.width = '0%';
+
+  try {
+    const result = await analyzeTrack(file, (pct, label) => {
+      progressBar.style.width = (pct * 100) + '%';
+      progressLabel.textContent = label;
+    });
+    displayAnalysis(result);
+  } catch (err) {
+    progressLabel.textContent = 'Error: ' + (err.message || 'Could not decode audio');
+    progressBar.style.width = '100%';
+    progressBar.style.background = '#ef4444';
+    setTimeout(() => {
+      progressBar.style.background = '';
+      progressWrap.classList.remove('active');
+    }, 3000);
+    return;
+  }
+  setTimeout(() => progressWrap.classList.remove('active'), 300);
+}
+
+// ─── Export (single) ─────────────────────────────────────────────
+
+document.getElementById('copyBtn').addEventListener('click', function() {
+  if (!currentResult) return;
+  navigator.clipboard.writeText(getResultText(currentResult)).then(() => {
+    this.textContent = 'Copied!';
+    this.classList.add('copied');
+    setTimeout(() => { this.textContent = 'Copy Results'; this.classList.remove('copied'); }, 1500);
+  });
+});
+
+document.getElementById('downloadBtn').addEventListener('click', () => {
+  if (!currentResult) return;
+  const json = JSON.stringify(getResultJSON(currentResult), null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = currentResult.filename.replace(/\.[^.]+$/, '') + '-analysis.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+
+// ─── Batch upload ────────────────────────────────────────────────
+
+const batchDropZone = document.getElementById('batchDropZone');
+const batchFileInput = document.getElementById('batchFileInput');
+const batchProgressWrap = document.getElementById('batchProgressWrap');
+const batchProgressBar = document.getElementById('batchProgressBar');
+const batchProgressLabel = document.getElementById('batchProgressLabel');
+const batchResults = document.getElementById('batchResults');
+const batchBody = document.getElementById('batchBody');
+
+let batchData = [];
+let batchSortCol = 'name';
+let batchSortAsc = true;
+
+batchDropZone.addEventListener('click', () => batchFileInput.click());
+batchDropZone.addEventListener('dragover', e => { e.preventDefault(); batchDropZone.classList.add('dragover'); });
+batchDropZone.addEventListener('dragleave', () => batchDropZone.classList.remove('dragover'));
+batchDropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  batchDropZone.classList.remove('dragover');
+  if (e.dataTransfer.files.length > 0) handleBatchFiles(e.dataTransfer.files);
+});
+batchFileInput.addEventListener('change', () => {
+  if (batchFileInput.files.length > 0) handleBatchFiles(batchFileInput.files);
+});
+
+async function handleBatchFiles(fileList) {
+  const files = Array.from(fileList);
+  batchData = [];
+  batchProgressWrap.classList.add('active');
+  batchResults.style.display = 'none';
+  batchProgressBar.style.width = '0%';
+  batchProgressBar.style.background = '';
+
+  for (let i = 0; i < files.length; i++) {
+    batchProgressLabel.textContent = `Analyzing ${i + 1}/${files.length}: ${files[i].name}`;
+    batchProgressBar.style.width = ((i / files.length) * 100) + '%';
+    try {
+      const result = await analyzeTrack(files[i]);
+      batchData.push(result);
+    } catch (err) {
+      batchData.push({
+        filename: files[i].name, fileSize: files[i].size,
+        bpm: '--', key: 'Error', camelot: '--',
+        duration: 0, avgEnergy: 0, error: true
+      });
+    }
+  }
+
+  batchProgressBar.style.width = '100%';
+  batchProgressLabel.textContent = `Done: ${batchData.length} files analyzed`;
+  setTimeout(() => batchProgressWrap.classList.remove('active'), 500);
+
+  batchResults.style.display = 'block';
+  renderBatchTable();
+}
+
+function renderBatchTable() {
+  const sorted = [...batchData].sort((a, b) => {
+    let va = a[batchSortCol], vb = b[batchSortCol];
+    if (batchSortCol === 'name') { va = a.filename; vb = b.filename; }
+    if (batchSortCol === 'energy') { va = a.avgEnergy || 0; vb = b.avgEnergy || 0; }
+    if (typeof va === 'string') {
+      return batchSortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+    }
+    return batchSortAsc ? (va - vb) : (vb - va);
+  });
+
+  batchBody.innerHTML = sorted.map(r => {
+    const energyPct = r.avgEnergy ? Math.round(r.avgEnergy * 1000) / 10 : 0;
+    return `<tr>
+      <td>${r.filename}</td>
+      <td class="bpm-cell">${r.bpm}</td>
+      <td class="key-cell">${r.key}</td>
+      <td>${r.camelot}</td>
+      <td>${r.duration ? formatDuration(r.duration) : '--'}</td>
+      <td>${energyPct ? energyPct.toFixed(1) + '%' : '--'}</td>
+    </tr>`;
+  }).join('');
+
+  // Update sort arrows
+  document.querySelectorAll('#batchTable th').forEach(th => {
+    const arrow = th.querySelector('.sort-arrow');
+    if (th.dataset.col === batchSortCol) {
+      arrow.textContent = batchSortAsc ? '\u25B2' : '\u25BC';
+    } else {
+      arrow.textContent = '';
+    }
+  });
+}
+
+document.querySelectorAll('#batchTable th').forEach(th => {
+  th.addEventListener('click', () => {
+    const col = th.dataset.col;
+    if (batchSortCol === col) batchSortAsc = !batchSortAsc;
+    else { batchSortCol = col; batchSortAsc = true; }
+    renderBatchTable();
+  });
+});
+
+// ─── Export (batch) ──────────────────────────────────────────────
+
+document.getElementById('batchCopyBtn').addEventListener('click', function() {
+  if (batchData.length === 0) return;
+  const header = 'Filename\tBPM\tKey\tCamelot\tDuration\tEnergy';
+  const rows = batchData.map(r => {
+    const e = r.avgEnergy ? (Math.round(r.avgEnergy * 1000) / 10).toFixed(1) + '%' : '--';
+    return `${r.filename}\t${r.bpm}\t${r.key}\t${r.camelot}\t${r.duration ? formatDuration(r.duration) : '--'}\t${e}`;
+  });
+  navigator.clipboard.writeText([header, ...rows].join('\n')).then(() => {
+    this.textContent = 'Copied!';
+    this.classList.add('copied');
+    setTimeout(() => { this.textContent = 'Copy Table'; this.classList.remove('copied'); }, 1500);
+  });
+});
+
+document.getElementById('batchDownloadBtn').addEventListener('click', () => {
+  if (batchData.length === 0) return;
+  const arr = batchData.map(getResultJSON);
+  const json = JSON.stringify(arr, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'batch-analysis.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+
+// ─── Resize redraw ───────────────────────────────────────────────
+
+window.addEventListener('resize', () => {
+  if (currentResult) {
+    drawThreeBandWaveform(document.getElementById('waveformCanvas'), currentResult.bands);
+    drawEnergyGraph(document.getElementById('energyCanvas'), currentResult.energy, currentResult.duration);
+  }
+});
+
+// ─── Init Camelot Wheel (empty) ──────────────────────────────────
+drawCamelotWheel(document.getElementById('camelotWheel'), null);
+
+})();
+</script>
+<script src="/related.js"></script>
+</body>
+</html>

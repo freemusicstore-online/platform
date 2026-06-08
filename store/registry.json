@@ -224,6 +224,51 @@
       "iconBg": "#b45309",
       "category": "library",
       "section": "library"
+    },
+    {
+      "id": "mixer",
+      "name": "DJ Mixer",
+      "description": "Two-deck mixer with crossfader, 3-band EQ, waveforms, BPM detection, sync. Load your own tracks.",
+      "icon": "🎧",
+      "iconBg": "#06b6d4",
+      "category": "dj",
+      "section": "dj"
+    },
+    {
+      "id": "scratch-pad",
+      "name": "Scratch Pad",
+      "description": "Virtual turntable with scratch simulation. Drag the vinyl to scratch, crossfader for cuts. Record your performance.",
+      "icon": "💿",
+      "iconBg": "#06b6d4",
+      "category": "dj",
+      "section": "dj"
+    },
+    {
+      "id": "dj-effects",
+      "name": "DJ Effects",
+      "description": "8 performance effects: filter sweep, echo out, flanger, phaser, reverb, bitcrusher, brake, backspin. XY pad.",
+      "icon": "🎚️",
+      "iconBg": "#0891b2",
+      "category": "dj",
+      "section": "dj"
+    },
+    {
+      "id": "cue-points",
+      "name": "Cue Points",
+      "description": "8 hot cues, loop sections, beat grid, CDJ-style transport. Practice transitions and mark your tracks.",
+      "icon": "⏯️",
+      "iconBg": "#0891b2",
+      "category": "dj",
+      "section": "dj"
+    },
+    {
+      "id": "track-analyzer",
+      "name": "Track Analyzer",
+      "description": "Detect BPM, musical key, energy. 3-band waveform, Camelot wheel, batch analysis for set preparation.",
+      "icon": "📈",
+      "iconBg": "#06b6d4",
+      "category": "dj",
+      "section": "dj"
     }
   ]
 }

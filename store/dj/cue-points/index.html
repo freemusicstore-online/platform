@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<title>Cue Points - FreeMusicStore</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --accent: #8b5cf6;
+  --accent-hover: #7c3aed;
+  --bg: #0a0a0b;
+  --surface: #141416;
+  --surface-2: #1e1e22;
+  --border: #2a2a2e;
+  --text: #f0f0f2;
+  --text-dim: #8a8a8e;
+  --red: #ef4444;
+  --green: #22c55e;
+  --yellow: #f59e0b;
+  --blue: #3b82f6;
+  --orange: #f97316;
+  --pink: #ec4899;
+  --cyan: #06b6d4;
+  --lime: #84cc16;
+}
+body {
+  font-family: 'Manrope', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.topbar {
+  display: flex; align-items: center; gap: 16px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+.topbar .back { font-size: 14px; font-weight: 500; }
+.topbar h1 { font-size: 18px; font-weight: 700; }
+.topbar .track-name {
+  margin-left: auto; font-size: 13px; color: var(--text-dim);
+  max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* Drop zone */
+.drop-zone {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  border: 2px dashed var(--border); border-radius: 12px;
+  padding: 60px 20px; margin: 24px auto; max-width: 900px;
+  cursor: pointer; transition: border-color 0.2s, background 0.2s;
+}
+.drop-zone:hover, .drop-zone.dragover {
+  border-color: var(--accent); background: rgba(139,92,246,0.05);
+}
+.drop-zone h2 { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+.drop-zone p { font-size: 13px; color: var(--text-dim); }
+.drop-zone input { display: none; }
+
+/* Main layout */
+.main { max-width: 940px; margin: 0 auto; padding: 16px 20px 32px; display: none; }
+.main.active { display: block; }
+
+/* Waveform section */
+.waveform-section { position: relative; margin-bottom: 12px; }
+.waveform-wrap {
+  position: relative; background: var(--surface); border-radius: 8px;
+  border: 1px solid var(--border); overflow: hidden; cursor: crosshair;
+}
+.waveform-wrap canvas { display: block; width: 100%; }
+.waveform-label {
+  position: absolute; top: 6px; left: 10px;
+  font-size: 10px; font-weight: 600; color: var(--text-dim);
+  text-transform: uppercase; letter-spacing: 0.08em;
+  pointer-events: none; z-index: 2;
+}
+.time-display {
+  position: absolute; top: 6px; right: 10px;
+  font-size: 12px; font-weight: 700; color: var(--text);
+  font-variant-numeric: tabular-nums;
+  pointer-events: none; z-index: 2;
+}
+
+/* Info bar */
+.info-bar {
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  padding: 8px 0; margin-bottom: 12px;
+  font-size: 12px; color: var(--text-dim);
+}
+.info-bar .bpm-display { font-weight: 700; color: var(--accent); font-size: 14px; }
+.info-bar .snap-toggle {
+  display: flex; align-items: center; gap: 6px; cursor: pointer;
+  user-select: none; -webkit-user-select: none;
+}
+.info-bar .snap-toggle input { accent-color: var(--accent); }
+
+/* Hot cues */
+.hot-cues {
+  display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px;
+  margin-bottom: 16px;
+}
+.hot-cue {
+  position: relative;
+  background: var(--surface-2); border: 2px solid var(--border);
+  border-radius: 8px; padding: 10px 4px 8px; text-align: center;
+  cursor: pointer; transition: all 0.15s;
+  user-select: none; -webkit-user-select: none;
+}
+.hot-cue:hover { border-color: var(--text-dim); }
+.hot-cue.set { border-color: var(--cue-color, var(--accent)); background: color-mix(in srgb, var(--cue-color, var(--accent)) 15%, var(--surface-2)); }
+.hot-cue .cue-num { font-size: 16px; font-weight: 800; color: var(--text-dim); }
+.hot-cue.set .cue-num { color: var(--cue-color, var(--accent)); }
+.hot-cue .cue-time { font-size: 9px; color: var(--text-dim); margin-top: 2px; font-variant-numeric: tabular-nums; min-height: 14px; }
+.hot-cue .cue-key { font-size: 9px; color: var(--text-dim); opacity: 0.5; margin-top: 1px; }
+
+/* Loop section */
+.loop-section {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  margin-bottom: 16px; padding: 10px 12px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+}
+.loop-section .label { font-size: 11px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; margin-right: 4px; }
+.loop-btn {
+  font-family: inherit; font-size: 11px; font-weight: 600;
+  padding: 5px 10px; border-radius: 6px;
+  border: 1px solid var(--border); background: var(--surface-2);
+  color: var(--text); cursor: pointer; transition: all 0.15s;
+}
+.loop-btn:hover { border-color: var(--accent); color: var(--accent); }
+.loop-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.loop-divider { width: 1px; height: 24px; background: var(--border); margin: 0 4px; }
+.auto-loops { display: flex; gap: 4px; }
+.auto-loop-btn {
+  font-family: inherit; font-size: 10px; font-weight: 600;
+  padding: 4px 7px; border-radius: 4px;
+  border: 1px solid var(--border); background: var(--surface-2);
+  color: var(--text-dim); cursor: pointer; transition: all 0.15s;
+}
+.auto-loop-btn:hover { border-color: var(--green); color: var(--green); }
+.auto-loop-btn.active { background: var(--green); border-color: var(--green); color: #fff; }
+
+/* Transport */
+.transport {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.transport-btn {
+  font-family: inherit; font-size: 13px; font-weight: 700;
+  padding: 10px 18px; border-radius: 8px; border: none;
+  cursor: pointer; transition: all 0.15s;
+  display: flex; align-items: center; gap: 6px;
+}
+.transport-btn svg { width: 16px; height: 16px; fill: currentColor; }
+.btn-play { background: var(--accent); color: #fff; }
+.btn-play:hover { background: var(--accent-hover); }
+.btn-play.playing { background: var(--green); }
+.btn-stop { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); }
+.btn-stop:hover { border-color: var(--red); color: var(--red); }
+.btn-cue { background: var(--surface-2); color: var(--yellow); border: 1px solid var(--yellow); }
+.btn-cue:hover { background: var(--yellow); color: #000; }
+.btn-jog {
+  font-family: inherit; font-size: 11px; font-weight: 600;
+  padding: 8px 10px; border-radius: 6px;
+  background: var(--surface-2); border: 1px solid var(--border);
+  color: var(--text-dim); cursor: pointer;
+}
+.btn-jog:hover { border-color: var(--text-dim); color: var(--text); }
+.pitch-group {
+  display: flex; align-items: center; gap: 8px; margin-left: auto;
+}
+.pitch-group label { font-size: 11px; color: var(--text-dim); font-weight: 600; }
+.pitch-slider {
+  width: 120px; accent-color: var(--accent);
+}
+.pitch-value { font-size: 12px; font-weight: 700; color: var(--accent); min-width: 48px; text-align: right; font-variant-numeric: tabular-nums; }
+
+/* Responsive */
+@media (max-width: 640px) {
+  .hot-cues { grid-template-columns: repeat(4, 1fr); }
+  .transport { justify-content: center; }
+  .pitch-group { margin-left: 0; width: 100%; justify-content: center; margin-top: 8px; }
+  .loop-section { font-size: 10px; }
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="/" class="back">&larr; Back to Store</a>
+  <h1>Cue Points</h1>
+  <span class="track-name" id="trackName"></span>
+</div>
+
+<div class="drop-zone" id="dropZone">
+  <h2>Load a Track</h2>
+  <p>Drag &amp; drop an audio file or click to browse</p>
+  <input type="file" id="fileInput" accept="audio/*">
+</div>
+
+<div class="main" id="mainUI">
+  <!-- Overview waveform -->
+  <div class="waveform-section">
+    <div class="waveform-wrap" id="overviewWrap">
+      <span class="waveform-label">Overview</span>
+      <span class="time-display" id="timeDisplay">0:00.0 / 0:00.0</span>
+      <canvas id="overviewCanvas" height="100"></canvas>
+    </div>
+  </div>
+
+  <!-- Zoomed waveform -->
+  <div class="waveform-section">
+    <div class="waveform-wrap" id="zoomWrap">
+      <span class="waveform-label">Zoomed</span>
+      <canvas id="zoomCanvas" height="80"></canvas>
+    </div>
+  </div>
+
+  <!-- Info bar -->
+  <div class="info-bar">
+    <span class="bpm-display" id="bpmDisplay">-- BPM</span>
+    <label class="snap-toggle"><input type="checkbox" id="snapToggle"> Snap to beat</label>
+  </div>
+
+  <!-- Hot Cues -->
+  <div class="hot-cues" id="hotCues"></div>
+
+  <!-- Loop section -->
+  <div class="loop-section">
+    <span class="label">Loop</span>
+    <button class="loop-btn" id="loopInBtn">IN</button>
+    <button class="loop-btn" id="loopOutBtn">OUT</button>
+    <button class="loop-btn" id="loopToggleBtn">LOOP</button>
+    <div class="loop-divider"></div>
+    <span class="label">Auto</span>
+    <div class="auto-loops" id="autoLoops"></div>
+  </div>
+
+  <!-- Transport -->
+  <div class="transport">
+    <button class="transport-btn btn-play" id="playBtn">
+      <svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>
+      Play
+    </button>
+    <button class="transport-btn btn-stop" id="stopBtn">
+      <svg viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="2"/></svg>
+      Stop
+    </button>
+    <button class="transport-btn btn-cue" id="cueBtn">CUE</button>
+    <button class="btn-jog" id="jogBack">&laquo; -10ms</button>
+    <button class="btn-jog" id="jogFwd">+10ms &raquo;</button>
+    <div class="pitch-group">
+      <label>Pitch</label>
+      <input type="range" class="pitch-slider" id="pitchSlider" min="-8" max="8" step="0.1" value="0">
+      <span class="pitch-value" id="pitchValue">0.0%</span>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  // ---- State ----
+  const CUE_COLORS = ['#ef4444','#f97316','#f59e0b','#22c55e','#06b6d4','#3b82f6','#8b5cf6','#ec4899'];
+  const BEAT_LOOPS = [1, 2, 4, 8, 16];
+
+  let audioCtx, audioBuffer, sourceNode, gainNode;
+  let isPlaying = false, startTime = 0, startOffset = 0;
+  let duration = 0, fileName = '';
+  let waveformData = []; // downsampled peaks
+  let bpm = 0, beatInterval = 0, firstBeat = 0;
+  let hotCues = new Array(8).fill(null); // each: { time: number } or null
+  let cdjCuePoint = 0; // CDJ-style cue
+  let loopIn = null, loopOut = null, loopActive = false, activeAutoLoop = null;
+  let snapToBeat = false;
+  let animFrame = null;
+
+  // ---- DOM ----
+  const $ = id => document.getElementById(id);
+  const dropZone = $('dropZone'), fileInput = $('fileInput'), mainUI = $('mainUI');
+  const overviewCanvas = $('overviewCanvas'), zoomCanvas = $('zoomCanvas');
+  const overviewCtx = overviewCanvas.getContext('2d'), zoomCtx = zoomCanvas.getContext('2d');
+  const overviewWrap = $('overviewWrap'), zoomWrap = $('zoomWrap');
+  const timeDisplay = $('timeDisplay'), bpmDisplay = $('bpmDisplay');
+  const trackNameEl = $('trackName'), snapToggle = $('snapToggle');
+  const playBtn = $('playBtn'), stopBtn = $('stopBtn'), cueBtn = $('cueBtn');
+  const jogBack = $('jogBack'), jogFwd = $('jogFwd');
+  const pitchSlider = $('pitchSlider'), pitchValue = $('pitchValue');
+  const loopInBtn = $('loopInBtn'), loopOutBtn = $('loopOutBtn'), loopToggleBtn = $('loopToggleBtn');
+  const hotCuesEl = $('hotCues'), autoLoopsEl = $('autoLoops');
+
+  // ---- Init hot cue buttons ----
+  for (let i = 0; i < 8; i++) {
+    const el = document.createElement('div');
+    el.className = 'hot-cue';
+    el.style.setProperty('--cue-color', CUE_COLORS[i]);
+    el.innerHTML = `<div class="cue-num">${i+1}</div><div class="cue-time" data-idx="${i}"></div><div class="cue-key">${i+1}</div>`;
+    el.addEventListener('click', () => handleHotCue(i));
+    el.addEventListener('contextmenu', e => { e.preventDefault(); deleteHotCue(i); });
+    // Long press for mobile
+    let lp;
+    el.addEventListener('touchstart', () => { lp = setTimeout(() => deleteHotCue(i), 500); }, { passive: true });
+    el.addEventListener('touchend', () => clearTimeout(lp));
+    el.addEventListener('touchmove', () => clearTimeout(lp));
+    hotCuesEl.appendChild(el);
+  }
+
+  // ---- Init auto-loop buttons ----
+  BEAT_LOOPS.forEach(beats => {
+    const btn = document.createElement('button');
+    btn.className = 'auto-loop-btn';
+    btn.textContent = beats === 1 ? '1' : beats.toString();
+    btn.addEventListener('click', () => handleAutoLoop(beats, btn));
+    autoLoopsEl.appendChild(btn);
+  });
+
+  // ---- File loading ----
+  dropZone.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', e => { if (e.target.files[0]) loadFile(e.target.files[0]); });
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault(); dropZone.classList.remove('dragover');
+    if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
+  });
+
+  async function loadFile(file) {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+
+    stopPlayback();
+    fileName = file.name;
+    trackNameEl.textContent = fileName;
+
+    const arrayBuf = await file.arrayBuffer();
+    audioBuffer = await audioCtx.decodeAudioData(arrayBuf);
+    duration = audioBuffer.duration;
+
+    analyzeWaveform();
+    detectBPM();
+    loadSavedCues();
+    resizeCanvases();
+
+    dropZone.style.display = 'none';
+    mainUI.classList.add('active');
+    startOffset = 0; cdjCuePoint = 0;
+    loopIn = null; loopOut = null; loopActive = false; activeAutoLoop = null;
+    updateLoopUI();
+    drawAll();
+  }
+
+  // ---- Waveform analysis ----
+  function analyzeWaveform() {
+    const raw = audioBuffer.getChannelData(0);
+    const samples = audioBuffer.length;
+    const buckets = 2000;
+    const bucketSize = Math.floor(samples / buckets);
+    waveformData = [];
+    for (let i = 0; i < buckets; i++) {
+      let max = 0;
+      const start = i * bucketSize;
+      const end = Math.min(start + bucketSize, samples);
+      for (let j = start; j < end; j += 4) {
+        const v = Math.abs(raw[j]);
+        if (v > max) max = v;
+      }
+      waveformData.push(max);
+    }
+  }
+
+  // ---- BPM detection ----
+  function detectBPM() {
+    // Use autocorrelation on a segment of audio
+    const sampleRate = audioBuffer.sampleRate;
+    const raw = audioBuffer.getChannelData(0);
+    // Analyze a 10-second window from the middle
+    const windowSec = Math.min(10, duration);
+    const startSample = Math.floor(Math.max(0, (duration / 2 - windowSec / 2)) * sampleRate);
+    const windowSamples = Math.floor(windowSec * sampleRate);
+
+    // Low-pass filter approximation: downsample
+    const ds = 4;
+    const len = Math.floor(windowSamples / ds);
+    const data = new Float32Array(len);
+    for (let i = 0; i < len; i++) {
+      data[i] = Math.abs(raw[startSample + i * ds]);
+    }
+
+    // Onset envelope
+    const envLen = Math.floor(len / 512);
+    const envelope = new Float32Array(envLen);
+    for (let i = 0; i < envLen; i++) {
+      let sum = 0;
+      for (let j = 0; j < 512; j++) {
+        const idx = i * 512 + j;
+        if (idx < len) sum += data[idx] * data[idx];
+      }
+      envelope[i] = Math.sqrt(sum / 512);
+    }
+
+    // Differentiate (onset detection)
+    const diff = new Float32Array(envLen);
+    for (let i = 1; i < envLen; i++) {
+      diff[i] = Math.max(0, envelope[i] - envelope[i - 1]);
+    }
+
+    // Autocorrelation
+    const effectiveRate = sampleRate / ds / 512;
+    const minBPM = 70, maxBPM = 180;
+    const minLag = Math.floor(effectiveRate * 60 / maxBPM);
+    const maxLag = Math.ceil(effectiveRate * 60 / minBPM);
+    let bestLag = minLag, bestCorr = -1;
+    for (let lag = minLag; lag <= maxLag && lag < diff.length; lag++) {
+      let corr = 0;
+      const count = Math.min(diff.length - lag, 200);
+      for (let i = 0; i < count; i++) {
+        corr += diff[i] * diff[i + lag];
+      }
+      if (corr > bestCorr) { bestCorr = corr; bestLag = lag; }
+    }
+
+    bpm = Math.round(effectiveRate * 60 / bestLag);
+    // Sanity: double or halve into 70-180 range
+    while (bpm > 0 && bpm < 70) bpm *= 2;
+    while (bpm > 180) bpm /= 2;
+    bpm = Math.round(bpm);
+
+    if (bpm > 0) {
+      beatInterval = 60 / bpm;
+      bpmDisplay.textContent = bpm + ' BPM';
+      // Estimate first beat (simplified: use onset detection)
+      firstBeat = estimateFirstBeat();
+    } else {
+      bpmDisplay.textContent = '-- BPM';
+      beatInterval = 0;
+    }
+  }
+
+  function estimateFirstBeat() {
+    if (beatInterval <= 0) return 0;
+    // Find the first strong onset in the first few seconds
+    const raw = audioBuffer.getChannelData(0);
+    const sr = audioBuffer.sampleRate;
+    const searchLen = Math.min(Math.floor(sr * 2), raw.length);
+    const blockSize = Math.floor(sr * 0.01); // 10ms blocks
+    let maxEnergy = 0, maxIdx = 0;
+    for (let i = 0; i < searchLen; i += blockSize) {
+      let energy = 0;
+      for (let j = i; j < Math.min(i + blockSize, searchLen); j++) {
+        energy += raw[j] * raw[j];
+      }
+      if (energy > maxEnergy) { maxEnergy = energy; maxIdx = i; }
+    }
+    return maxIdx / sr;
+  }
+
+  // ---- Canvas resizing ----
+  function resizeCanvases() {
+    const dpr = window.devicePixelRatio || 1;
+    const ow = overviewWrap.clientWidth;
+    overviewCanvas.width = ow * dpr; overviewCanvas.height = 100 * dpr;
+    overviewCanvas.style.height = '100px';
+    overviewCtx.scale(dpr, dpr);
+
+    const zw = zoomWrap.clientWidth;
+    zoomCanvas.width = zw * dpr; zoomCanvas.height = 80 * dpr;
+    zoomCanvas.style.height = '80px';
+    zoomCtx.scale(dpr, dpr);
+  }
+  window.addEventListener('resize', () => { if (audioBuffer) { resizeCanvases(); drawAll(); } });
+
+  // ---- Drawing ----
+  function drawAll() {
+    drawOverview();
+    drawZoomed();
+    updateTimeDisplay();
+    updateHotCueUI();
+  }
+
+  function currentTime() {
+    if (isPlaying) {
+      const rate = 1 + parseFloat(pitchSlider.value) / 100;
+      return startOffset + (audioCtx.currentTime - startTime) * rate;
+    }
+    return startOffset;
+  }
+
+  function drawOverview() {
+    const w = overviewWrap.clientWidth, h = 100;
+    overviewCtx.clearRect(0, 0, w, h);
+
+    const len = waveformData.length;
+    if (!len) return;
+
+    // Draw waveform bars
+    const barW = w / len;
+    for (let i = 0; i < len; i++) {
+      const v = waveformData[i];
+      const barH = v * h * 0.9;
+      const t = i / len;
+      // Gradient: blue to purple
+      const r = Math.floor(59 + t * 80);
+      const g = Math.floor(130 - t * 38);
+      const b = Math.floor(246 - t * 10);
+      overviewCtx.fillStyle = `rgb(${r},${g},${b})`;
+      const x = i * barW;
+      overviewCtx.fillRect(x, (h - barH) / 2, Math.max(barW - 0.5, 0.5), barH);
+    }
+
+    // Loop region
+    if (loopIn !== null && loopOut !== null) {
+      const x1 = (loopIn / duration) * w;
+      const x2 = (loopOut / duration) * w;
+      overviewCtx.fillStyle = loopActive ? 'rgba(34,197,94,0.15)' : 'rgba(34,197,94,0.08)';
+      overviewCtx.fillRect(x1, 0, x2 - x1, h);
+      overviewCtx.strokeStyle = loopActive ? '#22c55e' : 'rgba(34,197,94,0.4)';
+      overviewCtx.lineWidth = 1;
+      overviewCtx.beginPath(); overviewCtx.moveTo(x1, 0); overviewCtx.lineTo(x1, h); overviewCtx.stroke();
+      overviewCtx.beginPath(); overviewCtx.moveTo(x2, 0); overviewCtx.lineTo(x2, h); overviewCtx.stroke();
+    }
+
+    // Beat grid
+    if (beatInterval > 0) {
+      overviewCtx.strokeStyle = 'rgba(255,255,255,0.06)';
+      overviewCtx.lineWidth = 0.5;
+      let bt = firstBeat;
+      while (bt < duration) {
+        const x = (bt / duration) * w;
+        overviewCtx.beginPath(); overviewCtx.moveTo(x, 0); overviewCtx.lineTo(x, h); overviewCtx.stroke();
+        bt += beatInterval;
+      }
+    }
+
+    // Hot cue markers
+    for (let i = 0; i < 8; i++) {
+      if (hotCues[i] !== null) {
+        const x = (hotCues[i].time / duration) * w;
+        overviewCtx.strokeStyle = CUE_COLORS[i];
+        overviewCtx.lineWidth = 2;
+        overviewCtx.beginPath(); overviewCtx.moveTo(x, 0); overviewCtx.lineTo(x, h); overviewCtx.stroke();
+        // Triangle marker at top
+        overviewCtx.fillStyle = CUE_COLORS[i];
+        overviewCtx.beginPath();
+        overviewCtx.moveTo(x - 4, 0); overviewCtx.lineTo(x + 4, 0); overviewCtx.lineTo(x, 8);
+        overviewCtx.fill();
+      }
+    }
+
+    // Playhead
+    const ct = currentTime();
+    const px = Math.min(Math.max((ct / duration) * w, 0), w);
+    overviewCtx.strokeStyle = '#fff';
+    overviewCtx.lineWidth = 2;
+    overviewCtx.beginPath(); overviewCtx.moveTo(px, 0); overviewCtx.lineTo(px, h); overviewCtx.stroke();
+  }
+
+  function drawZoomed() {
+    const w = zoomWrap.clientWidth, h = 80;
+    zoomCtx.clearRect(0, 0, w, h);
+
+    if (!waveformData.length || !duration) return;
+
+    const ct = currentTime();
+    // Show ~4 seconds around current position
+    const windowSec = 4;
+    const startSec = ct - windowSec / 2;
+    const endSec = ct + windowSec / 2;
+
+    const len = waveformData.length;
+    const secPerBucket = duration / len;
+
+    // Draw waveform
+    for (let px = 0; px < w; px++) {
+      const t = startSec + (px / w) * (endSec - startSec);
+      if (t < 0 || t >= duration) continue;
+      const idx = Math.floor((t / duration) * len);
+      if (idx < 0 || idx >= len) continue;
+      const v = waveformData[idx];
+      const barH = v * h * 0.85;
+      const frac = t / duration;
+      const r = Math.floor(59 + frac * 80);
+      const g = Math.floor(130 - frac * 38);
+      const b = Math.floor(246 - frac * 10);
+      zoomCtx.fillStyle = `rgb(${r},${g},${b})`;
+      zoomCtx.fillRect(px, (h - barH) / 2, 1, barH);
+    }
+
+    // Loop region
+    if (loopIn !== null && loopOut !== null) {
+      const x1 = ((loopIn - startSec) / (endSec - startSec)) * w;
+      const x2 = ((loopOut - startSec) / (endSec - startSec)) * w;
+      if (x2 > 0 && x1 < w) {
+        zoomCtx.fillStyle = loopActive ? 'rgba(34,197,94,0.15)' : 'rgba(34,197,94,0.08)';
+        zoomCtx.fillRect(Math.max(x1, 0), 0, Math.min(x2, w) - Math.max(x1, 0), h);
+      }
+    }
+
+    // Beat grid
+    if (beatInterval > 0) {
+      zoomCtx.strokeStyle = 'rgba(255,255,255,0.12)';
+      zoomCtx.lineWidth = 1;
+      let bt = firstBeat + Math.floor((startSec - firstBeat) / beatInterval) * beatInterval;
+      while (bt < endSec) {
+        if (bt >= startSec) {
+          const x = ((bt - startSec) / (endSec - startSec)) * w;
+          zoomCtx.beginPath(); zoomCtx.moveTo(x, 0); zoomCtx.lineTo(x, h); zoomCtx.stroke();
+        }
+        bt += beatInterval;
+      }
+    }
+
+    // Hot cue markers on zoomed view
+    for (let i = 0; i < 8; i++) {
+      if (hotCues[i] !== null) {
+        const x = ((hotCues[i].time - startSec) / (endSec - startSec)) * w;
+        if (x >= -5 && x <= w + 5) {
+          zoomCtx.strokeStyle = CUE_COLORS[i];
+          zoomCtx.lineWidth = 2;
+          zoomCtx.beginPath(); zoomCtx.moveTo(x, 0); zoomCtx.lineTo(x, h); zoomCtx.stroke();
+        }
+      }
+    }
+
+    // Center playhead
+    const cx = w / 2;
+    zoomCtx.strokeStyle = '#fff';
+    zoomCtx.lineWidth = 2;
+    zoomCtx.beginPath(); zoomCtx.moveTo(cx, 0); zoomCtx.lineTo(cx, h); zoomCtx.stroke();
+    // Small triangle
+    zoomCtx.fillStyle = '#fff';
+    zoomCtx.beginPath();
+    zoomCtx.moveTo(cx - 5, 0); zoomCtx.lineTo(cx + 5, 0); zoomCtx.lineTo(cx, 6);
+    zoomCtx.fill();
+  }
+
+  function updateTimeDisplay() {
+    const ct = Math.max(0, Math.min(currentTime(), duration));
+    timeDisplay.textContent = formatTime(ct) + ' / ' + formatTime(duration);
+  }
+
+  function formatTime(s) {
+    if (!isFinite(s) || s < 0) return '0:00.0';
+    const m = Math.floor(s / 60);
+    const sec = s - m * 60;
+    return m + ':' + (sec < 10 ? '0' : '') + sec.toFixed(1);
+  }
+
+  function formatTimeCue(s) {
+    if (!isFinite(s) || s < 0) return '--:--';
+    const m = Math.floor(s / 60);
+    const sec = Math.floor(s - m * 60);
+    const ms = Math.floor((s % 1) * 10);
+    return m + ':' + (sec < 10 ? '0' : '') + sec + '.' + ms;
+  }
+
+  // ---- Hot Cue UI ----
+  function updateHotCueUI() {
+    const els = hotCuesEl.children;
+    for (let i = 0; i < 8; i++) {
+      const el = els[i];
+      const timeEl = el.querySelector('.cue-time');
+      if (hotCues[i] !== null) {
+        el.classList.add('set');
+        timeEl.textContent = formatTimeCue(hotCues[i].time);
+      } else {
+        el.classList.remove('set');
+        timeEl.textContent = '';
+      }
+    }
+  }
+
+  function handleHotCue(idx) {
+    if (hotCues[idx] !== null) {
+      // Jump to cue
+      seekTo(hotCues[idx].time);
+    } else {
+      // Set cue at current position
+      let t = currentTime();
+      if (snapToBeat && beatInterval > 0) t = snapToNearestBeat(t);
+      hotCues[idx] = { time: t };
+      saveCues();
+    }
+    drawAll();
+  }
+
+  function deleteHotCue(idx) {
+    hotCues[idx] = null;
+    saveCues();
+    drawAll();
+  }
+
+  // ---- Snap to beat ----
+  snapToggle.addEventListener('change', () => { snapToBeat = snapToggle.checked; });
+
+  function snapToNearestBeat(t) {
+    if (beatInterval <= 0) return t;
+    const beats = (t - firstBeat) / beatInterval;
+    const nearest = Math.round(beats);
+    return firstBeat + nearest * beatInterval;
+  }
+
+  // ---- Transport ----
+  function startPlayback(from) {
+    if (!audioBuffer) return;
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    stopSource();
+
+    const rate = 1 + parseFloat(pitchSlider.value) / 100;
+    sourceNode = audioCtx.createBufferSource();
+    sourceNode.buffer = audioBuffer;
+    sourceNode.playbackRate.value = rate;
+    gainNode = audioCtx.createGain();
+    sourceNode.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+
+    startOffset = Math.max(0, Math.min(from, duration));
+    startTime = audioCtx.currentTime;
+    sourceNode.start(0, startOffset);
+    isPlaying = true;
+
+    sourceNode.onended = () => {
+      if (isPlaying && !loopActive) {
+        isPlaying = false;
+        startOffset = 0;
+        updatePlayBtn();
+        drawAll();
+      }
+    };
+
+    updatePlayBtn();
+    tick();
+  }
+
+  function stopSource() {
+    if (sourceNode) {
+      try { sourceNode.onended = null; sourceNode.stop(); } catch(e) {}
+      sourceNode = null;
+    }
+  }
+
+  function stopPlayback() {
+    if (isPlaying) {
+      startOffset = currentTime();
+    }
+    stopSource();
+    isPlaying = false;
+    updatePlayBtn();
+    if (animFrame) { cancelAnimationFrame(animFrame); animFrame = null; }
+  }
+
+  function seekTo(t) {
+    t = Math.max(0, Math.min(t, duration));
+    if (isPlaying) {
+      startPlayback(t);
+    } else {
+      startOffset = t;
+      drawAll();
+    }
+  }
+
+  function updatePlayBtn() {
+    if (isPlaying) {
+      playBtn.classList.add('playing');
+      playBtn.innerHTML = '<svg viewBox="0 0 24 24"><rect x="5" y="4" width="4" height="16" rx="1"/><rect x="15" y="4" width="4" height="16" rx="1"/></svg> Pause';
+    } else {
+      playBtn.classList.remove('playing');
+      playBtn.innerHTML = '<svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg> Play';
+    }
+  }
+
+  playBtn.addEventListener('click', () => {
+    if (isPlaying) {
+      stopPlayback();
+    } else {
+      startPlayback(startOffset);
+    }
+  });
+
+  stopBtn.addEventListener('click', () => {
+    stopPlayback();
+    startOffset = 0;
+    drawAll();
+  });
+
+  cueBtn.addEventListener('click', () => {
+    if (isPlaying) {
+      // Playing: return to CDJ cue and pause
+      stopPlayback();
+      startOffset = cdjCuePoint;
+      drawAll();
+    } else {
+      // Paused: set CDJ cue at current position
+      let t = currentTime();
+      if (snapToBeat && beatInterval > 0) t = snapToNearestBeat(t);
+      cdjCuePoint = t;
+    }
+  });
+
+  jogBack.addEventListener('click', () => { seekTo(currentTime() - 0.01); });
+  jogFwd.addEventListener('click', () => { seekTo(currentTime() + 0.01); });
+
+  pitchSlider.addEventListener('input', () => {
+    const v = parseFloat(pitchSlider.value);
+    pitchValue.textContent = (v >= 0 ? '+' : '') + v.toFixed(1) + '%';
+    if (isPlaying) {
+      // Restart with new rate
+      const ct = currentTime();
+      startPlayback(ct);
+    }
+  });
+
+  // ---- Waveform click to seek ----
+  overviewWrap.addEventListener('click', e => {
+    if (!duration) return;
+    const rect = overviewCanvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const t = (x / rect.width) * duration;
+    seekTo(t);
+  });
+
+  zoomWrap.addEventListener('click', e => {
+    if (!duration) return;
+    const rect = zoomCanvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const ct = currentTime();
+    const windowSec = 4;
+    const startSec = ct - windowSec / 2;
+    const t = startSec + (x / rect.width) * windowSec;
+    seekTo(Math.max(0, Math.min(t, duration)));
+  });
+
+  // ---- Loop ----
+  loopInBtn.addEventListener('click', () => {
+    let t = currentTime();
+    if (snapToBeat && beatInterval > 0) t = snapToNearestBeat(t);
+    loopIn = t;
+    activeAutoLoop = null;
+    updateLoopUI();
+    drawAll();
+  });
+
+  loopOutBtn.addEventListener('click', () => {
+    let t = currentTime();
+    if (snapToBeat && beatInterval > 0) t = snapToNearestBeat(t);
+    loopOut = t;
+    if (loopIn !== null && loopOut <= loopIn) loopOut = loopIn + 0.1;
+    activeAutoLoop = null;
+    updateLoopUI();
+    drawAll();
+  });
+
+  loopToggleBtn.addEventListener('click', () => {
+    if (loopIn !== null && loopOut !== null) {
+      loopActive = !loopActive;
+    }
+    updateLoopUI();
+    drawAll();
+  });
+
+  function handleAutoLoop(beats, btn) {
+    if (!beatInterval) return;
+    const ct = currentTime();
+    let start = ct;
+    if (snapToBeat && beatInterval > 0) start = snapToNearestBeat(ct);
+    loopIn = start;
+    loopOut = start + beats * beatInterval;
+    if (activeAutoLoop === beats && loopActive) {
+      loopActive = false;
+      activeAutoLoop = null;
+    } else {
+      loopActive = true;
+      activeAutoLoop = beats;
+    }
+    updateLoopUI();
+    drawAll();
+  }
+
+  function updateLoopUI() {
+    loopInBtn.classList.toggle('active', loopIn !== null);
+    loopOutBtn.classList.toggle('active', loopOut !== null);
+    loopToggleBtn.classList.toggle('active', loopActive);
+    // Auto loop buttons
+    const btns = autoLoopsEl.children;
+    for (let i = 0; i < btns.length; i++) {
+      btns[i].classList.toggle('active', loopActive && activeAutoLoop === BEAT_LOOPS[i]);
+    }
+  }
+
+  // ---- Animation loop ----
+  function tick() {
+    if (!isPlaying) return;
+    const ct = currentTime();
+
+    // Loop check
+    if (loopActive && loopIn !== null && loopOut !== null && ct >= loopOut) {
+      seekTo(loopIn);
+      return; // seekTo -> startPlayback -> tick re-enters
+    }
+
+    // End of track check
+    if (ct >= duration) {
+      stopPlayback();
+      startOffset = 0;
+      drawAll();
+      return;
+    }
+
+    drawAll();
+    animFrame = requestAnimationFrame(tick);
+  }
+
+  // ---- Keyboard shortcuts ----
+  document.addEventListener('keydown', e => {
+    if (!audioBuffer) return;
+    const key = e.key;
+
+    // 1-8 hot cues
+    if (key >= '1' && key <= '8') {
+      e.preventDefault();
+      handleHotCue(parseInt(key) - 1);
+      return;
+    }
+
+    switch (key) {
+      case ' ':
+        e.preventDefault();
+        if (isPlaying) stopPlayback(); else startPlayback(startOffset);
+        break;
+      case 'Escape':
+        e.preventDefault();
+        stopPlayback(); startOffset = 0; drawAll();
+        break;
+    }
+  });
+
+  // ---- Save / Load cues ----
+  function saveCues() {
+    if (!fileName) return;
+    const data = { hotCues, cdjCuePoint, bpm };
+    localStorage.setItem('cuepoints_' + fileName, JSON.stringify(data));
+  }
+
+  function loadSavedCues() {
+    if (!fileName) return;
+    try {
+      const raw = localStorage.getItem('cuepoints_' + fileName);
+      if (raw) {
+        const data = JSON.parse(raw);
+        if (data.hotCues) hotCues = data.hotCues;
+        if (data.cdjCuePoint != null) cdjCuePoint = data.cdjCuePoint;
+      }
+    } catch (e) { /* ignore */ }
+  }
+})();
+</script>
+<script src="/related.js"></script>
+</body>
+</html>

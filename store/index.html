@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>FreeMusicStore — 25 Browser-Based Music Tools</title>
-<meta name="description" content="25 free music creation tools: beat maker, synth, sheet music library, MIDI player, chord progressions, metronome, tuner. No signup. Runs in your browser.">
+<title>FreeMusicStore — 30 Browser-Based Music Tools</title>
+<meta name="description" content="30 free music creation tools: beat maker, synth, sheet music library, MIDI player, chord progressions, metronome, tuner. No signup. Runs in your browser.">
 <meta property="og:title" content="FreeMusicStore — Browser-Based Music Tools">
-<meta property="og:description" content="25 free music tools. Beat maker, synth, sheet music library, MIDI player, chord progressions, metronome, tuner. No signup required.">
+<meta property="og:description" content="30 free music tools. Beat maker, synth, sheet music library, MIDI player, chord progressions, metronome, tuner. No signup required.">
 <link rel="canonical" href="https://freemusicstore.online/">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -118,9 +118,9 @@ footer a{color:var(--accent)}
 
 <section class="hero">
 <h1>Free<span>Music</span>Store</h1>
-<p>25 browser-based music creation tools. Beat makers, synths, 150+ classical scores, MIDI player, theory tools, and more. Everything runs in your browser. No signup, no tracking.</p>
+<p>30 browser-based music creation tools. DJ mixer, beat maker, synths, 150+ classical scores, MIDI player, theory tools, and more. Beat makers, synths, 150+ classical scores, MIDI player, theory tools, and more. Everything runs in your browser. No signup, no tracking.</p>
 <div class="badges">
-  <span class="badge badge-count">25 Tools</span>
+  <span class="badge badge-count">30 Tools</span>
   <span class="badge badge-accent">Web Audio API</span>
   <span class="badge">No Signup</span>
   <span class="badge">Open Source</span>
@@ -135,6 +135,7 @@ footer a{color:var(--accent)}
 <button class="filter-btn" data-cat="theory">Theory</button>
 <button class="filter-btn" data-cat="utilities">Utilities</button>
 <button class="filter-btn" data-cat="library">Library</button>
+<button class="filter-btn" data-cat="dj">DJ</button>
 </div>
 
 <div id="tools-container"></div>
@@ -185,7 +186,8 @@ FreeMusicStore &mdash; part of <a href="https://openfrontier.pages.dev">Open Fro
     mixing:    { icon: '&#127899;', bg: '#10b981', name: 'Mixing', desc: 'Effects, visualization, panning' },
     theory:    { icon: '&#127932;', bg: '#f59e0b', name: 'Theory', desc: 'Chords, scales, ear training' },
     utilities: { icon: '&#128295;', bg: '#3b82f6', name: 'Utilities', desc: 'Metronome, tuner, converter' },
-    library:   { icon: '&#128214;', bg: '#d97706', name: 'Library', desc: 'Sheet music, scores, MIDI' }
+    library:   { icon: '&#128214;', bg: '#d97706', name: 'Library', desc: 'Sheet music, scores, MIDI' },
+    dj:        { icon: '&#127911;', bg: '#06b6d4', name: 'DJ', desc: 'Mixing, scratching, effects, analysis' }
   };
 
   fetch('/registry.json').then(function(r){return r.json()}).then(function(data){
@@ -196,7 +198,7 @@ FreeMusicStore &mdash; part of <a href="https://openfrontier.pages.dev">Open Fro
     function render(cat) {
       activeCat = cat;
       var html = '';
-      var order = ['production','recording','mixing','theory','utilities','library'];
+      var order = ['production','recording','mixing','theory','utilities','library','dj'];
       order.forEach(function(catKey) {
         var catTools = tools.filter(function(t){ return t.category === catKey; });
         if (!catTools.length) return;
