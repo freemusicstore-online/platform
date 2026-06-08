@@ -226,6 +226,15 @@
       "section": "library"
     },
     {
+      "id": "page-turner",
+      "name": "Smart Page Turner",
+      "description": "Auto-turn sheet music pages by counting bars at your tempo. Beat indicator, metronome, rehearsal controls, performance mode.",
+      "icon": "📄",
+      "iconBg": "#d97706",
+      "category": "library",
+      "section": "library"
+    },
+    {
       "id": "mixer",
       "name": "DJ Mixer",
       "description": "Two-deck mixer with crossfader, 3-band EQ, waveforms, BPM detection, sync. Load your own tracks.",

@@ -1,0 +1,1420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Page Turner — FreeMusicStore</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0a0b;--surface:#141416;--surface-2:#1e1e22;--surface-3:#28282e;
+  --text:#f0f0f2;--text-dim:#8a8a8e;--text-muted:#5a5a5e;
+  --accent:#8b5cf6;--accent-hover:#7c3aed;--accent-glow:rgba(139,92,246,.15);--accent-dim:rgba(139,92,246,.10);
+  --border:#2a2a2e;--radius:10px;--radius-sm:6px;
+  --green:#22c55e;--red:#ef4444;--yellow:#eab308;--blue:#3b82f6;
+}
+html{scroll-behavior:smooth}
+body{font-family:'Manrope',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;min-height:100vh;overflow-x:hidden}
+a{color:var(--accent);text-decoration:none}
+a:hover{color:#a78bfa}
+button{font-family:inherit;cursor:pointer}
+input,select{font-family:inherit}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--surface-3);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--text-dim)}
+
+/* Back link */
+.back{display:inline-flex;align-items:center;gap:6px;padding:16px 24px 0;font-size:14px;font-weight:500;color:var(--text-dim)}
+.back:hover{color:var(--accent)}
+
+/* Top bar */
+.topbar{padding:12px 24px;display:flex;align-items:center;gap:16px;border-bottom:1px solid var(--border);background:var(--surface);flex-wrap:wrap}
+.topbar h1{font-size:18px;font-weight:700;background:linear-gradient(135deg,var(--text),#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.topbar-right{display:flex;align-items:center;gap:8px;margin-left:auto;flex-wrap:wrap}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text-dim);font-size:12px;font-weight:600;transition:all .15s;white-space:nowrap}
+.btn:hover{border-color:var(--accent);color:var(--text)}
+.btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.primary:hover{background:var(--accent-hover)}
+.btn.danger{border-color:var(--red);color:var(--red)}
+.btn.danger:hover{background:rgba(239,68,68,.1)}
+.btn svg{width:14px;height:14px}
+.btn-icon{padding:7px 8px}
+
+/* Inputs */
+.input{padding:7px 12px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:13px;outline:none;transition:border-color .2s;width:100%}
+.input:focus{border-color:var(--accent)}
+.input-sm{width:70px;text-align:center}
+select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a8a8e' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;padding-right:28px}
+
+/* Label */
+.field{display:flex;flex-direction:column;gap:4px}
+.field-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim)}
+.field-row{display:flex;align-items:center;gap:8px}
+
+/* Panel */
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:16px}
+.panel-title{font-size:12px;font-weight:700;text-transform:uppercase;color:var(--text-dim);margin-bottom:12px;letter-spacing:.5px}
+
+/* Container */
+.container{max-width:1200px;margin:0 auto;padding:24px}
+
+/* ===== VIEWS ===== */
+#setupView,#performView{display:none}
+#setupView.active,#performView.active{display:block}
+
+/* ===== SETUP VIEW ===== */
+
+/* Drop zone */
+.drop-zone{border:2px dashed var(--border);border-radius:var(--radius);padding:48px 24px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s}
+.drop-zone:hover,.drop-zone.dragover{border-color:var(--accent);background:var(--accent-dim)}
+.drop-zone .dz-icon{font-size:36px;margin-bottom:12px;color:var(--accent);display:block}
+.drop-zone h2{font-size:18px;font-weight:700;margin-bottom:6px}
+.drop-zone p{font-size:13px;color:var(--text-dim)}
+
+/* Page strip */
+.page-strip{display:flex;gap:10px;overflow-x:auto;padding:12px 4px;min-height:120px;align-items:flex-start}
+.page-thumb{position:relative;flex-shrink:0;width:90px;height:120px;border-radius:var(--radius-sm);border:2px solid var(--border);overflow:hidden;cursor:grab;transition:border-color .2s,transform .15s;background:var(--surface-2)}
+.page-thumb:hover{border-color:var(--accent);transform:translateY(-2px)}
+.page-thumb.dragging{opacity:.4;border-color:var(--accent)}
+.page-thumb.drag-over{border-color:var(--green);transform:scale(1.05)}
+.page-thumb img{width:100%;height:100%;object-fit:cover}
+.page-thumb .page-num{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.75);color:#fff;font-size:10px;font-weight:700;text-align:center;padding:2px 0}
+.page-thumb .page-remove{position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:rgba(0,0,0,.7);border:none;color:var(--red);font-size:12px;display:none;align-items:center;justify-content:center;cursor:pointer;line-height:1}
+.page-thumb:hover .page-remove{display:flex}
+
+/* Config grid */
+.config-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px}
+.config-grid .field{background:var(--surface-2);padding:12px;border-radius:var(--radius-sm)}
+
+/* Bars table */
+.bars-table{width:100%;border-collapse:collapse;font-size:13px}
+.bars-table th{text-align:left;font-size:11px;text-transform:uppercase;color:var(--text-dim);letter-spacing:.05em;padding:8px;border-bottom:1px solid var(--border);font-weight:700}
+.bars-table td{padding:6px 8px;border-bottom:1px solid var(--border)}
+.bars-table tr:hover{background:var(--surface-2)}
+.bars-table input{width:60px}
+
+/* Session save */
+.sessions-list{display:flex;flex-direction:column;gap:6px;max-height:180px;overflow-y:auto}
+.session-item{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--surface-2);border-radius:var(--radius-sm);font-size:13px}
+.session-item .session-name{font-weight:600;flex:1}
+.session-item .session-meta{font-size:11px;color:var(--text-dim);margin:0 12px}
+.session-item .session-actions{display:flex;gap:4px}
+
+/* ===== PERFORM VIEW ===== */
+.perform-layout{display:flex;flex-direction:column;height:calc(100vh - 60px)}
+
+/* Progress bar at top */
+.progress-track{height:4px;background:var(--surface-2);width:100%;position:relative;flex-shrink:0}
+.progress-fill{height:100%;background:var(--accent);transition:width .1s linear;border-radius:0 2px 2px 0}
+.progress-track.warning .progress-fill{background:var(--yellow);box-shadow:0 0 8px rgba(234,179,8,.4)}
+
+/* Toolbar */
+.perform-toolbar{display:flex;align-items:center;gap:10px;padding:8px 16px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap}
+.perform-toolbar .piece-name{font-weight:700;font-size:14px;margin-right:auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tempo-display{display:flex;align-items:center;gap:4px;font-size:13px;font-weight:600;color:var(--accent)}
+.tempo-display svg{width:16px;height:16px}
+
+/* Main stage */
+.stage{flex:1;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;background:var(--bg);min-height:0}
+.stage-image{max-width:100%;max-height:100%;object-fit:contain;transition:opacity .3s ease;user-select:none}
+.stage-image.fading{opacity:0}
+.stage-placeholder{color:var(--text-muted);font-size:15px;text-align:center}
+
+/* Bar/beat overlay */
+.overlay-top{position:absolute;top:12px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:16px;background:rgba(10,10,11,.85);backdrop-filter:blur(8px);padding:8px 20px;border-radius:30px;border:1px solid var(--border);z-index:5;white-space:nowrap}
+.bar-display{font-size:16px;font-weight:700;letter-spacing:.02em}
+.bar-display .bar-current{color:var(--accent);font-size:22px}
+.beat-dots{display:flex;gap:6px;align-items:center}
+.beat-dot{width:12px;height:12px;border-radius:50%;background:var(--surface-3);border:1.5px solid var(--border);transition:all .08s}
+.beat-dot.active{background:var(--accent);border-color:var(--accent);box-shadow:0 0 8px var(--accent)}
+.beat-dot.accent-beat.active{background:var(--yellow);border-color:var(--yellow);box-shadow:0 0 10px rgba(234,179,8,.5);transform:scale(1.2)}
+
+/* Sync indicator */
+.sync-indicator{position:absolute;top:12px;right:16px;font-size:11px;font-weight:700;text-transform:uppercase;padding:4px 10px;border-radius:12px;z-index:5;display:none}
+.sync-indicator.ahead{display:block;background:rgba(234,179,8,.15);color:var(--yellow)}
+.sync-indicator.behind{display:block;background:rgba(239,68,68,.15);color:var(--red)}
+
+/* Next page preview */
+.next-preview{position:absolute;bottom:16px;right:16px;width:80px;height:110px;border-radius:var(--radius-sm);border:2px solid var(--border);overflow:hidden;background:var(--surface);z-index:5;transition:border-color .2s;opacity:.7}
+.next-preview:hover{opacity:1}
+.next-preview img{width:100%;height:100%;object-fit:cover}
+.next-preview .np-label{position:absolute;top:0;left:0;right:0;background:rgba(0,0,0,.7);color:var(--text-dim);font-size:9px;font-weight:700;text-align:center;padding:2px;text-transform:uppercase}
+
+/* Turn warning */
+.turn-warning{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);background:rgba(139,92,246,.9);color:#fff;font-size:13px;font-weight:700;padding:8px 20px;border-radius:20px;z-index:5;opacity:0;transition:opacity .2s;pointer-events:none}
+.turn-warning.visible{opacity:1}
+
+/* Page counter overlay */
+.page-counter{position:absolute;top:12px;right:110px;font-size:12px;font-weight:600;color:var(--text-dim);background:rgba(10,10,11,.7);padding:4px 10px;border-radius:12px;z-index:5}
+
+/* Bottom strip in perform mode */
+.perform-strip{display:flex;gap:6px;padding:8px 16px;background:var(--surface);border-top:1px solid var(--border);overflow-x:auto;flex-shrink:0;align-items:center}
+.perform-strip .ps-thumb{width:48px;height:64px;border-radius:4px;border:2px solid var(--border);overflow:hidden;flex-shrink:0;cursor:pointer;transition:border-color .15s;opacity:.5}
+.perform-strip .ps-thumb.current{border-color:var(--accent);opacity:1;box-shadow:0 0 8px var(--accent-glow)}
+.perform-strip .ps-thumb img{width:100%;height:100%;object-fit:cover}
+
+/* Count-in overlay */
+.count-in-overlay{position:fixed;inset:0;background:rgba(10,10,11,.92);display:flex;align-items:center;justify-content:center;z-index:100;display:none}
+.count-in-overlay.active{display:flex}
+.count-in-number{font-size:120px;font-weight:800;color:var(--accent);animation:countPulse .3s ease-out}
+@keyframes countPulse{0%{transform:scale(1.3);opacity:.5}100%{transform:scale(1);opacity:1}}
+
+/* Performance mode (fullscreen) */
+body.performance-mode .topbar,
+body.performance-mode .back,
+body.performance-mode .perform-toolbar,
+body.performance-mode .perform-strip{display:none!important}
+body.performance-mode .perform-layout{height:100vh}
+body.performance-mode .progress-track{position:fixed;top:0;z-index:50}
+
+/* Loop badge */
+.loop-badge{position:absolute;top:12px;left:16px;font-size:11px;font-weight:700;background:rgba(34,197,94,.15);color:var(--green);padding:4px 10px;border-radius:12px;z-index:5;display:none}
+.loop-badge.visible{display:block}
+
+/* Dialog */
+.dialog-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;display:none;align-items:center;justify-content:center}
+.dialog-overlay.active{display:flex}
+.dialog{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;min-width:320px;max-width:90vw}
+.dialog h3{font-size:16px;font-weight:700;margin-bottom:16px}
+.dialog .dialog-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+
+/* Responsive */
+@media(max-width:768px){
+  .config-grid{grid-template-columns:1fr}
+  .topbar{padding:8px 16px}
+  .topbar h1{font-size:15px}
+  .container{padding:16px}
+  .overlay-top{padding:6px 14px;gap:10px}
+  .bar-display{font-size:14px}
+  .bar-display .bar-current{font-size:18px}
+  .beat-dot{width:10px;height:10px}
+}
+
+/* Shortcuts panel */
+.shortcuts-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 24px;font-size:13px}
+.shortcut-item{display:flex;justify-content:space-between;padding:4px 0}
+.shortcut-key{background:var(--surface-2);padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;color:var(--text-dim);font-family:monospace}
+</style>
+</head>
+<body>
+
+<a href="/" class="back">&larr; Back to Store</a>
+
+<div class="topbar">
+  <h1>Smart Page Turner</h1>
+  <div class="topbar-right">
+    <button class="btn" id="btnShortcuts" title="Keyboard shortcuts">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M8 12h.01M12 12h.01M16 12h.01M6 16h12"/></svg>
+      Keys
+    </button>
+    <button class="btn" id="btnSave" title="Save session">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+      Save
+    </button>
+    <button class="btn" id="btnLoad" title="Load session">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+      Load
+    </button>
+  </div>
+</div>
+
+<!-- ===== SETUP VIEW ===== -->
+<div id="setupView" class="active">
+<div class="container">
+
+  <!-- Upload -->
+  <div class="panel">
+    <div class="panel-title">Sheet Music Pages</div>
+    <div class="drop-zone" id="dropZone">
+      <span class="dz-icon">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+      </span>
+      <h2>Drop sheet music images here</h2>
+      <p>PNG, JPG, or WEBP — one image per page, in order</p>
+    </div>
+    <input type="file" id="fileInput" multiple accept="image/png,image/jpeg,image/webp" hidden>
+    <div class="page-strip" id="pageStrip"></div>
+  </div>
+
+  <!-- Score configuration -->
+  <div class="panel">
+    <div class="panel-title">Score Configuration</div>
+    <div class="config-grid">
+      <div class="field">
+        <span class="field-label">Tempo (BPM)</span>
+        <div class="field-row">
+          <input type="number" class="input input-sm" id="bpmInput" value="120" min="20" max="300">
+          <button class="btn" id="btnTapTempo">Tap Tempo</button>
+        </div>
+      </div>
+      <div class="field">
+        <span class="field-label">Time Signature</span>
+        <select class="input" id="timeSigSelect">
+          <option value="2/4">2/4</option>
+          <option value="3/4">3/4</option>
+          <option value="4/4" selected>4/4</option>
+          <option value="5/4">5/4</option>
+          <option value="6/4">6/4</option>
+          <option value="6/8">6/8</option>
+          <option value="7/8">7/8</option>
+          <option value="9/8">9/8</option>
+          <option value="12/8">12/8</option>
+        </select>
+      </div>
+      <div class="field">
+        <span class="field-label">Default Bars Per Page</span>
+        <input type="number" class="input input-sm" id="barsPerPageInput" value="8" min="1" max="99">
+      </div>
+      <div class="field">
+        <span class="field-label">Count-in Bars</span>
+        <input type="number" class="input input-sm" id="countInInput" value="1" min="0" max="8">
+      </div>
+      <div class="field">
+        <span class="field-label">Advance Mode</span>
+        <select class="input" id="advanceModeSelect">
+          <option value="auto">Auto (turn when bars run out)</option>
+          <option value="manual">Manual (Space / pedal to turn)</option>
+        </select>
+      </div>
+      <div class="field">
+        <span class="field-label">Metronome</span>
+        <div class="field-row">
+          <button class="btn" id="btnMetronomeToggle">Off</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Per-page bars override -->
+  <div class="panel" id="barsPanel" style="display:none">
+    <div class="panel-title">Bars Per Page (override per page)</div>
+    <table class="bars-table">
+      <thead><tr><th>Page</th><th>Bars</th></tr></thead>
+      <tbody id="barsTableBody"></tbody>
+    </table>
+  </div>
+
+  <!-- Mic sync option -->
+  <div class="panel">
+    <div class="panel-title">Advanced Options</div>
+    <div class="config-grid">
+      <div class="field">
+        <span class="field-label">Microphone Sync</span>
+        <div class="field-row">
+          <button class="btn" id="btnMicToggle">Off</button>
+          <span style="font-size:11px;color:var(--text-muted)">Detects if you're ahead/behind</span>
+        </div>
+      </div>
+      <div class="field">
+        <span class="field-label">Loop on Last Page</span>
+        <div class="field-row">
+          <button class="btn" id="btnLoopToggle">Off</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Start button -->
+  <div style="text-align:center;padding:16px 0">
+    <button class="btn primary" id="btnStart" style="padding:14px 40px;font-size:15px" disabled>
+      <svg viewBox="0 0 24 24" fill="currentColor" stroke="none" width="18" height="18"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      Start Performance
+    </button>
+    <p style="font-size:12px;color:var(--text-muted);margin-top:8px">Upload at least one page to begin</p>
+  </div>
+
+</div>
+</div>
+
+<!-- ===== PERFORM VIEW ===== -->
+<div id="performView">
+<div class="perform-layout">
+  <!-- Progress bar -->
+  <div class="progress-track" id="progressTrack"><div class="progress-fill" id="progressFill"></div></div>
+
+  <!-- Toolbar -->
+  <div class="perform-toolbar">
+    <span class="piece-name" id="pieceName">Untitled</span>
+    <div class="tempo-display" id="tempoDisplay">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v10l4.5 4.5"/><circle cx="12" cy="12" r="10"/></svg>
+      <span id="tempoValue">120</span> BPM
+    </div>
+    <button class="btn" id="btnHalfTempo" title="Half tempo">1/2x</button>
+    <button class="btn" id="btnMetronomePf" title="Toggle metronome (M)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L8 22h8L12 2z"/><line x1="5" y1="18" x2="19" y2="18"/></svg>
+    </button>
+    <button class="btn" id="btnMicPf" title="Mic sync">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+    </button>
+    <button class="btn" id="btnLoopPage" title="Loop current page">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
+    </button>
+    <button class="btn" id="btnGoToBar" title="Jump to bar">Go to bar</button>
+    <button class="btn primary" id="btnPlayPause" title="Play/Pause (Space)">
+      <svg viewBox="0 0 24 24" fill="currentColor" stroke="none" width="14" height="14" id="playPauseIcon"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+    </button>
+    <button class="btn" id="btnStop" title="Stop and return to setup">
+      <svg viewBox="0 0 24 24" fill="currentColor" stroke="none" width="14" height="14"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
+    </button>
+    <button class="btn" id="btnFullscreen" title="Performance mode (F)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+    </button>
+  </div>
+
+  <!-- Stage -->
+  <div class="stage" id="stage">
+    <img class="stage-image" id="stageImage" alt="Sheet music page">
+    <div class="stage-placeholder" id="stagePlaceholder">No pages loaded</div>
+
+    <!-- Overlays -->
+    <div class="overlay-top" id="overlayTop">
+      <div class="bar-display">Bar <span class="bar-current" id="barCurrent">1</span> / <span id="barTotal">8</span></div>
+      <div class="beat-dots" id="beatDots"></div>
+    </div>
+    <div class="page-counter" id="pageCounter">Page 1 / 1</div>
+    <div class="sync-indicator" id="syncIndicator"></div>
+    <div class="loop-badge" id="loopBadge">Looping Page</div>
+    <div class="turn-warning" id="turnWarning">Page turning...</div>
+    <div class="next-preview" id="nextPreview" style="display:none">
+      <span class="np-label">Next</span>
+      <img id="nextPreviewImg" alt="Next page">
+    </div>
+  </div>
+
+  <!-- Bottom strip -->
+  <div class="perform-strip" id="performStrip"></div>
+</div>
+</div>
+
+<!-- Count-in overlay -->
+<div class="count-in-overlay" id="countInOverlay">
+  <div class="count-in-number" id="countInNumber">1</div>
+</div>
+
+<!-- Keyboard shortcuts dialog -->
+<div class="dialog-overlay" id="shortcutsDialog">
+  <div class="dialog">
+    <h3>Keyboard Shortcuts</h3>
+    <div class="shortcuts-grid">
+      <div class="shortcut-item"><span>Play / Pause</span><span class="shortcut-key">Space</span></div>
+      <div class="shortcut-item"><span>Next page</span><span class="shortcut-key">&rarr;</span></div>
+      <div class="shortcut-item"><span>Previous page</span><span class="shortcut-key">&larr;</span></div>
+      <div class="shortcut-item"><span>BPM +1</span><span class="shortcut-key">&uarr;</span></div>
+      <div class="shortcut-item"><span>BPM -1</span><span class="shortcut-key">&darr;</span></div>
+      <div class="shortcut-item"><span>Performance mode</span><span class="shortcut-key">F</span></div>
+      <div class="shortcut-item"><span>Toggle metronome</span><span class="shortcut-key">M</span></div>
+      <div class="shortcut-item"><span>Exit performance</span><span class="shortcut-key">Esc</span></div>
+      <div class="shortcut-item"><span>Jump to page 1-9</span><span class="shortcut-key">1-9</span></div>
+    </div>
+    <div class="dialog-actions"><button class="btn primary" id="closeShortcuts">Close</button></div>
+  </div>
+</div>
+
+<!-- Save dialog -->
+<div class="dialog-overlay" id="saveDialog">
+  <div class="dialog">
+    <h3>Save Session</h3>
+    <div class="field" style="margin-bottom:12px">
+      <span class="field-label">Piece Name</span>
+      <input class="input" id="saveNameInput" placeholder="e.g. Moonlight Sonata Mvt 1">
+    </div>
+    <div class="dialog-actions">
+      <button class="btn" id="cancelSave">Cancel</button>
+      <button class="btn primary" id="confirmSave">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Load dialog -->
+<div class="dialog-overlay" id="loadDialog">
+  <div class="dialog" style="min-width:400px">
+    <h3>Load Session</h3>
+    <div class="sessions-list" id="sessionsList"></div>
+    <div id="noSessions" style="color:var(--text-muted);font-size:13px;text-align:center;padding:20px">No saved sessions</div>
+    <div class="dialog-actions"><button class="btn" id="closeLoad">Close</button></div>
+  </div>
+</div>
+
+<!-- Go to bar dialog -->
+<div class="dialog-overlay" id="goToBarDialog">
+  <div class="dialog">
+    <h3>Jump To</h3>
+    <div style="display:flex;gap:12px">
+      <div class="field" style="flex:1">
+        <span class="field-label">Bar Number (global)</span>
+        <input class="input" type="number" id="goBarInput" min="1" placeholder="e.g. 25">
+      </div>
+      <div class="field" style="flex:1">
+        <span class="field-label">Page Number</span>
+        <input class="input" type="number" id="goPageInput" min="1" placeholder="e.g. 4">
+      </div>
+    </div>
+    <div class="dialog-actions">
+      <button class="btn" id="cancelGoTo">Cancel</button>
+      <button class="btn primary" id="confirmGoTo">Go</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ========================================================
+   Smart Page Turner — FreeMusicStore
+   A practice & performance companion that counts bars
+   and automatically turns sheet music pages.
+   ======================================================== */
+
+(() => {
+'use strict';
+
+// ===== STATE =====
+const state = {
+  pages: [],             // {url, file?, bars}
+  bpm: 120,
+  timeSig: [4, 4],       // [beats, division]
+  defaultBars: 8,
+  countInBars: 1,
+  advanceMode: 'auto',   // 'auto' | 'manual'
+  metronome: false,
+  micSync: false,
+  loopEnd: false,
+  loopPage: false,
+
+  // performance state
+  playing: false,
+  currentPage: 0,
+  currentBar: 1,
+  currentBeat: 1,
+  halfTempo: false,
+  performanceMode: false,
+
+  // internals
+  audioCtx: null,
+  nextTickTime: 0,
+  tickTimer: null,
+  micStream: null,
+  micAnalyser: null,
+  micLastOnset: 0,
+  micExpectedBeat: 0,
+};
+
+// ===== DOM REFS =====
+const $ = id => document.getElementById(id);
+const setupView = $('setupView');
+const performView = $('performView');
+const dropZone = $('dropZone');
+const fileInput = $('fileInput');
+const pageStrip = $('pageStrip');
+const bpmInput = $('bpmInput');
+const timeSigSelect = $('timeSigSelect');
+const barsPerPageInput = $('barsPerPageInput');
+const countInInput = $('countInInput');
+const advanceModeSelect = $('advanceModeSelect');
+const barsPanel = $('barsPanel');
+const barsTableBody = $('barsTableBody');
+const btnStart = $('btnStart');
+const stageImage = $('stageImage');
+const stagePlaceholder = $('stagePlaceholder');
+const progressFill = $('progressFill');
+const progressTrack = $('progressTrack');
+const barCurrent = $('barCurrent');
+const barTotal = $('barTotal');
+const beatDots = $('beatDots');
+const pageCounter = $('pageCounter');
+const nextPreview = $('nextPreview');
+const nextPreviewImg = $('nextPreviewImg');
+const turnWarning = $('turnWarning');
+const loopBadge = $('loopBadge');
+const syncIndicator = $('syncIndicator');
+const performStrip = $('performStrip');
+const countInOverlay = $('countInOverlay');
+const countInNumber = $('countInNumber');
+const playPauseIcon = $('playPauseIcon');
+const tempoValue = $('tempoValue');
+const pieceName = $('pieceName');
+
+// ===== AUDIO CONTEXT =====
+function getAudioCtx() {
+  if (!state.audioCtx) {
+    state.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (state.audioCtx.state === 'suspended') state.audioCtx.resume();
+  return state.audioCtx;
+}
+
+// ===== FILE HANDLING =====
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+  handleFiles(e.dataTransfer.files);
+});
+fileInput.addEventListener('change', e => { handleFiles(e.target.files); fileInput.value = ''; });
+
+function handleFiles(files) {
+  const validTypes = ['image/png', 'image/jpeg', 'image/webp'];
+  for (const f of files) {
+    if (!validTypes.includes(f.type)) continue;
+    const url = URL.createObjectURL(f);
+    state.pages.push({ url, file: f, bars: state.defaultBars });
+  }
+  renderPageStrip();
+  renderBarsTable();
+  updateStartButton();
+}
+
+function removePage(i) {
+  URL.revokeObjectURL(state.pages[i].url);
+  state.pages.splice(i, 1);
+  renderPageStrip();
+  renderBarsTable();
+  updateStartButton();
+}
+
+function updateStartButton() {
+  btnStart.disabled = state.pages.length === 0;
+}
+
+// ===== PAGE STRIP (drag reorder) =====
+let dragIdx = null;
+
+function renderPageStrip() {
+  pageStrip.innerHTML = '';
+  state.pages.forEach((p, i) => {
+    const el = document.createElement('div');
+    el.className = 'page-thumb';
+    el.draggable = true;
+    el.dataset.idx = i;
+    el.innerHTML = `<img src="${p.url}" alt="Page ${i+1}"><span class="page-num">${i+1}</span><button class="page-remove" title="Remove">&times;</button>`;
+    el.querySelector('.page-remove').addEventListener('click', e => { e.stopPropagation(); removePage(i); });
+    el.addEventListener('dragstart', e => { dragIdx = i; el.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; });
+    el.addEventListener('dragend', () => { dragIdx = null; el.classList.remove('dragging'); document.querySelectorAll('.page-thumb').forEach(t => t.classList.remove('drag-over')); });
+    el.addEventListener('dragover', e => { e.preventDefault(); el.classList.add('drag-over'); });
+    el.addEventListener('dragleave', () => el.classList.remove('drag-over'));
+    el.addEventListener('drop', e => {
+      e.preventDefault();
+      el.classList.remove('drag-over');
+      if (dragIdx === null || dragIdx === i) return;
+      const [moved] = state.pages.splice(dragIdx, 1);
+      state.pages.splice(i, 0, moved);
+      renderPageStrip();
+      renderBarsTable();
+    });
+    pageStrip.appendChild(el);
+  });
+}
+
+// ===== BARS TABLE =====
+function renderBarsTable() {
+  if (state.pages.length === 0) { barsPanel.style.display = 'none'; return; }
+  barsPanel.style.display = '';
+  barsTableBody.innerHTML = '';
+  state.pages.forEach((p, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td style="font-weight:600">Page ${i+1}</td><td><input type="number" class="input input-sm" value="${p.bars}" min="1" max="99" data-idx="${i}"></td>`;
+    tr.querySelector('input').addEventListener('change', e => {
+      const v = Math.max(1, Math.min(99, parseInt(e.target.value) || state.defaultBars));
+      e.target.value = v;
+      state.pages[i].bars = v;
+    });
+    barsTableBody.appendChild(tr);
+  });
+}
+
+// Update all pages when default bars changes
+barsPerPageInput.addEventListener('change', () => {
+  const v = Math.max(1, Math.min(99, parseInt(barsPerPageInput.value) || 8));
+  barsPerPageInput.value = v;
+  state.defaultBars = v;
+  state.pages.forEach(p => p.bars = v);
+  renderBarsTable();
+});
+
+// ===== TAP TEMPO =====
+const tapTimes = [];
+$('btnTapTempo').addEventListener('click', () => {
+  const now = performance.now();
+  tapTimes.push(now);
+  // Keep last 6 taps
+  while (tapTimes.length > 6) tapTimes.shift();
+  if (tapTimes.length >= 2) {
+    const intervals = [];
+    for (let i = 1; i < tapTimes.length; i++) intervals.push(tapTimes[i] - tapTimes[i-1]);
+    const avgMs = intervals.reduce((a, b) => a + b) / intervals.length;
+    const bpm = Math.round(60000 / avgMs);
+    if (bpm >= 20 && bpm <= 300) {
+      state.bpm = bpm;
+      bpmInput.value = bpm;
+    }
+  }
+  // Reset if gap > 2.5s
+  if (tapTimes.length >= 2 && tapTimes[tapTimes.length - 1] - tapTimes[tapTimes.length - 2] > 2500) {
+    tapTimes.length = 0;
+    tapTimes.push(now);
+  }
+});
+
+// ===== CONFIG SYNC =====
+bpmInput.addEventListener('change', () => {
+  state.bpm = Math.max(20, Math.min(300, parseInt(bpmInput.value) || 120));
+  bpmInput.value = state.bpm;
+});
+timeSigSelect.addEventListener('change', () => {
+  const parts = timeSigSelect.value.split('/').map(Number);
+  state.timeSig = parts;
+});
+countInInput.addEventListener('change', () => {
+  state.countInBars = Math.max(0, Math.min(8, parseInt(countInInput.value) || 0));
+  countInInput.value = state.countInBars;
+});
+advanceModeSelect.addEventListener('change', () => { state.advanceMode = advanceModeSelect.value; });
+
+// Toggle buttons
+function setupToggle(btnId, stateKey) {
+  const btn = $(btnId);
+  btn.addEventListener('click', () => {
+    state[stateKey] = !state[stateKey];
+    btn.textContent = state[stateKey] ? 'On' : 'Off';
+    btn.classList.toggle('active', state[stateKey]);
+  });
+}
+setupToggle('btnMetronomeToggle', 'metronome');
+setupToggle('btnMicToggle', 'micSync');
+setupToggle('btnLoopToggle', 'loopEnd');
+
+// ===== START PERFORMANCE =====
+btnStart.addEventListener('click', startPerformance);
+
+function startPerformance() {
+  if (state.pages.length === 0) return;
+  // Read final config
+  state.bpm = Math.max(20, Math.min(300, parseInt(bpmInput.value) || 120));
+  state.timeSig = timeSigSelect.value.split('/').map(Number);
+  state.countInBars = parseInt(countInInput.value) || 0;
+  state.advanceMode = advanceModeSelect.value;
+  state.defaultBars = parseInt(barsPerPageInput.value) || 8;
+
+  state.currentPage = 0;
+  state.currentBar = 1;
+  state.currentBeat = 1;
+  state.playing = false;
+  state.halfTempo = false;
+  state.loopPage = false;
+
+  setupView.classList.remove('active');
+  performView.classList.add('active');
+
+  renderBeatDots();
+  showPage(0);
+  renderPerformStrip();
+  updateTempoDisplay();
+  updatePlayPauseIcon();
+
+  // Start with count-in then play
+  beginCountInAndPlay();
+}
+
+// ===== SHOW PAGE =====
+function showPage(idx, animate) {
+  if (idx < 0 || idx >= state.pages.length) return;
+  const oldIdx = state.currentPage;
+  state.currentPage = idx;
+  state.currentBar = 1;
+  state.currentBeat = 1;
+
+  const page = state.pages[idx];
+
+  if (animate && oldIdx !== idx) {
+    stageImage.classList.add('fading');
+    setTimeout(() => {
+      stageImage.src = page.url;
+      stageImage.classList.remove('fading');
+    }, 150);
+  } else {
+    stageImage.src = page.url;
+  }
+
+  stageImage.style.display = '';
+  stagePlaceholder.style.display = 'none';
+
+  barTotal.textContent = page.bars;
+  barCurrent.textContent = 1;
+  pageCounter.textContent = `Page ${idx + 1} / ${state.pages.length}`;
+  updateProgress();
+  updateBeatDots();
+  updateNextPreview();
+  highlightStripThumb();
+  turnWarning.classList.remove('visible');
+  progressTrack.classList.remove('warning');
+}
+
+function updateNextPreview() {
+  const next = state.currentPage + 1;
+  if (next < state.pages.length) {
+    nextPreview.style.display = '';
+    nextPreviewImg.src = state.pages[next].url;
+  } else if (state.loopEnd && state.pages.length > 1) {
+    nextPreview.style.display = '';
+    nextPreviewImg.src = state.pages[0].url;
+  } else {
+    nextPreview.style.display = 'none';
+  }
+}
+
+// ===== BEAT DOTS =====
+function renderBeatDots() {
+  const beats = state.timeSig[0];
+  beatDots.innerHTML = '';
+  for (let i = 0; i < beats; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'beat-dot' + (i === 0 ? ' accent-beat' : '');
+    beatDots.appendChild(dot);
+  }
+}
+
+function updateBeatDots() {
+  const dots = beatDots.children;
+  for (let i = 0; i < dots.length; i++) {
+    dots[i].classList.toggle('active', i === state.currentBeat - 1);
+  }
+}
+
+// ===== PROGRESS =====
+function updateProgress() {
+  const page = state.pages[state.currentPage];
+  if (!page) return;
+  const totalBeats = page.bars * state.timeSig[0];
+  const elapsedBeats = (state.currentBar - 1) * state.timeSig[0] + (state.currentBeat - 1);
+  const pct = (elapsedBeats / totalBeats) * 100;
+  progressFill.style.width = pct + '%';
+
+  // Warning in last 2 bars
+  const barsLeft = page.bars - state.currentBar;
+  if (barsLeft <= 1 && state.advanceMode === 'auto' && state.playing) {
+    progressTrack.classList.add('warning');
+    if (barsLeft <= 0 && state.currentBeat >= state.timeSig[0] - 1) {
+      turnWarning.classList.add('visible');
+      turnWarning.textContent = 'Page turning...';
+    }
+  } else {
+    progressTrack.classList.remove('warning');
+    turnWarning.classList.remove('visible');
+  }
+}
+
+// ===== PERFORM STRIP =====
+function renderPerformStrip() {
+  performStrip.innerHTML = '';
+  state.pages.forEach((p, i) => {
+    const el = document.createElement('div');
+    el.className = 'ps-thumb' + (i === state.currentPage ? ' current' : '');
+    el.innerHTML = `<img src="${p.url}" alt="Page ${i+1}">`;
+    el.addEventListener('click', () => { if (!state.playing) { showPage(i); } });
+    performStrip.appendChild(el);
+  });
+}
+
+function highlightStripThumb() {
+  const thumbs = performStrip.children;
+  for (let i = 0; i < thumbs.length; i++) {
+    thumbs[i].classList.toggle('current', i === state.currentPage);
+  }
+  // Scroll into view
+  if (thumbs[state.currentPage]) {
+    thumbs[state.currentPage].scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  }
+}
+
+// ===== METRONOME CLICK =====
+function playClick(time, accent) {
+  if (!state.metronome) return;
+  const ctx = getAudioCtx();
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.frequency.value = accent ? 1200 : 800;
+  osc.type = 'sine';
+  gain.gain.setValueAtTime(accent ? 0.25 : 0.12, time);
+  gain.gain.exponentialRampToValueAtTime(0.001, time + 0.06);
+  osc.start(time);
+  osc.stop(time + 0.06);
+}
+
+// ===== TEMPO HELPERS =====
+function effectiveBpm() {
+  return state.halfTempo ? state.bpm / 2 : state.bpm;
+}
+
+function beatDurationSec() {
+  return 60 / effectiveBpm();
+}
+
+// ===== COUNT-IN =====
+function beginCountInAndPlay() {
+  if (state.countInBars === 0) {
+    state.playing = true;
+    updatePlayPauseIcon();
+    startScheduler();
+    if (state.micSync) startMic();
+    return;
+  }
+
+  const ctx = getAudioCtx();
+  const beats = state.timeSig[0];
+  const totalCountBeats = state.countInBars * beats;
+  const dur = beatDurationSec();
+  let beatNum = 0;
+
+  countInOverlay.classList.add('active');
+
+  function tick() {
+    if (beatNum >= totalCountBeats) {
+      countInOverlay.classList.remove('active');
+      state.playing = true;
+      updatePlayPauseIcon();
+      startScheduler();
+      if (state.micSync) startMic();
+      return;
+    }
+
+    const barBeat = (beatNum % beats) + 1;
+    const barNum = Math.floor(beatNum / beats) + 1;
+    const isAccent = barBeat === 1;
+
+    countInNumber.textContent = barBeat;
+    countInNumber.style.animation = 'none';
+    void countInNumber.offsetWidth;
+    countInNumber.style.animation = '';
+
+    // Play click even during count-in if metronome is on
+    playClick(ctx.currentTime, isAccent);
+
+    beatNum++;
+    setTimeout(tick, dur * 1000);
+  }
+  tick();
+}
+
+// ===== MAIN SCHEDULER (lookahead) =====
+function startScheduler() {
+  if (state.tickTimer) clearInterval(state.tickTimer);
+  const ctx = getAudioCtx();
+  state.nextTickTime = ctx.currentTime;
+  const lookahead = 0.05; // seconds
+  const scheduleInterval = 25; // ms
+
+  state.tickTimer = setInterval(() => {
+    if (!state.playing) return;
+    while (state.nextTickTime < ctx.currentTime + lookahead) {
+      scheduleBeat(state.nextTickTime);
+      state.nextTickTime += beatDurationSec();
+    }
+  }, scheduleInterval);
+}
+
+function stopScheduler() {
+  if (state.tickTimer) { clearInterval(state.tickTimer); state.tickTimer = null; }
+}
+
+function scheduleBeat(time) {
+  const beats = state.timeSig[0];
+  const isAccent = state.currentBeat === 1;
+
+  playClick(time, isAccent);
+
+  // Schedule UI update
+  const ctx = getAudioCtx();
+  const delay = Math.max(0, (time - ctx.currentTime) * 1000);
+  setTimeout(() => advanceBeat(), delay);
+}
+
+function advanceBeat() {
+  if (!state.playing) return;
+  const page = state.pages[state.currentPage];
+  if (!page) return;
+  const beats = state.timeSig[0];
+
+  // Update display
+  barCurrent.textContent = state.currentBar;
+  updateBeatDots();
+  updateProgress();
+
+  // Check if mic sync should compare
+  if (state.micSync && state.micAnalyser) checkMicSync();
+
+  // Advance
+  state.currentBeat++;
+  if (state.currentBeat > beats) {
+    state.currentBeat = 1;
+    state.currentBar++;
+    if (state.currentBar > page.bars) {
+      // End of page
+      if (state.loopPage) {
+        state.currentBar = 1;
+        state.currentBeat = 1;
+        barCurrent.textContent = 1;
+        updateProgress();
+      } else if (state.advanceMode === 'auto') {
+        autoAdvancePage();
+      } else {
+        // Manual mode: stop counting, wait for user
+        state.currentBar = page.bars;
+        state.currentBeat = beats;
+        state.playing = false;
+        updatePlayPauseIcon();
+        stopScheduler();
+        turnWarning.textContent = 'Press Space or Right Arrow to turn page';
+        turnWarning.classList.add('visible');
+      }
+    }
+  }
+}
+
+function autoAdvancePage() {
+  const next = state.currentPage + 1;
+  if (next < state.pages.length) {
+    showPage(next, true);
+  } else if (state.loopEnd) {
+    showPage(0, true);
+  } else {
+    // Finished
+    state.playing = false;
+    updatePlayPauseIcon();
+    stopScheduler();
+    turnWarning.textContent = 'Finished!';
+    turnWarning.classList.add('visible');
+  }
+}
+
+// ===== PLAY/PAUSE =====
+function togglePlayPause() {
+  if (state.pages.length === 0) return;
+  if (state.playing) {
+    state.playing = false;
+    stopScheduler();
+    updatePlayPauseIcon();
+  } else {
+    state.playing = true;
+    updatePlayPauseIcon();
+    startScheduler();
+    turnWarning.classList.remove('visible');
+    if (state.micSync) startMic();
+  }
+}
+
+function updatePlayPauseIcon() {
+  if (state.playing) {
+    playPauseIcon.innerHTML = '<rect x="5" y="3" width="4" height="18" rx="1"/><rect x="15" y="3" width="4" height="18" rx="1"/>';
+  } else {
+    playPauseIcon.innerHTML = '<polygon points="5 3 19 12 5 21 5 3"/>';
+  }
+}
+
+function updateTempoDisplay() {
+  tempoValue.textContent = effectiveBpm();
+}
+
+// ===== MANUAL PAGE TURN =====
+function nextPage() {
+  const next = state.currentPage + 1;
+  if (next < state.pages.length) {
+    showPage(next, true);
+    if (state.advanceMode === 'manual' && !state.playing) {
+      state.playing = true;
+      updatePlayPauseIcon();
+      startScheduler();
+    }
+  } else if (state.loopEnd) {
+    showPage(0, true);
+  }
+}
+
+function prevPage() {
+  if (state.currentPage > 0) showPage(state.currentPage - 1, true);
+}
+
+function goToPage(num) {
+  const idx = Math.max(0, Math.min(state.pages.length - 1, num - 1));
+  showPage(idx, true);
+}
+
+function goToGlobalBar(barNum) {
+  let cumulative = 0;
+  for (let i = 0; i < state.pages.length; i++) {
+    if (cumulative + state.pages[i].bars >= barNum) {
+      showPage(i, true);
+      state.currentBar = barNum - cumulative;
+      state.currentBeat = 1;
+      barCurrent.textContent = state.currentBar;
+      updateProgress();
+      updateBeatDots();
+      return;
+    }
+    cumulative += state.pages[i].bars;
+  }
+  // Past end — go to last page last bar
+  const last = state.pages.length - 1;
+  showPage(last, true);
+  state.currentBar = state.pages[last].bars;
+  barCurrent.textContent = state.currentBar;
+}
+
+// ===== MIC SYNC =====
+async function startMic() {
+  if (state.micStream) return;
+  try {
+    state.micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const ctx = getAudioCtx();
+    const source = ctx.createMediaStreamSource(state.micStream);
+    state.micAnalyser = ctx.createAnalyser();
+    state.micAnalyser.fftSize = 1024;
+    source.connect(state.micAnalyser);
+    state.micLastOnset = performance.now();
+    state.micExpectedBeat = performance.now();
+  } catch (e) {
+    state.micSync = false;
+    console.warn('Mic access denied');
+  }
+}
+
+function stopMic() {
+  if (state.micStream) {
+    state.micStream.getTracks().forEach(t => t.stop());
+    state.micStream = null;
+    state.micAnalyser = null;
+  }
+  syncIndicator.className = 'sync-indicator';
+}
+
+function checkMicSync() {
+  if (!state.micAnalyser) return;
+  const buf = new Uint8Array(state.micAnalyser.fftSize);
+  state.micAnalyser.getByteTimeDomainData(buf);
+
+  // Simple energy detection
+  let sum = 0;
+  for (let i = 0; i < buf.length; i++) {
+    const v = (buf[i] - 128) / 128;
+    sum += v * v;
+  }
+  const rms = Math.sqrt(sum / buf.length);
+  const now = performance.now();
+  const beatMs = beatDurationSec() * 1000;
+
+  if (rms > 0.08) { // onset threshold
+    const timeSinceExpected = now - state.micExpectedBeat;
+    if (Math.abs(timeSinceExpected) > beatMs * 0.15) {
+      if (timeSinceExpected < 0) {
+        syncIndicator.className = 'sync-indicator ahead';
+        syncIndicator.textContent = 'Ahead';
+      } else {
+        syncIndicator.className = 'sync-indicator behind';
+        syncIndicator.textContent = 'Behind';
+      }
+    } else {
+      syncIndicator.className = 'sync-indicator';
+    }
+    state.micLastOnset = now;
+  }
+  state.micExpectedBeat = now + beatMs;
+}
+
+// ===== TOOLBAR BUTTONS =====
+$('btnPlayPause').addEventListener('click', togglePlayPause);
+
+$('btnStop').addEventListener('click', () => {
+  state.playing = false;
+  stopScheduler();
+  stopMic();
+  body_exitPerformanceMode();
+  performView.classList.remove('active');
+  setupView.classList.add('active');
+});
+
+$('btnHalfTempo').addEventListener('click', () => {
+  state.halfTempo = !state.halfTempo;
+  $('btnHalfTempo').classList.toggle('active', state.halfTempo);
+  $('btnHalfTempo').textContent = state.halfTempo ? '1/2x ON' : '1/2x';
+  updateTempoDisplay();
+  // Restart scheduler to pick up new tempo
+  if (state.playing) { stopScheduler(); startScheduler(); }
+});
+
+$('btnMetronomePf').addEventListener('click', () => {
+  state.metronome = !state.metronome;
+  $('btnMetronomePf').classList.toggle('active', state.metronome);
+  $('btnMetronomeToggle').textContent = state.metronome ? 'On' : 'Off';
+  $('btnMetronomeToggle').classList.toggle('active', state.metronome);
+});
+
+$('btnMicPf').addEventListener('click', () => {
+  state.micSync = !state.micSync;
+  $('btnMicPf').classList.toggle('active', state.micSync);
+  if (state.micSync && state.playing) startMic();
+  if (!state.micSync) stopMic();
+});
+
+$('btnLoopPage').addEventListener('click', () => {
+  state.loopPage = !state.loopPage;
+  $('btnLoopPage').classList.toggle('active', state.loopPage);
+  loopBadge.classList.toggle('visible', state.loopPage);
+});
+
+$('btnFullscreen').addEventListener('click', togglePerformanceMode);
+
+function togglePerformanceMode() {
+  state.performanceMode = !state.performanceMode;
+  document.body.classList.toggle('performance-mode', state.performanceMode);
+  if (state.performanceMode) {
+    document.documentElement.requestFullscreen?.().catch(() => {});
+  } else {
+    document.exitFullscreen?.().catch(() => {});
+  }
+}
+
+function body_exitPerformanceMode() {
+  state.performanceMode = false;
+  document.body.classList.remove('performance-mode');
+  document.exitFullscreen?.().catch(() => {});
+}
+
+// ===== GO TO BAR DIALOG =====
+$('btnGoToBar').addEventListener('click', () => {
+  $('goToBarDialog').classList.add('active');
+  $('goBarInput').value = '';
+  $('goPageInput').value = '';
+  $('goBarInput').focus();
+});
+$('cancelGoTo').addEventListener('click', () => $('goToBarDialog').classList.remove('active'));
+$('confirmGoTo').addEventListener('click', () => {
+  const bar = parseInt($('goBarInput').value);
+  const page = parseInt($('goPageInput').value);
+  if (bar > 0) goToGlobalBar(bar);
+  else if (page > 0) goToPage(page);
+  $('goToBarDialog').classList.remove('active');
+});
+$('goBarInput').addEventListener('keydown', e => { if (e.key === 'Enter') $('confirmGoTo').click(); });
+$('goPageInput').addEventListener('keydown', e => { if (e.key === 'Enter') $('confirmGoTo').click(); });
+
+// ===== SESSION SAVE/LOAD =====
+const STORAGE_KEY = 'fmus-page-turner-sessions';
+
+function getSessions() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch { return {}; }
+}
+function saveSessions(sessions) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
+}
+
+$('btnSave').addEventListener('click', () => {
+  $('saveDialog').classList.add('active');
+  $('saveNameInput').value = '';
+  $('saveNameInput').focus();
+});
+$('cancelSave').addEventListener('click', () => $('saveDialog').classList.remove('active'));
+$('confirmSave').addEventListener('click', () => {
+  const name = $('saveNameInput').value.trim();
+  if (!name) return;
+  const sessions = getSessions();
+  sessions[name] = {
+    bpm: state.bpm,
+    timeSig: timeSigSelect.value,
+    defaultBars: state.defaultBars,
+    countInBars: state.countInBars,
+    advanceMode: state.advanceMode,
+    metronome: state.metronome,
+    micSync: state.micSync,
+    loopEnd: state.loopEnd,
+    barsPerPage: state.pages.map(p => p.bars),
+    pageCount: state.pages.length,
+    savedAt: Date.now()
+  };
+  saveSessions(sessions);
+  $('saveDialog').classList.remove('active');
+  pieceName.textContent = name;
+});
+$('saveNameInput').addEventListener('keydown', e => { if (e.key === 'Enter') $('confirmSave').click(); });
+
+$('btnLoad').addEventListener('click', () => {
+  renderSessionsList();
+  $('loadDialog').classList.add('active');
+});
+$('closeLoad').addEventListener('click', () => $('loadDialog').classList.remove('active'));
+
+function renderSessionsList() {
+  const sessions = getSessions();
+  const keys = Object.keys(sessions);
+  const list = $('sessionsList');
+  const noSessions = $('noSessions');
+  list.innerHTML = '';
+  if (keys.length === 0) { noSessions.style.display = ''; return; }
+  noSessions.style.display = 'none';
+  keys.sort((a, b) => (sessions[b].savedAt || 0) - (sessions[a].savedAt || 0));
+  keys.forEach(name => {
+    const s = sessions[name];
+    const el = document.createElement('div');
+    el.className = 'session-item';
+    const date = s.savedAt ? new Date(s.savedAt).toLocaleDateString() : '';
+    el.innerHTML = `
+      <span class="session-name">${name}</span>
+      <span class="session-meta">${s.bpm} BPM | ${s.timeSig} | ${s.pageCount || '?'} pages | ${date}</span>
+      <span class="session-actions">
+        <button class="btn" data-action="load">Load</button>
+        <button class="btn danger" data-action="delete">&times;</button>
+      </span>`;
+    el.querySelector('[data-action="load"]').addEventListener('click', () => {
+      loadSession(name, s);
+      $('loadDialog').classList.remove('active');
+    });
+    el.querySelector('[data-action="delete"]').addEventListener('click', () => {
+      delete sessions[name];
+      saveSessions(sessions);
+      renderSessionsList();
+    });
+    list.appendChild(el);
+  });
+}
+
+function loadSession(name, s) {
+  state.bpm = s.bpm || 120;
+  bpmInput.value = state.bpm;
+  timeSigSelect.value = s.timeSig || '4/4';
+  state.timeSig = timeSigSelect.value.split('/').map(Number);
+  state.defaultBars = s.defaultBars || 8;
+  barsPerPageInput.value = state.defaultBars;
+  state.countInBars = s.countInBars ?? 1;
+  countInInput.value = state.countInBars;
+  state.advanceMode = s.advanceMode || 'auto';
+  advanceModeSelect.value = state.advanceMode;
+  state.metronome = s.metronome || false;
+  $('btnMetronomeToggle').textContent = state.metronome ? 'On' : 'Off';
+  $('btnMetronomeToggle').classList.toggle('active', state.metronome);
+  state.micSync = s.micSync || false;
+  $('btnMicToggle').textContent = state.micSync ? 'On' : 'Off';
+  $('btnMicToggle').classList.toggle('active', state.micSync);
+  state.loopEnd = s.loopEnd || false;
+  $('btnLoopToggle').textContent = state.loopEnd ? 'On' : 'Off';
+  $('btnLoopToggle').classList.toggle('active', state.loopEnd);
+
+  // Apply per-page bars if pages exist
+  if (s.barsPerPage && s.barsPerPage.length > 0) {
+    state.pages.forEach((p, i) => {
+      p.bars = s.barsPerPage[i] || state.defaultBars;
+    });
+    renderBarsTable();
+  }
+
+  pieceName.textContent = name;
+}
+
+// ===== SHORTCUTS DIALOG =====
+$('btnShortcuts').addEventListener('click', () => $('shortcutsDialog').classList.add('active'));
+$('closeShortcuts').addEventListener('click', () => $('shortcutsDialog').classList.remove('active'));
+
+// Close dialogs on overlay click
+document.querySelectorAll('.dialog-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) overlay.classList.remove('active');
+  });
+});
+
+// ===== KEYBOARD SHORTCUTS =====
+document.addEventListener('keydown', e => {
+  // Don't capture when typing in inputs
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
+
+  // Close any open dialog
+  const openDialog = document.querySelector('.dialog-overlay.active');
+  if (e.key === 'Escape' && openDialog) {
+    openDialog.classList.remove('active');
+    return;
+  }
+
+  // Performance mode specific
+  if (performView.classList.contains('active')) {
+    switch (e.key) {
+      case ' ':
+        e.preventDefault();
+        if (state.advanceMode === 'manual' && !state.playing) {
+          // In manual mode when stopped at end of page, space advances
+          nextPage();
+        } else {
+          togglePlayPause();
+        }
+        break;
+      case 'ArrowRight':
+        e.preventDefault();
+        nextPage();
+        break;
+      case 'ArrowLeft':
+        e.preventDefault();
+        prevPage();
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        state.bpm = Math.min(300, state.bpm + 1);
+        bpmInput.value = state.bpm;
+        updateTempoDisplay();
+        if (state.playing) { stopScheduler(); startScheduler(); }
+        break;
+      case 'ArrowDown':
+        e.preventDefault();
+        state.bpm = Math.max(20, state.bpm - 1);
+        bpmInput.value = state.bpm;
+        updateTempoDisplay();
+        if (state.playing) { stopScheduler(); startScheduler(); }
+        break;
+      case 'f': case 'F':
+        e.preventDefault();
+        togglePerformanceMode();
+        break;
+      case 'm': case 'M':
+        e.preventDefault();
+        state.metronome = !state.metronome;
+        $('btnMetronomePf').classList.toggle('active', state.metronome);
+        $('btnMetronomeToggle').textContent = state.metronome ? 'On' : 'Off';
+        $('btnMetronomeToggle').classList.toggle('active', state.metronome);
+        break;
+      case 'Escape':
+        if (state.performanceMode) {
+          body_exitPerformanceMode();
+        }
+        break;
+    }
+    // Number keys 1-9 to jump to page
+    if (e.key >= '1' && e.key <= '9') {
+      const pageNum = parseInt(e.key);
+      if (pageNum <= state.pages.length) {
+        goToPage(pageNum);
+      }
+    }
+  }
+});
+
+// Handle fullscreen change (e.g. user presses browser Escape)
+document.addEventListener('fullscreenchange', () => {
+  if (!document.fullscreenElement && state.performanceMode) {
+    state.performanceMode = false;
+    document.body.classList.remove('performance-mode');
+  }
+});
+
+// ===== INIT =====
+renderPageStrip();
+updateStartButton();
+
+})();
+</script>
+<script src="/related.js"></script>
+</body>
+</html>
