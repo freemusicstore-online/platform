@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<title>Key Finder - FreeMusicStore</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Manrope', sans-serif;
+  background: #0f0f0f;
+  color: #e0e0e0;
+  min-height: 100vh;
+  line-height: 1.5;
+}
+a { color: #8b5cf6; text-decoration: none; }
+a:hover { text-decoration: underline; }
+.back {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 16px 24px; font-size: 14px; font-weight: 500; color: #999;
+}
+.back:hover { color: #8b5cf6; text-decoration: none; }
+header {
+  text-align: center; padding: 24px 24px 32px;
+  border-bottom: 1px solid #1e1e1e;
+}
+header h1 { font-size: 28px; font-weight: 800; color: #fff; margin-bottom: 6px; }
+header p { color: #888; font-size: 15px; }
+.container { max-width: 900px; margin: 0 auto; padding: 24px; }
+.instructions {
+  background: #1a1a1a; border: 1px solid #262626; border-radius: 12px;
+  padding: 16px 20px; margin-bottom: 24px; font-size: 14px; color: #888;
+}
+.instructions strong { color: #ccc; }
+.keyboard-wrap {
+  overflow-x: auto; padding-bottom: 8px; margin-bottom: 8px;
+}
+.keyboard {
+  position: relative; height: 160px; display: inline-flex; user-select: none;
+}
+.white-key {
+  width: 44px; height: 160px;
+  background: #f0f0f0; border: 1px solid #999;
+  border-radius: 0 0 6px 6px;
+  cursor: pointer; position: relative; z-index: 1;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: flex-end;
+  padding-bottom: 8px; transition: background 0.1s;
+}
+.white-key:hover { background: #e0e0e0; }
+.white-key.selected { background: #c4b5fd; }
+.white-key.matched { background: #a7f3d0; }
+.white-key.selected.matched { background: #8b5cf6; }
+.white-key .note-label {
+  font-size: 11px; font-weight: 700; color: #555; pointer-events: none;
+}
+.white-key.selected .note-label { color: #1a1a1a; font-weight: 800; }
+.black-key {
+  width: 28px; height: 100px;
+  background: #222; border: 1px solid #111;
+  border-radius: 0 0 4px 4px;
+  position: absolute; z-index: 2;
+  cursor: pointer;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: flex-end;
+  padding-bottom: 6px; transition: background 0.1s;
+}
+.black-key:hover { background: #333; }
+.black-key.selected { background: #7c3aed; }
+.black-key.matched { background: #059669; }
+.black-key.selected.matched { background: #8b5cf6; }
+.black-key .note-label {
+  font-size: 9px; font-weight: 700; color: #888; pointer-events: none;
+}
+.black-key.selected .note-label { color: #fff; }
+.selected-notes {
+  display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; min-height: 32px; align-items: center;
+}
+.selected-label { font-size: 12px; color: #666; font-weight: 600; margin-right: 8px; }
+.note-chip {
+  background: #8b5cf6; color: #fff; border-radius: 6px;
+  padding: 4px 10px; font-size: 13px; font-weight: 600;
+}
+.actions { display: flex; gap: 8px; margin-bottom: 24px; }
+.action-btn {
+  font-family: 'Manrope', sans-serif;
+  background: #262626; color: #ccc; border: none;
+  border-radius: 8px; padding: 10px 20px;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.action-btn:hover { background: #333; }
+.action-btn.primary { background: #8b5cf6; color: #fff; }
+.action-btn.primary:hover { background: #7c3aed; }
+.results { margin-top: 16px; }
+.results h3 {
+  font-size: 14px; font-weight: 700; color: #8b5cf6;
+  text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;
+}
+.result-card {
+  background: #1a1a1a; border: 1px solid #262626; border-radius: 10px;
+  padding: 12px 16px; margin-bottom: 8px;
+  display: flex; align-items: center; gap: 16px;
+  cursor: pointer; transition: all 0.15s;
+}
+.result-card:hover { border-color: #8b5cf6; }
+.result-card.top { border-color: #8b5cf6; background: #1e1a2e; }
+.result-rank {
+  font-size: 20px; font-weight: 800; color: #444; min-width: 32px; text-align: center;
+}
+.result-card.top .result-rank { color: #8b5cf6; }
+.result-info { flex: 1; }
+.result-key { font-size: 16px; font-weight: 700; color: #fff; }
+.result-card.top .result-key { color: #8b5cf6; }
+.result-scale { font-size: 12px; color: #888; }
+.result-bar-wrap {
+  width: 120px; height: 8px; background: #262626; border-radius: 4px; overflow: hidden;
+}
+.result-bar {
+  height: 100%; background: #8b5cf6; border-radius: 4px; transition: width 0.3s;
+}
+.result-pct { font-size: 13px; font-weight: 700; color: #888; min-width: 48px; text-align: right; }
+.result-card.top .result-pct { color: #8b5cf6; }
+.no-results { color: #555; font-size: 14px; padding: 20px 0; text-align: center; }
+.method-note {
+  font-size: 12px; color: #444; margin-top: 16px; text-align: center;
+}
+</style>
+</head>
+<body>
+<a href="/" class="back">&larr; Back to Store</a>
+<header>
+  <h1>Key Finder</h1>
+  <p>Click notes you've heard, and we'll find the most likely key</p>
+</header>
+<div class="container">
+  <div class="instructions">
+    <strong>How to use:</strong> Click notes on the keyboard below to select the notes you've heard in a song or melody. The algorithm will rank the most likely keys using the Krumhansl-Schmuckler key-finding method, which correlates your input with known key profiles.
+  </div>
+
+  <div class="keyboard-wrap">
+    <div class="keyboard" id="keyboard"></div>
+  </div>
+
+  <div class="selected-notes" id="selectedNotes">
+    <span class="selected-label">Selected:</span>
+    <span style="color:#555;font-size:13px;">Click keys above</span>
+  </div>
+
+  <div class="actions">
+    <button class="action-btn primary" id="findBtn" disabled>Find Key</button>
+    <button class="action-btn" id="clearBtn">Clear All</button>
+  </div>
+
+  <div class="results" id="results"></div>
+  <div class="method-note">Uses the Krumhansl-Schmuckler key-finding algorithm with Krumhansl-Kessler key profiles</div>
+</div>
+
+<script>
+const NOTE_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+
+// Krumhansl-Kessler key profiles
+const MAJOR_PROFILE = [6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88];
+const MINOR_PROFILE = [6.33, 2.68, 3.52, 5.38, 2.60, 3.53, 2.54, 4.75, 3.98, 2.69, 3.34, 3.17];
+
+const WHITE_NOTES = [0,2,4,5,7,9,11];
+const BLACK_NOTES = [
+  { note: 1, afterWhite: 0 },
+  { note: 3, afterWhite: 1 },
+  { note: 6, afterWhite: 3 },
+  { note: 8, afterWhite: 4 },
+  { note: 10, afterWhite: 5 },
+];
+
+const MAJOR_SCALE = [0,2,4,5,7,9,11];
+const MINOR_SCALE = [0,2,3,5,7,8,10];
+
+let selectedNotes = new Set();
+let matchedScale = null;
+let audioCtx = null;
+
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function noteFreq(midi) { return 440 * Math.pow(2, (midi - 69) / 12); }
+
+function playNote(noteIdx) {
+  const ctx = getAudioCtx();
+  const midi = 60 + noteIdx;
+  const t = ctx.currentTime;
+  const gain = ctx.createGain();
+  gain.connect(ctx.destination);
+  gain.gain.setValueAtTime(0.2, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
+  const osc = ctx.createOscillator();
+  osc.type = 'triangle';
+  osc.frequency.value = noteFreq(midi);
+  osc.connect(gain);
+  osc.start(t);
+  osc.stop(t + 0.6);
+}
+
+function toggleNote(noteIdx) {
+  if (selectedNotes.has(noteIdx)) {
+    selectedNotes.delete(noteIdx);
+  } else {
+    selectedNotes.add(noteIdx);
+    playNote(noteIdx);
+  }
+  updateDisplay();
+  saveState();
+}
+
+function buildKeyboard() {
+  const kb = document.getElementById('keyboard');
+  kb.innerHTML = '';
+  const whiteWidth = 44;
+  const totalWhites = 12; // C through B displayed as one "octave" keyboard + extra
+  // Show exactly 12 notes (one of each pitch class) as a single octave
+  // 7 white keys: C D E F G A B
+
+  kb.style.width = (7 * whiteWidth) + 'px';
+
+  // White keys
+  WHITE_NOTES.forEach((noteIdx, w) => {
+    const key = document.createElement('div');
+    key.className = 'white-key';
+    if (selectedNotes.has(noteIdx)) key.classList.add('selected');
+    if (matchedScale && matchedScale.has(noteIdx)) key.classList.add('matched');
+    const label = document.createElement('span');
+    label.className = 'note-label';
+    label.textContent = NOTE_NAMES[noteIdx];
+    key.appendChild(label);
+    key.addEventListener('click', () => toggleNote(noteIdx));
+    kb.appendChild(key);
+  });
+
+  // Black keys
+  BLACK_NOTES.forEach(b => {
+    const key = document.createElement('div');
+    key.className = 'black-key';
+    if (selectedNotes.has(b.note)) key.classList.add('selected');
+    if (matchedScale && matchedScale.has(b.note)) key.classList.add('matched');
+    key.style.left = (b.afterWhite * whiteWidth + whiteWidth - 14) + 'px';
+    const label = document.createElement('span');
+    label.className = 'note-label';
+    label.textContent = NOTE_NAMES[b.note];
+    key.appendChild(label);
+    key.addEventListener('click', (e) => { e.stopPropagation(); toggleNote(b.note); });
+    kb.appendChild(key);
+  });
+}
+
+function updateDisplay() {
+  // Update selected notes display
+  const container = document.getElementById('selectedNotes');
+  if (selectedNotes.size === 0) {
+    container.innerHTML = '<span class="selected-label">Selected:</span><span style="color:#555;font-size:13px;">Click keys above</span>';
+  } else {
+    const sorted = [...selectedNotes].sort((a, b) => a - b);
+    container.innerHTML = '<span class="selected-label">Selected:</span>' +
+      sorted.map(n => `<span class="note-chip">${NOTE_NAMES[n]}</span>`).join('');
+  }
+  document.getElementById('findBtn').disabled = selectedNotes.size < 2;
+  matchedScale = null;
+  buildKeyboard();
+}
+
+function pearsonCorrelation(x, y) {
+  const n = x.length;
+  let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0, sumY2 = 0;
+  for (let i = 0; i < n; i++) {
+    sumX += x[i];
+    sumY += y[i];
+    sumXY += x[i] * y[i];
+    sumX2 += x[i] * x[i];
+    sumY2 += y[i] * y[i];
+  }
+  const num = n * sumXY - sumX * sumY;
+  const den = Math.sqrt((n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY));
+  if (den === 0) return 0;
+  return num / den;
+}
+
+function findKey() {
+  if (selectedNotes.size < 2) return;
+
+  // Build input vector: duration-weighted (1 for present, 0 for absent)
+  const inputVector = new Array(12).fill(0);
+  selectedNotes.forEach(n => { inputVector[n] = 1; });
+
+  const results = [];
+
+  for (let root = 0; root < 12; root++) {
+    // Rotate the input vector so that 'root' aligns with index 0
+    const rotated = new Array(12);
+    for (let i = 0; i < 12; i++) {
+      rotated[i] = inputVector[(root + i) % 12];
+    }
+
+    // Correlate with major profile
+    const majorCorr = pearsonCorrelation(rotated, MAJOR_PROFILE);
+    results.push({
+      root,
+      mode: 'major',
+      name: NOTE_NAMES[root] + ' Major',
+      correlation: majorCorr,
+      scaleNotes: MAJOR_SCALE.map(i => (root + i) % 12),
+    });
+
+    // Correlate with minor profile
+    const minorCorr = pearsonCorrelation(rotated, MINOR_PROFILE);
+    results.push({
+      root,
+      mode: 'minor',
+      name: NOTE_NAMES[root] + ' Minor',
+      correlation: minorCorr,
+      scaleNotes: MINOR_SCALE.map(i => (root + i) % 12),
+    });
+  }
+
+  // Sort by correlation descending
+  results.sort((a, b) => b.correlation - a.correlation);
+
+  // Display top 8
+  const top = results.slice(0, 8);
+  const maxCorr = Math.max(...top.map(r => Math.max(r.correlation, 0)));
+  const container = document.getElementById('results');
+
+  container.innerHTML = '<h3>Most Likely Keys</h3>' +
+    top.map((r, i) => {
+      const pct = maxCorr > 0 ? Math.max(0, Math.round((r.correlation / maxCorr) * 100)) : 0;
+      const isTop = i === 0;
+      return `<div class="result-card${isTop ? ' top' : ''}" data-idx="${i}">
+        <div class="result-rank">${i + 1}</div>
+        <div class="result-info">
+          <div class="result-key">${r.name}</div>
+          <div class="result-scale">${r.scaleNotes.map(n => NOTE_NAMES[n]).join(' - ')}</div>
+        </div>
+        <div class="result-bar-wrap"><div class="result-bar" style="width:${pct}%"></div></div>
+        <div class="result-pct">${r.correlation >= 0 ? '+' : ''}${r.correlation.toFixed(2)}</div>
+      </div>`;
+    }).join('');
+
+  // Show top match on keyboard
+  if (top.length > 0) {
+    matchedScale = new Set(top[0].scaleNotes);
+    buildKeyboard();
+  }
+
+  // Click result cards to show their scale
+  container.querySelectorAll('.result-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const idx = parseInt(card.dataset.idx);
+      matchedScale = new Set(top[idx].scaleNotes);
+      container.querySelectorAll('.result-card').forEach(c => c.classList.remove('top'));
+      card.classList.add('top');
+      buildKeyboard();
+    });
+  });
+
+  localStorage.setItem('fmus-key-finder-notes', JSON.stringify([...selectedNotes]));
+}
+
+function clearAll() {
+  selectedNotes.clear();
+  matchedScale = null;
+  document.getElementById('results').innerHTML = '';
+  updateDisplay();
+  localStorage.removeItem('fmus-key-finder-notes');
+}
+
+function saveState() {
+  localStorage.setItem('fmus-key-finder-notes', JSON.stringify([...selectedNotes]));
+}
+
+// Restore
+const saved = localStorage.getItem('fmus-key-finder-notes');
+if (saved) {
+  try {
+    const arr = JSON.parse(saved);
+    arr.forEach(n => selectedNotes.add(n));
+  } catch(e) {}
+}
+
+document.getElementById('findBtn').addEventListener('click', findKey);
+document.getElementById('clearBtn').addEventListener('click', clearAll);
+
+updateDisplay();
+buildKeyboard();
+</script>
+<script src="/related.js"></script>
+</body>
+</html>

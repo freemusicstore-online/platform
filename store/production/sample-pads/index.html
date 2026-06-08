@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<title>Sample Pads - FreeMusicStore</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --accent: #8b5cf6;
+  --accent-hover: #7c3aed;
+  --bg: #0f0f0f;
+  --surface: #1a1a1a;
+  --surface-2: #252525;
+  --border: #333;
+  --text: #f5f5f5;
+  --text-dim: #999;
+}
+body {
+  font-family: 'Manrope', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.topbar {
+  display: flex; align-items: center; gap: 16px;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+.topbar .back { font-size: 14px; font-weight: 500; }
+.topbar h1 { font-size: 18px; font-weight: 700; }
+.container { max-width: 600px; margin: 0 auto; padding: 24px; }
+
+.controls {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 20px; flex-wrap: wrap;
+}
+.btn {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn:hover { background: var(--accent-hover); }
+.btn.secondary {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}
+.btn.secondary:hover { background: var(--border); }
+.btn.active { background: #ef4444; }
+.btn.active:hover { background: #dc2626; }
+
+.pads-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.pad {
+  aspect-ratio: 1;
+  border-radius: 12px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: transform 0.08s, filter 0.08s;
+  user-select: none;
+  position: relative;
+  overflow: hidden;
+}
+.pad:active, .pad.triggered {
+  transform: scale(0.93);
+  filter: brightness(1.3);
+}
+.pad .name {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: rgba(255,255,255,0.9);
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+}
+.pad .key-hint {
+  font-size: 10px;
+  color: rgba(255,255,255,0.5);
+  font-weight: 600;
+}
+
+.status { font-size: 13px; color: var(--text-dim); min-height: 20px; }
+
+.recording-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #ef4444;
+}
+.recording-indicator .dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #ef4444;
+  animation: pulse 1s infinite;
+}
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <a href="/" class="back">&larr; Back to Store</a>
+  <h1>Sample Pads</h1>
+</div>
+<div class="container">
+  <div class="controls">
+    <button class="btn" id="recordBtn">Record</button>
+    <button class="btn secondary" id="playbackBtn" disabled>Play Sequence</button>
+    <button class="btn secondary" id="clearSeqBtn">Clear Sequence</button>
+  </div>
+
+  <div class="pads-grid" id="padsGrid"></div>
+
+  <div class="status" id="status"></div>
+</div>
+
+<script>
+const STORAGE_KEY = 'fmus-sample-pads-sequence';
+let audioCtx = null;
+
+function getCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+const PAD_DEFS = [
+  { name: 'Kick', color: '#ef4444', key: '1', gen: (ctx, t, vel) => {
+    const o = ctx.createOscillator(); const g = ctx.createGain();
+    o.type = 'sine'; o.frequency.setValueAtTime(150, t);
+    o.frequency.exponentialRampToValueAtTime(30, t + 0.15);
+    g.gain.setValueAtTime(vel, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+    o.connect(g).connect(ctx.destination); o.start(t); o.stop(t + 0.3);
+  }},
+  { name: 'Snare', color: '#f59e0b', key: '2', gen: (ctx, t, vel) => {
+    const bufSz = ctx.sampleRate * 0.12; const buf = ctx.createBuffer(1, bufSz, ctx.sampleRate);
+    const d = buf.getChannelData(0); for (let i = 0; i < bufSz; i++) d[i] = (Math.random() * 2 - 1);
+    const n = ctx.createBufferSource(); n.buffer = buf;
+    const g = ctx.createGain(); g.gain.setValueAtTime(vel * 0.5, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+    const f = ctx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 1200;
+    n.connect(f).connect(g).connect(ctx.destination); n.start(t); n.stop(t + 0.12);
+    const o = ctx.createOscillator(); const og = ctx.createGain();
+    o.type = 'sine'; o.frequency.setValueAtTime(180, t);
+    og.gain.setValueAtTime(vel * 0.6, t); og.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+    o.connect(og).connect(ctx.destination); o.start(t); o.stop(t + 0.08);
+  }},
+  { name: 'HiHat', color: '#22d3ee', key: '3', gen: (ctx, t, vel) => {
+    const bufSz = ctx.sampleRate * 0.04; const buf = ctx.createBuffer(1, bufSz, ctx.sampleRate);
+    const d = buf.getChannelData(0); for (let i = 0; i < bufSz; i++) d[i] = (Math.random() * 2 - 1);
+    const n = ctx.createBufferSource(); n.buffer = buf;
+    const g = ctx.createGain(); g.gain.setValueAtTime(vel * 0.25, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
+    const f = ctx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 8000;
+    n.connect(f).connect(g).connect(ctx.destination); n.start(t); n.stop(t + 0.04);
+  }},
+  { name: 'Clap', color: '#a78bfa', key: '4', gen: (ctx, t, vel) => {
+    const bufSz = ctx.sampleRate * 0.12; const buf = ctx.createBuffer(1, bufSz, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < bufSz; i++) {
+      const e = i < bufSz*0.02 ? 1 : i < bufSz*0.04 ? 0.2 : i < bufSz*0.06 ? 0.7 :
+        Math.exp(-((i - bufSz*0.06)/(bufSz*0.25))*5);
+      d[i] = (Math.random() * 2 - 1) * e;
+    }
+    const n = ctx.createBufferSource(); n.buffer = buf;
+    const g = ctx.createGain(); g.gain.value = vel * 0.4;
+    const f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 2500; f.Q.value = 1;
+    n.connect(f).connect(g).connect(ctx.destination); n.start(t); n.stop(t + 0.12);
+  }},
+  { name: 'Tom Hi', color: '#f97316', key: 'q', gen: (ctx, t, vel) => {
+    const o = ctx.createOscillator(); const g = ctx.createGain();
+    o.type = 'sine'; o.frequency.setValueAtTime(300, t);
+    o.frequency.exponentialRampToValueAtTime(100, t + 0.2);
+    g.gain.setValueAtTime(vel * 0.8, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+    o.connect(g).connect(ctx.destination); o.start(t); o.stop(t + 0.25);
+  }},
+  { name: 'Tom Lo', color: '#ea580c', key: 'w', gen: (ctx, t, vel) => {
+    const o = ctx.createOscillator(); const g = ctx.createGain();
+    o.type = 'sine'; o.frequency.setValueAtTime(180, t);
+    o.frequency.exponentialRampToValueAtTime(60, t + 0.3);
+    g.gain.setValueAtTime(vel * 0.8, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+    o.connect(g).connect(ctx.destination); o.start(t); o.stop(t + 0.35);
+  }},
+  { name: 'Rim', color: '#10b981', key: 'e', gen: (ctx, t, vel) => {
+    const o = ctx.createOscillator(); const g = ctx.createGain();
+    o.type = 'square'; o.frequency.setValueAtTime(800, t);
+    g.gain.setValueAtTime(vel * 0.3, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.03);
+    o.connect(g).connect(ctx.destination); o.start(t); o.stop(t + 0.03);
+  }},
+  { name: 'Cowbell', color: '#14b8a6', key: 'r', gen: (ctx, t, vel) => {
+    const o1 = ctx.createOscillator(); const o2 = ctx.createOscillator();
+    const g = ctx.createGain();
+    o1.type = 'square'; o1.frequency.value = 587; o2.type = 'square'; o2.frequency.value = 845;
+    g.gain.setValueAtTime(vel * 0.2, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+    const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 700; bp.Q.value = 3;
+    o1.connect(bp); o2.connect(bp); bp.connect(g).connect(ctx.destination);
+    o1.start(t); o2.start(t); o1.stop(t + 0.15); o2.stop(t + 0.15);
+  }},
+  { name: 'Shaker', color: '#06b6d4', key: 'a', gen: (ctx, t, vel) => {
+    const bufSz = ctx.sampleRate * 0.06; const buf = ctx.createBuffer(1, bufSz, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < bufSz; i++) { d[i] = (Math.random() * 2 - 1) * (1 - i/bufSz); }
+    const n = ctx.createBufferSource(); n.buffer = buf;
+    const g = ctx.createGain(); g.gain.value = vel * 0.15;
+    const f = ctx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 5000;
+    n.connect(f).connect(g).connect(ctx.destination); n.start(t); n.stop(t + 0.06);
+  }},
+  { name: 'Clave', color: '#0284c7', key: 's', gen: (ctx, t, vel) => {
+    const o = ctx.createOscillator(); const g = ctx.createGain();
+    o.type = 'sine'; o.frequency.value = 2500;
+    g.gain.setValueAtTime(vel * 0.3, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.02);
+    o.connect(g).connect(ctx.destination); o.start(t); o.stop(t + 0.02);
+  }},
+  { name: 'Perc', color: '#8b5cf6', key: 'd', gen: (ctx, t, vel) => {
+    const o = ctx.createOscillator(); const g = ctx.createGain();
+    o.type = 'triangle'; o.frequency.setValueAtTime(600, t);
+    o.frequency.exponentialRampToValueAtTime(200, t + 0.08);
+    g.gain.setValueAtTime(vel * 0.5, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+    o.connect(g).connect(ctx.destination); o.start(t); o.stop(t + 0.12);
+  }},
+  { name: 'Zap', color: '#c084fc', key: 'f', gen: (ctx, t, vel) => {
+    const o = ctx.createOscillator(); const g = ctx.createGain();
+    o.type = 'sawtooth'; o.frequency.setValueAtTime(1200, t);
+    o.frequency.exponentialRampToValueAtTime(50, t + 0.1);
+    g.gain.setValueAtTime(vel * 0.25, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+    o.connect(g).connect(ctx.destination); o.start(t); o.stop(t + 0.12);
+  }},
+  { name: 'Bass', color: '#6366f1', key: 'z', gen: (ctx, t, vel) => {
+    const o = ctx.createOscillator(); const g = ctx.createGain();
+    o.type = 'sine'; o.frequency.value = 55;
+    g.gain.setValueAtTime(vel * 0.8, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+    o.connect(g).connect(ctx.destination); o.start(t); o.stop(t + 0.4);
+  }},
+  { name: 'Chord', color: '#818cf8', key: 'x', gen: (ctx, t, vel) => {
+    [261.6, 329.6, 392].forEach(fr => {
+      const o = ctx.createOscillator(); const g = ctx.createGain();
+      o.type = 'triangle'; o.frequency.value = fr;
+      g.gain.setValueAtTime(vel * 0.12, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+      o.connect(g).connect(ctx.destination); o.start(t); o.stop(t + 0.3);
+    });
+  }},
+  { name: 'Blip', color: '#f472b6', key: 'c', gen: (ctx, t, vel) => {
+    const o = ctx.createOscillator(); const g = ctx.createGain();
+    o.type = 'sine'; o.frequency.setValueAtTime(880, t);
+    o.frequency.exponentialRampToValueAtTime(440, t + 0.05);
+    g.gain.setValueAtTime(vel * 0.3, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+    o.connect(g).connect(ctx.destination); o.start(t); o.stop(t + 0.08);
+  }},
+  { name: 'Noise', color: '#fb7185', key: 'v', gen: (ctx, t, vel) => {
+    const bufSz = ctx.sampleRate * 0.2; const buf = ctx.createBuffer(1, bufSz, ctx.sampleRate);
+    const d = buf.getChannelData(0); for (let i = 0; i < bufSz; i++) d[i] = (Math.random() * 2 - 1);
+    const n = ctx.createBufferSource(); n.buffer = buf;
+    const g = ctx.createGain(); g.gain.setValueAtTime(vel * 0.15, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+    n.connect(g).connect(ctx.destination); n.start(t); n.stop(t + 0.2);
+  }},
+];
+
+// Recording state
+let recording = false;
+let recordedSequence = [];
+let recordStartTime = 0;
+let playingBack = false;
+let playbackTimeouts = [];
+
+function triggerPad(idx, velocity) {
+  const ctx = getCtx();
+  const pad = PAD_DEFS[idx];
+  pad.gen(ctx, ctx.currentTime, velocity);
+
+  // Visual feedback
+  const el = document.querySelectorAll('.pad')[idx];
+  if (el) {
+    el.classList.add('triggered');
+    setTimeout(() => el.classList.remove('triggered'), 100);
+  }
+
+  // Recording
+  if (recording) {
+    recordedSequence.push({
+      pad: idx,
+      time: Date.now() - recordStartTime,
+      velocity
+    });
+  }
+}
+
+function buildPads() {
+  const grid = document.getElementById('padsGrid');
+  grid.innerHTML = '';
+  PAD_DEFS.forEach((pad, idx) => {
+    const el = document.createElement('div');
+    el.className = 'pad';
+    el.style.background = pad.color;
+    el.innerHTML = `<span class="name">${pad.name}</span><span class="key-hint">${pad.key.toUpperCase()}</span>`;
+
+    el.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      const rect = el.getBoundingClientRect();
+      const yRatio = (e.clientY - rect.top) / rect.height;
+      const velocity = 0.3 + yRatio * 0.7; // top=soft(0.3), bottom=hard(1.0)
+      triggerPad(idx, velocity);
+    });
+    el.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      const touch = e.touches[0];
+      const rect = el.getBoundingClientRect();
+      const yRatio = (touch.clientY - rect.top) / rect.height;
+      const velocity = 0.3 + yRatio * 0.7;
+      triggerPad(idx, velocity);
+    }, { passive: false });
+
+    grid.appendChild(el);
+  });
+}
+
+// Keyboard mapping
+const keyMap = {};
+PAD_DEFS.forEach((pad, idx) => { keyMap[pad.key.toLowerCase()] = idx; });
+
+document.addEventListener('keydown', (e) => {
+  if (e.repeat || e.metaKey || e.ctrlKey) return;
+  const idx = keyMap[e.key.toLowerCase()];
+  if (idx !== undefined) {
+    triggerPad(idx, 0.7);
+  }
+});
+
+// Record
+const recordBtn = document.getElementById('recordBtn');
+recordBtn.addEventListener('click', () => {
+  if (!recording) {
+    recording = true;
+    recordedSequence = [];
+    recordStartTime = Date.now();
+    recordBtn.textContent = 'Stop Rec';
+    recordBtn.classList.add('active');
+    document.getElementById('status').innerHTML = '<span class="recording-indicator"><span class="dot"></span>Recording...</span>';
+  } else {
+    recording = false;
+    recordBtn.textContent = 'Record';
+    recordBtn.classList.remove('active');
+    if (recordedSequence.length > 0) {
+      document.getElementById('playbackBtn').disabled = false;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(recordedSequence));
+      document.getElementById('status').textContent = `Recorded ${recordedSequence.length} hits.`;
+    } else {
+      document.getElementById('status').textContent = 'No hits recorded.';
+    }
+  }
+});
+
+// Playback
+document.getElementById('playbackBtn').addEventListener('click', () => {
+  if (playingBack) {
+    stopPlayback();
+    return;
+  }
+  if (recordedSequence.length === 0) return;
+  playingBack = true;
+  document.getElementById('playbackBtn').textContent = 'Stop';
+  document.getElementById('status').textContent = 'Playing sequence...';
+
+  recordedSequence.forEach(hit => {
+    const tid = setTimeout(() => {
+      triggerPad(hit.pad, hit.velocity);
+    }, hit.time);
+    playbackTimeouts.push(tid);
+  });
+
+  const totalTime = recordedSequence[recordedSequence.length - 1].time + 500;
+  playbackTimeouts.push(setTimeout(() => {
+    stopPlayback();
+  }, totalTime));
+});
+
+function stopPlayback() {
+  playingBack = false;
+  playbackTimeouts.forEach(clearTimeout);
+  playbackTimeouts = [];
+  document.getElementById('playbackBtn').textContent = 'Play Sequence';
+  document.getElementById('status').textContent = '';
+}
+
+document.getElementById('clearSeqBtn').addEventListener('click', () => {
+  recordedSequence = [];
+  localStorage.removeItem(STORAGE_KEY);
+  document.getElementById('playbackBtn').disabled = true;
+  stopPlayback();
+  document.getElementById('status').textContent = 'Sequence cleared.';
+});
+
+// Load saved sequence
+try {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (saved) {
+    recordedSequence = JSON.parse(saved);
+    if (recordedSequence.length > 0) {
+      document.getElementById('playbackBtn').disabled = false;
+    }
+  }
+} catch {}
+
+buildPads();
+</script>
+<script src="/related.js"></script>
+</body>
+</html>

@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<title>Metronome - FreeMusicStore</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Manrope', sans-serif;
+  background: #0a0a0a;
+  color: #e5e5e5;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+a { color: #8b5cf6; text-decoration: none; }
+a:hover { text-decoration: underline; }
+.back { position: absolute; top: 1.25rem; left: 1.25rem; font-size: 0.875rem; font-weight: 500; }
+.back::before { content: '\2190 '; }
+header { text-align: center; padding: 3rem 1rem 1.5rem; }
+header h1 { font-size: 1.5rem; font-weight: 800; color: #fff; }
+header p { font-size: 0.875rem; color: #a3a3a3; margin-top: 0.25rem; }
+.container { width: 100%; max-width: 420px; padding: 0 1rem 3rem; display: flex; flex-direction: column; align-items: center; gap: 2rem; }
+.bpm-display { text-align: center; }
+.bpm-value { font-size: 5rem; font-weight: 800; color: #fff; line-height: 1; }
+.bpm-label { font-size: 0.875rem; color: #a3a3a3; text-transform: uppercase; letter-spacing: 0.1em; margin-top: 0.25rem; }
+.bpm-slider { width: 100%; }
+.bpm-slider input[type="range"] {
+  -webkit-appearance: none; appearance: none; width: 100%; height: 6px;
+  background: #262626; border-radius: 3px; outline: none;
+}
+.bpm-slider input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none; width: 24px; height: 24px;
+  border-radius: 50%; background: #8b5cf6; cursor: pointer; border: none;
+}
+.bpm-slider input[type="range"]::-moz-range-thumb {
+  width: 24px; height: 24px; border-radius: 50%; background: #8b5cf6; cursor: pointer; border: none;
+}
+.bpm-slider .range-labels { display: flex; justify-content: space-between; font-size: 0.75rem; color: #525252; margin-top: 0.25rem; }
+.beat-indicator { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
+.beat-dot {
+  width: 36px; height: 36px; border-radius: 50%; background: #1a1a1a; border: 2px solid #333;
+  transition: transform 0.08s, background 0.08s, border-color 0.08s;
+}
+.beat-dot.active { background: #8b5cf6; border-color: #8b5cf6; transform: scale(1.3); }
+.beat-dot.accent.active { background: #a78bfa; border-color: #a78bfa; transform: scale(1.45); box-shadow: 0 0 20px rgba(139,92,246,0.5); }
+.controls { display: flex; gap: 0.75rem; flex-wrap: wrap; justify-content: center; }
+.btn {
+  font-family: 'Manrope', sans-serif; font-weight: 600; font-size: 0.875rem;
+  padding: 0.625rem 1.5rem; border-radius: 0.5rem; border: none; cursor: pointer;
+  transition: opacity 0.15s;
+}
+.btn:hover { opacity: 0.85; }
+.btn-primary { background: #8b5cf6; color: #fff; }
+.btn-primary.active { background: #7c3aed; }
+.btn-secondary { background: #262626; color: #e5e5e5; }
+.btn-tap { background: #1f1f1f; color: #8b5cf6; border: 2px solid #8b5cf6; padding: 0.625rem 1.25rem; }
+.settings { width: 100%; display: flex; flex-direction: column; gap: 1rem; }
+.setting-row { display: flex; align-items: center; justify-content: space-between; }
+.setting-label { font-size: 0.875rem; color: #a3a3a3; }
+select {
+  font-family: 'Manrope', sans-serif; font-size: 0.875rem; font-weight: 500;
+  background: #1a1a1a; color: #e5e5e5; border: 1px solid #333; border-radius: 0.375rem;
+  padding: 0.375rem 0.75rem; cursor: pointer;
+}
+.toggle { position: relative; width: 44px; height: 24px; cursor: pointer; }
+.toggle input { opacity: 0; width: 0; height: 0; }
+.toggle .slider {
+  position: absolute; inset: 0; background: #333; border-radius: 12px; transition: background 0.2s;
+}
+.toggle .slider::before {
+  content: ''; position: absolute; left: 3px; top: 3px; width: 18px; height: 18px;
+  border-radius: 50%; background: #fff; transition: transform 0.2s;
+}
+.toggle input:checked + .slider { background: #8b5cf6; }
+.toggle input:checked + .slider::before { transform: translateX(20px); }
+</style>
+</head>
+<body>
+<a href="/" class="back">&larr; Back to Store</a>
+<header>
+  <h1>Metronome</h1>
+  <p>Precise BPM metronome with tap tempo</p>
+</header>
+<div class="container">
+  <div class="bpm-display">
+    <div class="bpm-value" id="bpmValue">120</div>
+    <div class="bpm-label">BPM</div>
+  </div>
+
+  <div class="bpm-slider">
+    <input type="range" id="bpmSlider" min="30" max="300" value="120">
+    <div class="range-labels"><span>30</span><span>300</span></div>
+  </div>
+
+  <div class="beat-indicator" id="beatIndicator"></div>
+
+  <div class="controls">
+    <button class="btn btn-primary" id="playBtn">Start</button>
+    <button class="btn btn-tap" id="tapBtn">Tap Tempo</button>
+  </div>
+
+  <div class="settings">
+    <div class="setting-row">
+      <span class="setting-label">Time Signature</span>
+      <select id="timeSig">
+        <option value="2-4">2/4</option>
+        <option value="3-4">3/4</option>
+        <option value="4-4" selected>4/4</option>
+        <option value="5-4">5/4</option>
+        <option value="6-8">6/8</option>
+        <option value="7-8">7/8</option>
+      </select>
+    </div>
+    <div class="setting-row">
+      <span class="setting-label">Accent Downbeat</span>
+      <label class="toggle">
+        <input type="checkbox" id="accentToggle" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  const STORAGE_KEY = 'fmus-metronome';
+
+  let audioCtx = null;
+  let isPlaying = false;
+  let bpm = 120;
+  let currentBeat = 0;
+  let beatsPerMeasure = 4;
+  let accentEnabled = true;
+  let nextNoteTime = 0;
+  let timerID = null;
+  let tapTimes = [];
+
+  const bpmValue = document.getElementById('bpmValue');
+  const bpmSlider = document.getElementById('bpmSlider');
+  const playBtn = document.getElementById('playBtn');
+  const tapBtn = document.getElementById('tapBtn');
+  const timeSig = document.getElementById('timeSig');
+  const accentToggle = document.getElementById('accentToggle');
+  const beatIndicator = document.getElementById('beatIndicator');
+
+  function loadState() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+      if (saved) {
+        bpm = saved.bpm || 120;
+        timeSig.value = saved.timeSig || '4-4';
+        accentToggle.checked = saved.accent !== false;
+      }
+    } catch(e) {}
+    bpmSlider.value = bpm;
+    bpmValue.textContent = bpm;
+    accentEnabled = accentToggle.checked;
+    updateTimeSig();
+  }
+
+  function saveState() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ bpm, timeSig: timeSig.value, accent: accentEnabled }));
+  }
+
+  function updateTimeSig() {
+    const parts = timeSig.value.split('-');
+    beatsPerMeasure = parseInt(parts[0]);
+    buildBeatDots();
+  }
+
+  function buildBeatDots() {
+    beatIndicator.innerHTML = '';
+    for (let i = 0; i < beatsPerMeasure; i++) {
+      const dot = document.createElement('div');
+      dot.className = 'beat-dot' + (i === 0 ? ' accent' : '');
+      beatIndicator.appendChild(dot);
+    }
+  }
+
+  function initAudio() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+  }
+
+  function playClick(time, isAccent) {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    if (isAccent && accentEnabled) {
+      osc.frequency.value = 1000;
+      gain.gain.setValueAtTime(0.6, time);
+    } else {
+      osc.frequency.value = 800;
+      gain.gain.setValueAtTime(0.3, time);
+    }
+    gain.gain.exponentialRampToValueAtTime(0.001, time + 0.06);
+    osc.start(time);
+    osc.stop(time + 0.06);
+  }
+
+  function scheduler() {
+    while (nextNoteTime < audioCtx.currentTime + 0.1) {
+      const isAccent = currentBeat === 0;
+      playClick(nextNoteTime, isAccent);
+      highlightBeat(currentBeat);
+      const secondsPerBeat = 60.0 / bpm;
+      nextNoteTime += secondsPerBeat;
+      currentBeat = (currentBeat + 1) % beatsPerMeasure;
+    }
+    timerID = setTimeout(scheduler, 25);
+  }
+
+  function highlightBeat(beat) {
+    const dots = beatIndicator.querySelectorAll('.beat-dot');
+    dots.forEach(d => d.classList.remove('active'));
+    if (dots[beat]) dots[beat].classList.add('active');
+  }
+
+  function start() {
+    initAudio();
+    isPlaying = true;
+    currentBeat = 0;
+    nextNoteTime = audioCtx.currentTime;
+    playBtn.textContent = 'Stop';
+    playBtn.classList.add('active');
+    scheduler();
+  }
+
+  function stop() {
+    isPlaying = false;
+    clearTimeout(timerID);
+    playBtn.textContent = 'Start';
+    playBtn.classList.remove('active');
+    beatIndicator.querySelectorAll('.beat-dot').forEach(d => d.classList.remove('active'));
+  }
+
+  playBtn.addEventListener('click', () => {
+    if (isPlaying) stop(); else start();
+  });
+
+  bpmSlider.addEventListener('input', () => {
+    bpm = parseInt(bpmSlider.value);
+    bpmValue.textContent = bpm;
+    saveState();
+  });
+
+  timeSig.addEventListener('change', () => {
+    updateTimeSig();
+    if (isPlaying) { stop(); start(); }
+    saveState();
+  });
+
+  accentToggle.addEventListener('change', () => {
+    accentEnabled = accentToggle.checked;
+    saveState();
+  });
+
+  tapBtn.addEventListener('click', () => {
+    const now = performance.now();
+    tapTimes.push(now);
+    if (tapTimes.length > 4) tapTimes = tapTimes.slice(-4);
+    if (tapTimes.length >= 2) {
+      let total = 0;
+      for (let i = 1; i < tapTimes.length; i++) {
+        total += tapTimes[i] - tapTimes[i - 1];
+      }
+      const avgMs = total / (tapTimes.length - 1);
+      const tappedBpm = Math.round(60000 / avgMs);
+      bpm = Math.max(30, Math.min(300, tappedBpm));
+      bpmSlider.value = bpm;
+      bpmValue.textContent = bpm;
+      saveState();
+    }
+    // Auto-reset tap buffer after 3 seconds
+    clearTimeout(tapBtn._resetTimer);
+    tapBtn._resetTimer = setTimeout(() => { tapTimes = []; }, 3000);
+  });
+
+  loadState();
+})();
+</script>
+<script src="/related.js"></script>
+</body>
+</html>

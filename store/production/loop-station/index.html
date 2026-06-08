@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<title>Loop Station - FreeMusicStore</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --accent: #8b5cf6;
+  --accent-hover: #7c3aed;
+  --bg: #0f0f0f;
+  --surface: #1a1a1a;
+  --surface-2: #252525;
+  --border: #333;
+  --text: #f5f5f5;
+  --text-dim: #999;
+  --red: #ef4444;
+  --green: #22c55e;
+  --yellow: #f59e0b;
+}
+body {
+  font-family: 'Manrope', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.topbar {
+  display: flex; align-items: center; gap: 16px;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+.topbar .back { font-size: 14px; font-weight: 500; }
+.topbar h1 { font-size: 18px; font-weight: 700; }
+.container { max-width: 800px; margin: 0 auto; padding: 24px; }
+
+.master-controls {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 24px; flex-wrap: wrap;
+}
+.btn {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn:hover { background: var(--accent-hover); }
+.btn.secondary {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+.btn.secondary:hover { background: var(--border); }
+.btn.record-btn { background: var(--red); }
+.btn.record-btn:hover { background: #dc2626; }
+.btn.record-btn.recording {
+  animation: pulse-red 1s infinite;
+}
+@keyframes pulse-red {
+  0%,100% { background: var(--red); }
+  50% { background: #991b1b; }
+}
+.btn.play-btn { background: var(--green); }
+.btn.play-btn:hover { background: #16a34a; }
+.btn.play-btn.playing { background: var(--yellow); }
+
+.loop-info {
+  font-size: 13px; color: var(--text-dim); font-weight: 500;
+}
+
+/* Progress bar */
+.progress-container {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  height: 8px;
+  margin-bottom: 24px;
+  overflow: hidden;
+}
+.progress-bar {
+  height: 100%;
+  background: var(--accent);
+  width: 0%;
+  transition: width 0.05s linear;
+  border-radius: 8px;
+}
+
+/* Tracks */
+.tracks-header {
+  font-size: 13px; font-weight: 700; text-transform: uppercase;
+  color: var(--text-dim); margin-bottom: 12px; letter-spacing: 0.5px;
+}
+.no-tracks {
+  text-align: center;
+  padding: 40px;
+  color: var(--text-dim);
+  font-size: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.track {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 10px;
+}
+.track-header {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+}
+.track-name {
+  font-size: 14px; font-weight: 700; flex: 1;
+}
+.track-btn {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.track-btn:hover { border-color: #555; color: var(--text); }
+.track-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.track-btn.muted { background: var(--red); border-color: var(--red); color: #fff; }
+.track-btn.delete { border-color: var(--red); color: var(--red); }
+.track-btn.delete:hover { background: var(--red); color: #fff; }
+
+.track-waveform {
+  width: 100%; height: 60px;
+  background: var(--surface-2);
+  border-radius: 6px;
+  margin-bottom: 10px;
+}
+
+.volume-row {
+  display: flex; align-items: center; gap: 8px;
+}
+.volume-row label {
+  font-size: 12px; color: var(--text-dim); font-weight: 600;
+}
+.volume-row input[type="range"] {
+  flex: 1; accent-color: var(--accent);
+}
+.volume-row .vol-val {
+  font-size: 12px; font-weight: 700; min-width: 36px; text-align: right;
+}
+
+.status { margin-top: 16px; font-size: 13px; color: var(--text-dim); min-height: 20px; }
+.error-msg { color: var(--red); }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <a href="/" class="back">&larr; Back to Store</a>
+  <h1>Loop Station</h1>
+</div>
+<div class="container">
+  <div class="master-controls">
+    <button class="btn record-btn" id="recordBtn">Record Loop</button>
+    <button class="btn play-btn" id="playBtn" disabled>Play All</button>
+    <button class="btn secondary" id="stopBtn">Stop</button>
+    <button class="btn secondary" id="clearAllBtn">Clear All</button>
+    <span class="loop-info" id="loopInfo"></span>
+  </div>
+
+  <div class="progress-container">
+    <div class="progress-bar" id="progressBar"></div>
+  </div>
+
+  <div class="tracks-header">Tracks</div>
+  <div id="tracksContainer">
+    <div class="no-tracks" id="noTracks">Record your first loop to get started.</div>
+  </div>
+
+  <div class="status" id="status"></div>
+</div>
+
+<script>
+const STORAGE_KEY = 'fmus-loop-station-settings';
+let audioCtx = null;
+let mediaStream = null;
+let mediaRecorder = null;
+let recordedChunks = [];
+let loops = []; // { buffer, source, gainNode, muted, solo, volume, canvas }
+let loopDuration = 0; // seconds — set by first loop
+let playing = false;
+let recording = false;
+let playStartTime = 0;
+let animFrameId = null;
+
+function getCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+async function getMic() {
+  if (mediaStream) return mediaStream;
+  try {
+    mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    return mediaStream;
+  } catch (err) {
+    setStatus('Microphone access denied.', true);
+    throw err;
+  }
+}
+
+function setStatus(msg, error) {
+  const el = document.getElementById('status');
+  el.textContent = msg;
+  el.className = 'status' + (error ? ' error-msg' : '');
+}
+
+// Record
+document.getElementById('recordBtn').addEventListener('click', async () => {
+  if (recording) {
+    stopRecording();
+    return;
+  }
+  try {
+    const stream = await getMic();
+    const ctx = getCtx();
+    if (ctx.state === 'suspended') await ctx.resume();
+
+    recording = true;
+    recordedChunks = [];
+
+    mediaRecorder = new MediaRecorder(stream);
+    mediaRecorder.ondataavailable = (e) => {
+      if (e.data.size > 0) recordedChunks.push(e.data);
+    };
+    mediaRecorder.onstop = async () => {
+      const blob = new Blob(recordedChunks, { type: 'audio/webm' });
+      const arrayBuf = await blob.arrayBuffer();
+      const audioBuf = await ctx.decodeAudioData(arrayBuf);
+
+      if (loops.length === 0) {
+        loopDuration = audioBuf.duration;
+        document.getElementById('loopInfo').textContent = `Loop: ${loopDuration.toFixed(1)}s`;
+      }
+
+      addLoop(audioBuf);
+      document.getElementById('playBtn').disabled = false;
+      setStatus(`Loop ${loops.length} recorded (${audioBuf.duration.toFixed(1)}s).`);
+    };
+
+    mediaRecorder.start();
+    document.getElementById('recordBtn').textContent = 'Stop Rec';
+    document.getElementById('recordBtn').classList.add('recording');
+    setStatus('Recording...');
+
+    // If loop length is set and playing, auto-stop at loop boundary
+    if (loopDuration > 0) {
+      setTimeout(() => {
+        if (recording) stopRecording();
+      }, loopDuration * 1000);
+    }
+  } catch {}
+});
+
+function stopRecording() {
+  if (!recording) return;
+  recording = false;
+  mediaRecorder.stop();
+  document.getElementById('recordBtn').textContent = 'Record Loop';
+  document.getElementById('recordBtn').classList.remove('recording');
+}
+
+function addLoop(audioBuf) {
+  const idx = loops.length;
+  const ctx = getCtx();
+  const gainNode = ctx.createGain();
+  gainNode.connect(ctx.destination);
+
+  const loop = {
+    buffer: audioBuf,
+    source: null,
+    gainNode,
+    muted: false,
+    solo: false,
+    volume: 1,
+  };
+  loops.push(loop);
+
+  renderTracks();
+
+  // If already playing, start this loop immediately
+  if (playing) {
+    scheduleLoop(idx);
+  }
+}
+
+function renderTracks() {
+  const container = document.getElementById('tracksContainer');
+  document.getElementById('noTracks').style.display = loops.length === 0 ? 'block' : 'none';
+
+  // Remove existing track elements (keep noTracks)
+  container.querySelectorAll('.track').forEach(el => el.remove());
+
+  loops.forEach((loop, idx) => {
+    const track = document.createElement('div');
+    track.className = 'track';
+    track.dataset.idx = idx;
+
+    const canvas = document.createElement('canvas');
+    canvas.className = 'track-waveform';
+    canvas.width = 800;
+    canvas.height = 120;
+    drawWaveform(canvas, loop.buffer);
+
+    track.innerHTML = `
+      <div class="track-header">
+        <span class="track-name">Loop ${idx + 1}</span>
+        <button class="track-btn ${loop.muted ? 'muted' : ''}" data-action="mute">M</button>
+        <button class="track-btn ${loop.solo ? 'active' : ''}" data-action="solo">S</button>
+        <button class="track-btn delete" data-action="delete">Del</button>
+      </div>
+      <div class="volume-row">
+        <label>Vol</label>
+        <input type="range" min="0" max="1" step="0.01" value="${loop.volume}" data-action="volume">
+        <span class="vol-val">${Math.round(loop.volume * 100)}%</span>
+      </div>
+    `;
+
+    // Insert canvas before volume row
+    const header = track.querySelector('.track-header');
+    header.after(canvas);
+
+    // Event handlers
+    track.querySelector('[data-action="mute"]').addEventListener('click', (e) => {
+      loop.muted = !loop.muted;
+      e.target.classList.toggle('muted');
+      updateGains();
+    });
+    track.querySelector('[data-action="solo"]').addEventListener('click', (e) => {
+      loop.solo = !loop.solo;
+      e.target.classList.toggle('active');
+      updateGains();
+    });
+    track.querySelector('[data-action="delete"]').addEventListener('click', () => {
+      if (loop.source) { try { loop.source.stop(); } catch {} }
+      loop.gainNode.disconnect();
+      loops.splice(idx, 1);
+      if (loops.length === 0) {
+        loopDuration = 0;
+        document.getElementById('loopInfo').textContent = '';
+        document.getElementById('playBtn').disabled = true;
+        stopAll();
+      }
+      renderTracks();
+    });
+    track.querySelector('[data-action="volume"]').addEventListener('input', (e) => {
+      loop.volume = parseFloat(e.target.value);
+      track.querySelector('.vol-val').textContent = Math.round(loop.volume * 100) + '%';
+      updateGains();
+    });
+
+    container.appendChild(track);
+  });
+}
+
+function drawWaveform(canvas, buffer) {
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width;
+  const h = canvas.height;
+  const data = buffer.getChannelData(0);
+  const step = Math.ceil(data.length / w);
+
+  ctx.fillStyle = '#252525';
+  ctx.fillRect(0, 0, w, h);
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = '#8b5cf6';
+  ctx.beginPath();
+
+  for (let i = 0; i < w; i++) {
+    let min = 1, max = -1;
+    for (let j = 0; j < step; j++) {
+      const val = data[i * step + j] || 0;
+      if (val < min) min = val;
+      if (val > max) max = val;
+    }
+    const yMin = ((1 + min) / 2) * h;
+    const yMax = ((1 + max) / 2) * h;
+    ctx.moveTo(i, yMin);
+    ctx.lineTo(i, yMax);
+  }
+  ctx.stroke();
+}
+
+function updateGains() {
+  const anySolo = loops.some(l => l.solo);
+  loops.forEach(loop => {
+    let gain = loop.volume;
+    if (loop.muted) gain = 0;
+    if (anySolo && !loop.solo) gain = 0;
+    loop.gainNode.gain.value = gain;
+  });
+}
+
+function scheduleLoop(idx) {
+  const ctx = getCtx();
+  const loop = loops[idx];
+  if (!loop) return;
+
+  const source = ctx.createBufferSource();
+  source.buffer = loop.buffer;
+  source.loop = true;
+  if (loopDuration > 0) {
+    source.loopEnd = loopDuration;
+  }
+  source.connect(loop.gainNode);
+  source.start(0);
+  loop.source = source;
+}
+
+function playAll() {
+  const ctx = getCtx();
+  if (ctx.state === 'suspended') ctx.resume();
+  playing = true;
+  playStartTime = ctx.currentTime;
+
+  loops.forEach((loop, idx) => {
+    if (loop.source) { try { loop.source.stop(); } catch {} }
+    scheduleLoop(idx);
+  });
+
+  updateGains();
+  document.getElementById('playBtn').textContent = 'Playing';
+  document.getElementById('playBtn').classList.add('playing');
+  animateProgress();
+}
+
+function stopAll() {
+  playing = false;
+  loops.forEach(loop => {
+    if (loop.source) { try { loop.source.stop(); } catch {} loop.source = null; }
+  });
+  if (animFrameId) cancelAnimationFrame(animFrameId);
+  document.getElementById('progressBar').style.width = '0%';
+  document.getElementById('playBtn').textContent = 'Play All';
+  document.getElementById('playBtn').classList.remove('playing');
+}
+
+function animateProgress() {
+  if (!playing) return;
+  const ctx = getCtx();
+  const elapsed = ctx.currentTime - playStartTime;
+  if (loopDuration > 0) {
+    const pct = ((elapsed % loopDuration) / loopDuration) * 100;
+    document.getElementById('progressBar').style.width = pct + '%';
+  }
+  animFrameId = requestAnimationFrame(animateProgress);
+}
+
+document.getElementById('playBtn').addEventListener('click', () => {
+  if (playing) { stopAll(); return; }
+  playAll();
+});
+
+document.getElementById('stopBtn').addEventListener('click', () => {
+  if (recording) stopRecording();
+  stopAll();
+  setStatus('Stopped.');
+});
+
+document.getElementById('clearAllBtn').addEventListener('click', () => {
+  stopAll();
+  if (recording) stopRecording();
+  loops.forEach(loop => {
+    if (loop.source) { try { loop.source.stop(); } catch {} }
+    loop.gainNode.disconnect();
+  });
+  loops = [];
+  loopDuration = 0;
+  document.getElementById('loopInfo').textContent = '';
+  document.getElementById('playBtn').disabled = true;
+  renderTracks();
+  setStatus('All loops cleared.');
+});
+
+renderTracks();
+</script>
+<script src="/related.js"></script>
+</body>
+</html>

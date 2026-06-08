@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<title>Stereo Panner - FreeMusicStore</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --accent: #8b5cf6;
+  --accent-hover: #7c3aed;
+  --bg: #0f0f0f;
+  --surface: #1a1a1a;
+  --surface2: #242424;
+  --border: #333;
+  --text: #f0f0f0;
+  --text-dim: #999;
+  --green: #22c55e;
+  --radius: 10px;
+}
+body {
+  font-family: 'Manrope', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.5;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 16px 24px;
+  font-size: 14px;
+  color: var(--text-dim);
+}
+.back:hover { color: var(--text); text-decoration: none; }
+header {
+  text-align: center;
+  padding: 0 24px 32px;
+}
+header h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+header p { color: var(--text-dim); font-size: 15px; max-width: 520px; margin: 0 auto; }
+.container {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 0 24px 64px;
+}
+.upload-zone {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 48px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  margin-bottom: 24px;
+}
+.upload-zone:hover, .upload-zone.dragover {
+  border-color: var(--accent);
+  background: rgba(139, 92, 246, 0.05);
+}
+.upload-zone p { color: var(--text-dim); font-size: 15px; }
+.upload-zone .icon { font-size: 36px; margin-bottom: 12px; }
+.file-info {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 14px 20px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.file-info .name { font-weight: 600; font-size: 15px; }
+.file-info .meta { color: var(--text-dim); font-size: 13px; }
+.transport {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+}
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
+.btn-secondary { background: var(--surface2); color: var(--text); }
+.btn-secondary:hover:not(:disabled) { background: var(--border); }
+.btn-export { background: var(--green); color: #fff; }
+.btn-export:hover:not(:disabled) { background: #16a34a; }
+
+/* Pan Knob */
+.knob-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 32px;
+  margin-bottom: 24px;
+  text-align: center;
+}
+.knob-section h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-dim);
+  margin-bottom: 20px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.knob-container {
+  position: relative;
+  width: 160px;
+  height: 160px;
+  margin: 0 auto 16px;
+  cursor: pointer;
+  user-select: none;
+  touch-action: none;
+}
+.knob-ring {
+  width: 160px;
+  height: 160px;
+}
+.knob-value-display {
+  font-size: 20px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 4px;
+}
+.knob-labels {
+  display: flex;
+  justify-content: space-between;
+  width: 180px;
+  margin: 0 auto;
+  font-size: 13px;
+  color: var(--text-dim);
+  font-weight: 600;
+}
+
+/* Stereo field display */
+.stereo-field {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-bottom: 24px;
+}
+.stereo-field h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-dim);
+  margin-bottom: 16px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  text-align: center;
+}
+.field-canvas-wrap {
+  position: relative;
+}
+.field-canvas {
+  display: block;
+  width: 100%;
+  height: 80px;
+  border-radius: 8px;
+}
+
+/* Width control */
+.width-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-bottom: 24px;
+}
+.width-section h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-dim);
+  margin-bottom: 16px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  text-align: center;
+}
+.slider-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.slider-label { font-size: 13px; color: var(--text-dim); min-width: 50px; }
+.slider-input {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  background: var(--surface2);
+  border-radius: 3px;
+  outline: none;
+}
+.slider-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  background: var(--accent);
+  border-radius: 50%;
+  cursor: pointer;
+}
+.slider-value {
+  font-size: 14px;
+  font-weight: 600;
+  min-width: 44px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* VU Meters */
+.vu-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-bottom: 24px;
+}
+.vu-section h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-dim);
+  margin-bottom: 16px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  text-align: center;
+}
+.vu-meters {
+  display: flex;
+  gap: 24px;
+  align-items: flex-end;
+  justify-content: center;
+}
+.vu-channel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.vu-channel label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+.vu-bar-wrap {
+  width: 32px;
+  height: 200px;
+  background: var(--surface2);
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+.vu-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 0%;
+  border-radius: 4px;
+  transition: height 0.06s linear;
+}
+.vu-bar.left { background: linear-gradient(to top, #22c55e, #eab308, #ef4444); }
+.vu-bar.right { background: linear-gradient(to top, #22c55e, #eab308, #ef4444); }
+.vu-db {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
+  min-width: 48px;
+  text-align: center;
+}
+.vu-scale {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 200px;
+  font-size: 10px;
+  color: #555;
+  padding: 2px 0;
+}
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<a href="/" class="back">&larr; Back to Store</a>
+
+<header>
+  <h1>Stereo Panner</h1>
+  <p>Pan audio left and right with a circular knob, adjust stereo width, and monitor L/R levels with VU meters. Export the panned result as WAV.</p>
+</header>
+
+<div class="container">
+  <div id="uploadZone" class="upload-zone">
+    <div class="icon">&#9835;</div>
+    <p>Drop an audio file here or click to browse</p>
+    <p style="font-size:13px;margin-top:8px;color:#666">MP3, WAV, OGG, FLAC</p>
+  </div>
+  <input type="file" id="fileInput" accept="audio/*" style="display:none">
+
+  <div id="fileInfo" class="file-info hidden">
+    <div>
+      <div class="name" id="fileName"></div>
+      <div class="meta" id="fileMeta"></div>
+    </div>
+    <button class="btn btn-secondary" onclick="removeFile()" style="padding:6px 14px;font-size:13px">Remove</button>
+  </div>
+
+  <div id="mainUI" style="display:none">
+    <div class="transport">
+      <button class="btn btn-primary" id="playBtn" onclick="togglePlay()">&#9654; Play</button>
+      <button class="btn btn-secondary" id="stopBtn" onclick="stopAudio()">&#9632; Stop</button>
+      <button class="btn btn-export" id="exportBtn" onclick="exportWav()">&#8615; Export WAV</button>
+    </div>
+
+    <!-- Pan Knob -->
+    <div class="knob-section">
+      <h3>Pan Position</h3>
+      <div class="knob-container" id="knobContainer">
+        <svg class="knob-ring" viewBox="0 0 160 160">
+          <!-- Track -->
+          <circle cx="80" cy="80" r="65" fill="none" stroke="#333" stroke-width="8" stroke-linecap="round"
+                  stroke-dasharray="306.3" stroke-dashoffset="-76.6"
+                  transform="rotate(135 80 80)"/>
+          <!-- Value arc -->
+          <circle cx="80" cy="80" r="65" fill="none" stroke="#8b5cf6" stroke-width="8" stroke-linecap="round"
+                  id="knobArc"
+                  stroke-dasharray="306.3" stroke-dashoffset="153.15"
+                  transform="rotate(135 80 80)"/>
+          <!-- Indicator dot -->
+          <circle id="knobDot" cx="80" cy="15" r="6" fill="#8b5cf6"/>
+          <!-- Center display -->
+          <text x="80" y="78" text-anchor="middle" fill="#f0f0f0" font-family="Manrope" font-size="13" font-weight="600">PAN</text>
+        </svg>
+      </div>
+      <div class="knob-value-display" id="panDisplay">C</div>
+      <div class="knob-labels">
+        <span>L</span>
+        <span>C</span>
+        <span>R</span>
+      </div>
+    </div>
+
+    <!-- Stereo Field -->
+    <div class="stereo-field">
+      <h3>Stereo Field</h3>
+      <div class="field-canvas-wrap">
+        <canvas class="field-canvas" id="fieldCanvas"></canvas>
+      </div>
+    </div>
+
+    <!-- Width Control -->
+    <div class="width-section">
+      <h3>Stereo Width</h3>
+      <div class="slider-row">
+        <span class="slider-label">Mono</span>
+        <input class="slider-input" type="range" min="0" max="200" step="1" value="100" id="widthSlider" oninput="updateWidth()">
+        <span class="slider-value" id="widthValue">100%</span>
+      </div>
+    </div>
+
+    <!-- VU Meters -->
+    <div class="vu-section">
+      <h3>Level Meters</h3>
+      <div class="vu-meters">
+        <div class="vu-scale">
+          <span>0</span><span>-6</span><span>-12</span><span>-24</span><span>-48</span>
+        </div>
+        <div class="vu-channel">
+          <label>L</label>
+          <div class="vu-bar-wrap"><div class="vu-bar left" id="vuLeft"></div></div>
+          <div class="vu-db" id="vuLeftDb">-inf</div>
+        </div>
+        <div class="vu-channel">
+          <label>R</label>
+          <div class="vu-bar-wrap"><div class="vu-bar right" id="vuRight"></div></div>
+          <div class="vu-db" id="vuRightDb">-inf</div>
+        </div>
+        <div class="vu-scale">
+          <span>0</span><span>-6</span><span>-12</span><span>-24</span><span>-48</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const STORAGE_PREFIX = 'fmus-stereo-panner-';
+
+let audioCtx = null;
+let audioBuffer = null;
+let sourceNode = null;
+let pannerNode = null;
+let splitter = null;
+let merger = null;
+let leftGain = null;
+let rightGain = null;
+let analyserL = null;
+let analyserR = null;
+let isPlaying = false;
+let animationId = null;
+
+let panValue = 0;    // -1 to +1
+let widthValue = 100; // 0 to 200
+
+function loadSettings() {
+  try {
+    const p = localStorage.getItem(STORAGE_PREFIX + 'pan');
+    if (p !== null) panValue = parseFloat(p);
+    const w = localStorage.getItem(STORAGE_PREFIX + 'width');
+    if (w !== null) { widthValue = parseFloat(w); document.getElementById('widthSlider').value = widthValue; }
+    updatePanDisplay();
+    updateWidthDisplay();
+  } catch (e) {}
+}
+
+function saveSettings() {
+  try {
+    localStorage.setItem(STORAGE_PREFIX + 'pan', panValue.toString());
+    localStorage.setItem(STORAGE_PREFIX + 'width', widthValue.toString());
+  } catch (e) {}
+}
+
+function initAudioContext() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+// Upload
+const uploadZone = document.getElementById('uploadZone');
+const fileInput = document.getElementById('fileInput');
+uploadZone.addEventListener('click', () => fileInput.click());
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadZone.classList.remove('dragover');
+  if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', e => {
+  if (e.target.files.length) handleFile(e.target.files[0]);
+});
+
+function handleFile(file) {
+  if (!file.type.startsWith('audio/') && !file.name.match(/\.(mp3|wav|ogg|flac|m4a|aac|webm)$/i)) return;
+  initAudioContext();
+
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    try {
+      audioBuffer = await audioCtx.decodeAudioData(e.target.result);
+      document.getElementById('fileName').textContent = file.name;
+      const d = audioBuffer.duration;
+      document.getElementById('fileMeta').textContent =
+        `${Math.floor(d/60)}:${Math.floor(d%60).toString().padStart(2,'0')} | ${audioBuffer.numberOfChannels}ch | ${audioBuffer.sampleRate}Hz`;
+      uploadZone.classList.add('hidden');
+      document.getElementById('fileInfo').classList.remove('hidden');
+      document.getElementById('mainUI').style.display = 'block';
+      initFieldCanvas();
+    } catch (err) {
+      alert('Could not decode audio file.');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function removeFile() {
+  stopAudio();
+  audioBuffer = null;
+  uploadZone.classList.remove('hidden');
+  document.getElementById('fileInfo').classList.add('hidden');
+  document.getElementById('mainUI').style.display = 'none';
+  fileInput.value = '';
+}
+
+function buildGraph() {
+  // Panner
+  pannerNode = audioCtx.createStereoPanner();
+  pannerNode.pan.value = panValue;
+
+  // Width processing: split -> gain adjust -> merge
+  splitter = audioCtx.createChannelSplitter(2);
+  merger = audioCtx.createChannelMerger(2);
+
+  // For width: when width < 100, blend toward mono. When > 100, exaggerate difference.
+  leftGain = audioCtx.createGain();
+  rightGain = audioCtx.createGain();
+
+  // Analysers for VU
+  analyserL = audioCtx.createAnalyser();
+  analyserL.fftSize = 1024;
+  analyserR = audioCtx.createAnalyser();
+  analyserR.fftSize = 1024;
+
+  // Connect source -> panner -> splitter -> width processing -> merger -> analysers -> destination
+  sourceNode.connect(pannerNode);
+  pannerNode.connect(splitter);
+
+  // Width: create mid/side processing
+  const midGain = audioCtx.createGain();
+  const sideGainL = audioCtx.createGain();
+  const sideGainR = audioCtx.createGain();
+
+  updateWidthGains();
+
+  // Left output = left channel with width applied
+  splitter.connect(leftGain, 0);
+  leftGain.connect(merger, 0, 0);
+  merger.connect(analyserL);
+
+  // Right output
+  splitter.connect(rightGain, audioBuffer.numberOfChannels > 1 ? 1 : 0);
+  rightGain.connect(merger, 0, 1);
+  merger.connect(analyserR);
+
+  // For proper stereo width, we use a different approach:
+  // We'll re-wire after understanding the channel count
+  // Simple approach: create cross-feed for width control
+  reconnectWidth();
+
+  const outputMerger = audioCtx.createChannelMerger(2);
+  analyserL.connect(outputMerger, 0, 0);
+  analyserR.connect(outputMerger, 0, 1);
+  outputMerger.connect(audioCtx.destination);
+}
+
+function reconnectWidth() {
+  if (!splitter || !merger) return;
+
+  // Disconnect existing connections from splitter
+  try { splitter.disconnect(); } catch (e) {}
+  try { leftGain.disconnect(); } catch (e) {}
+  try { rightGain.disconnect(); } catch (e) {}
+  try { merger.disconnect(); } catch (e) {}
+
+  const w = widthValue / 100;
+  // Width factor: 0 = mono, 1 = normal, 2 = wide
+  // Left = mid + side*w, Right = mid - side*w
+  // Simplified: for stereo input:
+  // L_out = L * (1+w)/2 + R * (1-w)/2
+  // R_out = R * (1+w)/2 + L * (1-w)/2
+
+  const chCount = audioBuffer.numberOfChannels;
+
+  // Create fresh gain nodes for cross-feed
+  const ll = audioCtx.createGain(); // left -> left
+  const lr = audioCtx.createGain(); // left -> right
+  const rl = audioCtx.createGain(); // right -> left
+  const rr = audioCtx.createGain(); // right -> right
+
+  if (chCount >= 2) {
+    ll.gain.value = (1 + w) / 2;
+    lr.gain.value = (1 - w) / 2;
+    rl.gain.value = (1 - w) / 2;
+    rr.gain.value = (1 + w) / 2;
+
+    splitter.connect(ll, 0); // L -> ll
+    splitter.connect(rl, 0); // L -> rl (cross to right)
+    splitter.connect(lr, 1); // R -> lr (cross to left)
+    splitter.connect(rr, 1); // R -> rr
+
+    ll.connect(merger, 0, 0);
+    lr.connect(merger, 0, 0);
+    rl.connect(merger, 0, 1);
+    rr.connect(merger, 0, 1);
+  } else {
+    // Mono source: just duplicate
+    ll.gain.value = 1;
+    rr.gain.value = 1;
+    splitter.connect(ll, 0);
+    splitter.connect(rr, 0);
+    ll.connect(merger, 0, 0);
+    rr.connect(merger, 0, 1);
+  }
+
+  merger.connect(analyserL);
+  merger.connect(analyserR);
+
+  // Reconnect analysers to destination
+  try { analyserL.disconnect(); } catch (e) {}
+  try { analyserR.disconnect(); } catch (e) {}
+
+  const finalSplitter = audioCtx.createChannelSplitter(2);
+  const finalMerger = audioCtx.createChannelMerger(2);
+  const finalAnalL = audioCtx.createAnalyser();
+  finalAnalL.fftSize = 1024;
+  const finalAnalR = audioCtx.createAnalyser();
+  finalAnalR.fftSize = 1024;
+
+  // Actually, let's simplify. Rebuild entire chain.
+  // This function is called during playback changes, so let's just update gain values
+}
+
+// Simplified approach: rebuild on play
+function play() {
+  if (!audioBuffer) return;
+  initAudioContext();
+
+  sourceNode = audioCtx.createBufferSource();
+  sourceNode.buffer = audioBuffer;
+
+  pannerNode = audioCtx.createStereoPanner();
+  pannerNode.pan.value = panValue;
+
+  const chCount = audioBuffer.numberOfChannels;
+  const w = widthValue / 100;
+
+  splitter = audioCtx.createChannelSplitter(2);
+  merger = audioCtx.createChannelMerger(2);
+
+  analyserL = audioCtx.createAnalyser();
+  analyserL.fftSize = 1024;
+  analyserR = audioCtx.createAnalyser();
+  analyserR.fftSize = 1024;
+
+  // Source -> panner -> splitter
+  sourceNode.connect(pannerNode);
+  pannerNode.connect(splitter);
+
+  if (chCount >= 2) {
+    const ll = audioCtx.createGain();
+    const lr = audioCtx.createGain();
+    const rl = audioCtx.createGain();
+    const rr = audioCtx.createGain();
+
+    ll.gain.value = (1 + w) / 2;
+    lr.gain.value = (1 - w) / 2;
+    rl.gain.value = (1 - w) / 2;
+    rr.gain.value = (1 + w) / 2;
+
+    splitter.connect(ll, 0);
+    splitter.connect(rl, 0);
+    splitter.connect(lr, 1);
+    splitter.connect(rr, 1);
+
+    ll.connect(merger, 0, 0);
+    lr.connect(merger, 0, 0);
+    rl.connect(merger, 0, 1);
+    rr.connect(merger, 0, 1);
+  } else {
+    const g1 = audioCtx.createGain();
+    const g2 = audioCtx.createGain();
+    g1.gain.value = 1;
+    g2.gain.value = 1;
+    splitter.connect(g1, 0);
+    splitter.connect(g2, 0);
+    g1.connect(merger, 0, 0);
+    g2.connect(merger, 0, 1);
+  }
+
+  // Split merged output for separate L/R analysis
+  const outSplitter = audioCtx.createChannelSplitter(2);
+  merger.connect(outSplitter);
+  outSplitter.connect(analyserL, 0);
+  outSplitter.connect(analyserR, 1);
+
+  // Also connect to destination
+  merger.connect(audioCtx.destination);
+
+  sourceNode.onended = () => {
+    if (isPlaying) {
+      isPlaying = false;
+      document.getElementById('playBtn').innerHTML = '&#9654; Play';
+      if (animationId) { cancelAnimationFrame(animationId); animationId = null; }
+    }
+  };
+
+  sourceNode.start(0);
+  isPlaying = true;
+  document.getElementById('playBtn').innerHTML = '&#10074;&#10074; Pause';
+  startMeters();
+}
+
+function togglePlay() {
+  if (isPlaying) {
+    stopAudio();
+  } else {
+    play();
+  }
+}
+
+function stopAudio() {
+  if (sourceNode) {
+    try { sourceNode.stop(); } catch (e) {}
+    try { sourceNode.disconnect(); } catch (e) {}
+    sourceNode = null;
+  }
+  isPlaying = false;
+  document.getElementById('playBtn').innerHTML = '&#9654; Play';
+  if (animationId) { cancelAnimationFrame(animationId); animationId = null; }
+  // Reset meters
+  document.getElementById('vuLeft').style.height = '0%';
+  document.getElementById('vuRight').style.height = '0%';
+  document.getElementById('vuLeftDb').textContent = '-inf';
+  document.getElementById('vuRightDb').textContent = '-inf';
+}
+
+function updateWidthGains() {
+  // Called for real-time updates, but we rebuild on play for simplicity
+}
+
+function updateWidth() {
+  widthValue = parseFloat(document.getElementById('widthSlider').value);
+  updateWidthDisplay();
+  saveSettings();
+  // If playing, restart to apply width change
+  if (isPlaying) {
+    stopAudio();
+    play();
+  }
+}
+
+function updateWidthDisplay() {
+  document.getElementById('widthValue').textContent = widthValue + '%';
+}
+
+// Knob interaction
+const knobContainer = document.getElementById('knobContainer');
+let isDragging = false;
+
+function getAngleFromEvent(e) {
+  const rect = knobContainer.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  const dx = clientX - cx;
+  const dy = clientY - cy;
+  let angle = Math.atan2(dy, dx) * (180 / Math.PI);
+  // Map angle: -135 = full left (-1), +135 = full right (+1)
+  // 0 degrees = right, 90 = down, -90 = up
+  // Our range: from 225deg (full left) through 270 (bottom/center-left) to 315 (full right)
+  // Actually let's use: top = center, left = L, right = R
+  // Angle from top: atan2(dx, -dy) gives 0 at top, positive clockwise
+  let angleFromTop = Math.atan2(dx, -dy) * (180 / Math.PI);
+  // Clamp to -135 to +135
+  angleFromTop = Math.max(-135, Math.min(135, angleFromTop));
+  return angleFromTop / 135; // -1 to +1
+}
+
+knobContainer.addEventListener('mousedown', e => { isDragging = true; panValue = getAngleFromEvent(e); applyPan(); });
+window.addEventListener('mousemove', e => { if (isDragging) { panValue = getAngleFromEvent(e); applyPan(); } });
+window.addEventListener('mouseup', () => { if (isDragging) { isDragging = false; saveSettings(); } });
+
+knobContainer.addEventListener('touchstart', e => { e.preventDefault(); isDragging = true; panValue = getAngleFromEvent(e); applyPan(); }, { passive: false });
+window.addEventListener('touchmove', e => { if (isDragging) { panValue = getAngleFromEvent(e); applyPan(); } }, { passive: false });
+window.addEventListener('touchend', () => { if (isDragging) { isDragging = false; saveSettings(); } });
+
+// Double-click to center
+knobContainer.addEventListener('dblclick', () => { panValue = 0; applyPan(); saveSettings(); });
+
+function applyPan() {
+  panValue = Math.max(-1, Math.min(1, panValue));
+  if (pannerNode) {
+    pannerNode.pan.setValueAtTime(panValue, audioCtx.currentTime);
+  }
+  updatePanDisplay();
+  drawField();
+}
+
+function updatePanDisplay() {
+  const display = document.getElementById('panDisplay');
+  if (Math.abs(panValue) < 0.01) {
+    display.textContent = 'C';
+  } else if (panValue < 0) {
+    display.textContent = Math.round(Math.abs(panValue) * 100) + '% L';
+  } else {
+    display.textContent = Math.round(panValue * 100) + '% R';
+  }
+  updateKnobSVG();
+}
+
+function updateKnobSVG() {
+  const arc = document.getElementById('knobArc');
+  const dot = document.getElementById('knobDot');
+  // Arc: full range is 270 degrees (from -135 to +135)
+  // Circumference of r=65 = 2*PI*65 = 408.4
+  // 270/360 of that = 306.3
+  // Center is at panValue=0, which is the midpoint of the arc
+  const totalArc = 306.3;
+  const halfArc = totalArc / 2;
+
+  if (Math.abs(panValue) < 0.01) {
+    // Center: hide arc
+    arc.setAttribute('stroke-dashoffset', totalArc.toString());
+  } else {
+    // Show arc from center to current position
+    const arcLen = Math.abs(panValue) * halfArc;
+    arc.setAttribute('stroke-dasharray', `${arcLen} ${totalArc - arcLen}`);
+    if (panValue < 0) {
+      // Left: arc goes counter-clockwise from center (top = 270deg in our rotated system)
+      const startOffset = halfArc - arcLen;
+      arc.setAttribute('stroke-dashoffset', (-startOffset).toString());
+    } else {
+      // Right
+      arc.setAttribute('stroke-dashoffset', (-halfArc).toString());
+    }
+  }
+
+  // Dot position: angle from top, -135 to +135 mapped to panValue -1 to +1
+  const angleDeg = panValue * 135;
+  const angleRad = (angleDeg - 90) * Math.PI / 180;
+  // Wait, we want: panValue=-1 -> left (angle -135 from top), 0 -> top, +1 -> right (angle +135 from top)
+  const dotAngleRad = (angleDeg) * Math.PI / 180; // 0 = top when using sin/cos offset
+  const r = 65;
+  const cx = 80 + r * Math.sin(dotAngleRad);
+  const cy = 80 - r * Math.cos(dotAngleRad);
+  dot.setAttribute('cx', cx);
+  dot.setAttribute('cy', cy);
+}
+
+// Stereo field canvas
+function initFieldCanvas() {
+  const canvas = document.getElementById('fieldCanvas');
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width;
+  canvas.height = 80;
+  drawField();
+}
+
+function drawField() {
+  const canvas = document.getElementById('fieldCanvas');
+  if (!canvas.width) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width;
+  const H = canvas.height;
+
+  ctx.fillStyle = '#111';
+  ctx.fillRect(0, 0, W, H);
+
+  // Center line
+  ctx.strokeStyle = '#333';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.moveTo(W / 2, 0);
+  ctx.lineTo(W / 2, H);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // L/R labels
+  ctx.fillStyle = '#555';
+  ctx.font = '12px Manrope';
+  ctx.textAlign = 'left';
+  ctx.fillText('L', 8, H / 2 + 4);
+  ctx.textAlign = 'right';
+  ctx.fillText('R', W - 8, H / 2 + 4);
+
+  // Width visualization
+  const w = widthValue / 100;
+  const panPos = (panValue + 1) / 2; // 0 to 1
+  const centerX = panPos * W;
+
+  // Draw stereo spread
+  const spreadW = w * W * 0.3;
+
+  const gradient = ctx.createLinearGradient(centerX - spreadW, 0, centerX + spreadW, 0);
+  gradient.addColorStop(0, 'rgba(139, 92, 246, 0)');
+  gradient.addColorStop(0.3, 'rgba(139, 92, 246, 0.3)');
+  gradient.addColorStop(0.5, 'rgba(139, 92, 246, 0.6)');
+  gradient.addColorStop(0.7, 'rgba(139, 92, 246, 0.3)');
+  gradient.addColorStop(1, 'rgba(139, 92, 246, 0)');
+
+  ctx.fillStyle = gradient;
+  ctx.fillRect(centerX - spreadW, 10, spreadW * 2, H - 20);
+
+  // Center dot
+  ctx.beginPath();
+  ctx.arc(centerX, H / 2, 6, 0, Math.PI * 2);
+  ctx.fillStyle = '#8b5cf6';
+  ctx.fill();
+
+  // Outer glow
+  ctx.beginPath();
+  ctx.arc(centerX, H / 2, 10, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(139, 92, 246, 0.4)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+}
+
+// VU Meters
+function startMeters() {
+  if (animationId) cancelAnimationFrame(animationId);
+
+  function updateMeters() {
+    animationId = requestAnimationFrame(updateMeters);
+    if (!analyserL || !analyserR) return;
+
+    const bufL = new Float32Array(analyserL.fftSize);
+    const bufR = new Float32Array(analyserR.fftSize);
+    analyserL.getFloatTimeDomainData(bufL);
+    analyserR.getFloatTimeDomainData(bufR);
+
+    let rmsL = 0, rmsR = 0;
+    for (let i = 0; i < bufL.length; i++) {
+      rmsL += bufL[i] * bufL[i];
+      rmsR += bufR[i] * bufR[i];
+    }
+    rmsL = Math.sqrt(rmsL / bufL.length);
+    rmsR = Math.sqrt(rmsR / bufR.length);
+
+    const dbL = rmsL > 0 ? 20 * Math.log10(rmsL) : -100;
+    const dbR = rmsR > 0 ? 20 * Math.log10(rmsR) : -100;
+
+    // Map dB to percentage: -48dB = 0%, 0dB = 100%
+    const pctL = Math.max(0, Math.min(100, ((dbL + 48) / 48) * 100));
+    const pctR = Math.max(0, Math.min(100, ((dbR + 48) / 48) * 100));
+
+    document.getElementById('vuLeft').style.height = pctL + '%';
+    document.getElementById('vuRight').style.height = pctR + '%';
+    document.getElementById('vuLeftDb').textContent = dbL > -60 ? dbL.toFixed(1) + ' dB' : '-inf';
+    document.getElementById('vuRightDb').textContent = dbR > -60 ? dbR.toFixed(1) + ' dB' : '-inf';
+
+    // Update field visualization with live data
+    drawField();
+  }
+  updateMeters();
+}
+
+// Export
+async function exportWav() {
+  if (!audioBuffer) return;
+  const btn = document.getElementById('exportBtn');
+  btn.disabled = true;
+  btn.textContent = 'Rendering...';
+
+  try {
+    const sr = audioBuffer.sampleRate;
+    const len = audioBuffer.length;
+    const offCtx = new OfflineAudioContext(2, len, sr);
+
+    const src = offCtx.createBufferSource();
+    src.buffer = audioBuffer;
+
+    const panner = offCtx.createStereoPanner();
+    panner.pan.value = panValue;
+
+    const chCount = audioBuffer.numberOfChannels;
+    const w = widthValue / 100;
+
+    src.connect(panner);
+
+    if (chCount >= 2 && Math.abs(w - 1) > 0.01) {
+      const split = offCtx.createChannelSplitter(2);
+      const merge = offCtx.createChannelMerger(2);
+      panner.connect(split);
+
+      const ll = offCtx.createGain();
+      const lr = offCtx.createGain();
+      const rl = offCtx.createGain();
+      const rr = offCtx.createGain();
+      ll.gain.value = (1 + w) / 2;
+      lr.gain.value = (1 - w) / 2;
+      rl.gain.value = (1 - w) / 2;
+      rr.gain.value = (1 + w) / 2;
+
+      split.connect(ll, 0);
+      split.connect(rl, 0);
+      split.connect(lr, 1);
+      split.connect(rr, 1);
+      ll.connect(merge, 0, 0);
+      lr.connect(merge, 0, 0);
+      rl.connect(merge, 0, 1);
+      rr.connect(merge, 0, 1);
+      merge.connect(offCtx.destination);
+    } else {
+      panner.connect(offCtx.destination);
+    }
+
+    src.start(0);
+    const rendered = await offCtx.startRendering();
+
+    const wav = encodeWav(rendered);
+    const blob = new Blob([wav], { type: 'audio/wav' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'panned-audio.wav';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+  } catch (err) {
+    alert('Export failed: ' + err.message);
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '&#8615; Export WAV';
+}
+
+function encodeWav(buffer) {
+  const numCh = buffer.numberOfChannels;
+  const sr = buffer.sampleRate;
+  const bps = 16;
+  const channels = [];
+  for (let i = 0; i < numCh; i++) channels.push(buffer.getChannelData(i));
+  const numSamples = channels[0].length;
+  const dataSize = numSamples * numCh * (bps / 8);
+  const buf = new ArrayBuffer(44 + dataSize);
+  const v = new DataView(buf);
+
+  function ws(o, s) { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); }
+  ws(0, 'RIFF');
+  v.setUint32(4, 36 + dataSize, true);
+  ws(8, 'WAVE');
+  ws(12, 'fmt ');
+  v.setUint32(16, 16, true);
+  v.setUint16(20, 1, true);
+  v.setUint16(22, numCh, true);
+  v.setUint32(24, sr, true);
+  v.setUint32(28, sr * numCh * (bps / 8), true);
+  v.setUint16(32, numCh * (bps / 8), true);
+  v.setUint16(34, bps, true);
+  ws(36, 'data');
+  v.setUint32(40, dataSize, true);
+
+  let off = 44;
+  for (let i = 0; i < numSamples; i++) {
+    for (let ch = 0; ch < numCh; ch++) {
+      let s = Math.max(-1, Math.min(1, channels[ch][i]));
+      s = s < 0 ? s * 0x8000 : s * 0x7FFF;
+      v.setInt16(off, s, true);
+      off += 2;
+    }
+  }
+  return buf;
+}
+
+// Resize handler
+window.addEventListener('resize', () => {
+  if (document.getElementById('mainUI').style.display !== 'none') {
+    initFieldCanvas();
+  }
+});
+
+loadSettings();
+updateKnobSVG();
+</script>
+<script src="/related.js"></script>
+</body>
+</html>

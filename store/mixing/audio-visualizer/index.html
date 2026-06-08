@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<title>Audio Visualizer - FreeMusicStore</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --accent: #8b5cf6;
+  --accent-hover: #7c3aed;
+  --bg: #0f0f0f;
+  --surface: #1a1a1a;
+  --surface2: #242424;
+  --border: #333;
+  --text: #f0f0f0;
+  --text-dim: #999;
+  --radius: 10px;
+}
+body {
+  font-family: 'Manrope', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.5;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 16px 24px;
+  font-size: 14px;
+  color: var(--text-dim);
+}
+.back:hover { color: var(--text); text-decoration: none; }
+header {
+  text-align: center;
+  padding: 0 24px 32px;
+}
+header h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+header p { color: var(--text-dim); font-size: 15px; max-width: 520px; margin: 0 auto; }
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 24px 64px;
+}
+.source-selector {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+.upload-zone {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 40px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  flex: 1;
+  min-width: 200px;
+}
+.upload-zone:hover, .upload-zone.dragover {
+  border-color: var(--accent);
+  background: rgba(139, 92, 246, 0.05);
+}
+.upload-zone p { color: var(--text-dim); font-size: 14px; }
+.upload-zone .icon { font-size: 28px; margin-bottom: 8px; }
+.mic-zone {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 40px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  min-width: 180px;
+}
+.mic-zone:hover { border-color: var(--accent); background: rgba(139, 92, 246, 0.05); }
+.mic-zone.active { border-color: #22c55e; background: rgba(34, 197, 94, 0.08); }
+.mic-zone p { color: var(--text-dim); font-size: 14px; }
+.mic-zone .icon { font-size: 28px; margin-bottom: 8px; }
+.controls {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+}
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
+.btn-secondary { background: var(--surface2); color: var(--text); }
+.btn-secondary:hover:not(:disabled) { background: var(--border); }
+.btn-active { background: var(--accent); color: #fff; }
+.mode-btns {
+  display: flex;
+  gap: 4px;
+  background: var(--surface);
+  border-radius: 8px;
+  padding: 4px;
+}
+.mode-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-dim);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.mode-btn.active { background: var(--accent); color: #fff; }
+.mode-btn:hover:not(.active) { color: var(--text); }
+.settings-row {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.setting-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.setting-group label { font-size: 13px; color: var(--text-dim); white-space: nowrap; }
+.setting-group select {
+  background: var(--surface2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.canvas-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: 20px;
+  position: relative;
+}
+canvas {
+  display: block;
+  width: 100%;
+  height: 400px;
+}
+.file-info {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 14px;
+}
+.file-info .name { font-weight: 600; }
+.file-info .meta { color: var(--text-dim); font-size: 13px; }
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<a href="/" class="back">&larr; Back to Store</a>
+
+<header>
+  <h1>Audio Visualizer</h1>
+  <p>Visualize audio from a file or your microphone with waveform, frequency bars, and spectrogram views.</p>
+</header>
+
+<div class="container">
+  <div class="source-selector" id="sourceSelector">
+    <div class="upload-zone" id="uploadZone">
+      <div class="icon">&#9835;</div>
+      <p>Drop audio file or click to browse</p>
+    </div>
+    <div class="mic-zone" id="micZone">
+      <div class="icon">&#127908;</div>
+      <p>Use Microphone</p>
+    </div>
+  </div>
+  <input type="file" id="fileInput" accept="audio/*" style="display:none">
+
+  <div id="fileInfo" class="file-info hidden">
+    <div>
+      <span class="name" id="fileName"></span>
+      <span class="meta" id="fileMeta"></span>
+    </div>
+    <button class="btn btn-secondary" onclick="resetSource()" style="padding:6px 14px;font-size:13px">Remove</button>
+  </div>
+
+  <div class="controls" id="controls" style="display:none">
+    <button class="btn btn-primary" id="playBtn" onclick="togglePlay()">&#9654; Play</button>
+    <button class="btn btn-secondary" id="stopBtn" onclick="stopAudio()">&#9632; Stop</button>
+    <div class="mode-btns">
+      <button class="mode-btn active" data-mode="waveform" onclick="setMode('waveform',this)">Waveform</button>
+      <button class="mode-btn" data-mode="bars" onclick="setMode('bars',this)">Frequency Bars</button>
+      <button class="mode-btn" data-mode="spectrogram" onclick="setMode('spectrogram',this)">Spectrogram</button>
+    </div>
+  </div>
+
+  <div class="settings-row" id="settingsRow" style="display:none;margin-bottom:20px">
+    <div class="setting-group">
+      <label>FFT Size</label>
+      <select id="fftSelect" onchange="updateFFT()">
+        <option value="256">256</option>
+        <option value="512">512</option>
+        <option value="1024">1024</option>
+        <option value="2048" selected>2048</option>
+        <option value="4096">4096</option>
+        <option value="8192">8192</option>
+      </select>
+    </div>
+    <div class="setting-group">
+      <label>Color Theme</label>
+      <select id="themeSelect" onchange="updateTheme()">
+        <option value="purple">Purple</option>
+        <option value="cyan">Cyan</option>
+        <option value="fire">Fire</option>
+        <option value="green">Green</option>
+        <option value="rainbow">Rainbow</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="canvas-wrap" id="canvasWrap" style="display:none">
+    <canvas id="vizCanvas"></canvas>
+  </div>
+</div>
+
+<script>
+const STORAGE_PREFIX = 'fmus-audio-visualizer-';
+
+let audioCtx = null;
+let analyser = null;
+let sourceNode = null;
+let audioBuffer = null;
+let micStream = null;
+let isPlaying = false;
+let isMicMode = false;
+let animationId = null;
+let vizMode = 'waveform';
+let spectrogramX = 0;
+let spectrogramCtx = null;
+
+const colorThemes = {
+  purple: { primary: '#8b5cf6', secondary: '#c084fc', bg: '#1a1a1a', gradient: ['#4c1d95','#7c3aed','#8b5cf6','#a78bfa','#c4b5fd'] },
+  cyan:   { primary: '#06b6d4', secondary: '#67e8f9', bg: '#1a1a1a', gradient: ['#164e63','#0891b2','#06b6d4','#22d3ee','#67e8f9'] },
+  fire:   { primary: '#f97316', secondary: '#fbbf24', bg: '#1a1a1a', gradient: ['#7c2d12','#ea580c','#f97316','#fb923c','#fbbf24'] },
+  green:  { primary: '#22c55e', secondary: '#86efac', bg: '#1a1a1a', gradient: ['#14532d','#16a34a','#22c55e','#4ade80','#86efac'] },
+  rainbow:{ primary: '#8b5cf6', secondary: '#ec4899', bg: '#1a1a1a', gradient: ['#ef4444','#f97316','#eab308','#22c55e','#06b6d4','#8b5cf6','#ec4899'] }
+};
+let currentTheme = 'purple';
+
+function loadSettings() {
+  try {
+    const mode = localStorage.getItem(STORAGE_PREFIX + 'mode');
+    if (mode) vizMode = mode;
+    const theme = localStorage.getItem(STORAGE_PREFIX + 'theme');
+    if (theme && colorThemes[theme]) {
+      currentTheme = theme;
+      document.getElementById('themeSelect').value = theme;
+    }
+    const fft = localStorage.getItem(STORAGE_PREFIX + 'fft');
+    if (fft) document.getElementById('fftSelect').value = fft;
+    document.querySelectorAll('.mode-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.mode === vizMode);
+    });
+  } catch (e) {}
+}
+
+function saveSettings() {
+  try {
+    localStorage.setItem(STORAGE_PREFIX + 'mode', vizMode);
+    localStorage.setItem(STORAGE_PREFIX + 'theme', currentTheme);
+    localStorage.setItem(STORAGE_PREFIX + 'fft', document.getElementById('fftSelect').value);
+  } catch (e) {}
+}
+
+function initAudioContext() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+function createAnalyser() {
+  analyser = audioCtx.createAnalyser();
+  analyser.fftSize = parseInt(document.getElementById('fftSelect').value);
+  analyser.smoothingTimeConstant = 0.8;
+}
+
+// Upload handling
+const uploadZone = document.getElementById('uploadZone');
+const fileInput = document.getElementById('fileInput');
+const micZone = document.getElementById('micZone');
+
+uploadZone.addEventListener('click', () => fileInput.click());
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadZone.classList.remove('dragover');
+  if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', e => {
+  if (e.target.files.length) handleFile(e.target.files[0]);
+});
+
+micZone.addEventListener('click', startMic);
+
+function handleFile(file) {
+  if (!file.type.startsWith('audio/') && !file.name.match(/\.(mp3|wav|ogg|flac|m4a|aac|webm)$/i)) return;
+  initAudioContext();
+  createAnalyser();
+
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    try {
+      audioBuffer = await audioCtx.decodeAudioData(e.target.result);
+      isMicMode = false;
+      document.getElementById('fileName').textContent = file.name;
+      const d = audioBuffer.duration;
+      document.getElementById('fileMeta').textContent =
+        ` - ${Math.floor(d/60)}:${Math.floor(d%60).toString().padStart(2,'0')} | ${audioBuffer.sampleRate}Hz`;
+      document.getElementById('fileInfo').classList.remove('hidden');
+      document.getElementById('sourceSelector').style.display = 'none';
+      document.getElementById('controls').style.display = 'flex';
+      document.getElementById('settingsRow').style.display = 'flex';
+      showCanvas();
+      document.getElementById('playBtn').style.display = '';
+      document.getElementById('stopBtn').style.display = '';
+    } catch (err) {
+      alert('Could not decode audio file.');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+async function startMic() {
+  try {
+    initAudioContext();
+    createAnalyser();
+    micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    sourceNode = audioCtx.createMediaStreamSource(micStream);
+    sourceNode.connect(analyser);
+    isMicMode = true;
+    isPlaying = true;
+    micZone.classList.add('active');
+    document.getElementById('sourceSelector').style.display = 'none';
+    document.getElementById('controls').style.display = 'flex';
+    document.getElementById('settingsRow').style.display = 'flex';
+    document.getElementById('playBtn').style.display = 'none';
+    document.getElementById('stopBtn').style.display = 'none';
+    showCanvas();
+    startVisualization();
+  } catch (err) {
+    alert('Microphone access denied.');
+  }
+}
+
+function showCanvas() {
+  const wrap = document.getElementById('canvasWrap');
+  wrap.style.display = 'block';
+  const canvas = document.getElementById('vizCanvas');
+  const rect = wrap.getBoundingClientRect();
+  canvas.width = rect.width;
+  canvas.height = 400;
+  spectrogramX = 0;
+  spectrogramCtx = canvas.getContext('2d');
+  spectrogramCtx.fillStyle = colorThemes[currentTheme].bg;
+  spectrogramCtx.fillRect(0, 0, canvas.width, canvas.height);
+}
+
+function resetSource() {
+  stopAudio();
+  if (micStream) {
+    micStream.getTracks().forEach(t => t.stop());
+    micStream = null;
+  }
+  if (sourceNode) {
+    try { sourceNode.disconnect(); } catch (e) {}
+    sourceNode = null;
+  }
+  audioBuffer = null;
+  isMicMode = false;
+  isPlaying = false;
+  micZone.classList.remove('active');
+  document.getElementById('fileInfo').classList.add('hidden');
+  document.getElementById('sourceSelector').style.display = 'flex';
+  document.getElementById('controls').style.display = 'none';
+  document.getElementById('settingsRow').style.display = 'none';
+  document.getElementById('canvasWrap').style.display = 'none';
+  fileInput.value = '';
+  if (animationId) { cancelAnimationFrame(animationId); animationId = null; }
+}
+
+function togglePlay() {
+  if (isPlaying) {
+    stopAudio();
+  } else {
+    playAudio();
+  }
+}
+
+function playAudio() {
+  if (!audioBuffer || isMicMode) return;
+  initAudioContext();
+  if (!analyser) createAnalyser();
+
+  sourceNode = audioCtx.createBufferSource();
+  sourceNode.buffer = audioBuffer;
+  sourceNode.connect(analyser);
+  analyser.connect(audioCtx.destination);
+  sourceNode.onended = () => {
+    if (isPlaying) {
+      isPlaying = false;
+      document.getElementById('playBtn').innerHTML = '&#9654; Play';
+    }
+  };
+  sourceNode.start(0);
+  isPlaying = true;
+  document.getElementById('playBtn').innerHTML = '&#10074;&#10074; Pause';
+  startVisualization();
+}
+
+function stopAudio() {
+  if (sourceNode && !isMicMode) {
+    try { sourceNode.stop(); } catch (e) {}
+    try { sourceNode.disconnect(); } catch (e) {}
+    sourceNode = null;
+  }
+  isPlaying = false;
+  document.getElementById('playBtn').innerHTML = '&#9654; Play';
+  if (animationId) { cancelAnimationFrame(animationId); animationId = null; }
+}
+
+function setMode(mode, btn) {
+  vizMode = mode;
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  spectrogramX = 0;
+  const canvas = document.getElementById('vizCanvas');
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = colorThemes[currentTheme].bg;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  saveSettings();
+}
+
+function updateFFT() {
+  if (analyser) {
+    analyser.fftSize = parseInt(document.getElementById('fftSelect').value);
+  }
+  saveSettings();
+}
+
+function updateTheme() {
+  currentTheme = document.getElementById('themeSelect').value;
+  saveSettings();
+}
+
+function startVisualization() {
+  if (animationId) cancelAnimationFrame(animationId);
+
+  function draw() {
+    animationId = requestAnimationFrame(draw);
+    if (!analyser) return;
+
+    const canvas = document.getElementById('vizCanvas');
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width;
+    const H = canvas.height;
+    const theme = colorThemes[currentTheme];
+
+    if (vizMode === 'waveform') {
+      const bufferLength = analyser.fftSize;
+      const dataArray = new Uint8Array(bufferLength);
+      analyser.getByteTimeDomainData(dataArray);
+
+      ctx.fillStyle = theme.bg;
+      ctx.fillRect(0, 0, W, H);
+
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = theme.primary;
+      ctx.beginPath();
+
+      const sliceWidth = W / bufferLength;
+      let x = 0;
+      for (let i = 0; i < bufferLength; i++) {
+        const v = dataArray[i] / 128.0;
+        const y = (v * H) / 2;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+        x += sliceWidth;
+      }
+      ctx.lineTo(W, H / 2);
+      ctx.stroke();
+
+      // Center line
+      ctx.strokeStyle = 'rgba(139,92,246,0.2)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(0, H / 2);
+      ctx.lineTo(W, H / 2);
+      ctx.stroke();
+
+    } else if (vizMode === 'bars') {
+      const bufferLength = analyser.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+      analyser.getByteFrequencyData(dataArray);
+
+      ctx.fillStyle = theme.bg;
+      ctx.fillRect(0, 0, W, H);
+
+      const barCount = Math.min(bufferLength, 128);
+      const step = Math.floor(bufferLength / barCount);
+      const barWidth = (W / barCount) - 1;
+
+      for (let i = 0; i < barCount; i++) {
+        const val = dataArray[i * step];
+        const barHeight = (val / 255) * H;
+        const x = i * (barWidth + 1);
+
+        const gradient = ctx.createLinearGradient(0, H, 0, H - barHeight);
+        const colors = theme.gradient;
+        for (let c = 0; c < colors.length; c++) {
+          gradient.addColorStop(c / (colors.length - 1), colors[c]);
+        }
+        ctx.fillStyle = gradient;
+        ctx.fillRect(x, H - barHeight, barWidth, barHeight);
+      }
+
+    } else if (vizMode === 'spectrogram') {
+      const bufferLength = analyser.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+      analyser.getByteFrequencyData(dataArray);
+
+      const colors = theme.gradient;
+
+      // Draw column
+      for (let i = 0; i < H; i++) {
+        const freqIndex = Math.floor((i / H) * bufferLength);
+        const val = dataArray[bufferLength - 1 - freqIndex];
+        const norm = val / 255;
+
+        if (colors.length >= 5) {
+          const idx = norm * (colors.length - 1);
+          const lo = Math.floor(idx);
+          const hi = Math.min(lo + 1, colors.length - 1);
+          const t = idx - lo;
+          ctx.fillStyle = lerpColor(colors[lo], colors[hi], t);
+        } else {
+          const r = Math.floor(norm * 200);
+          const g = Math.floor(norm * 50);
+          const b = Math.floor(norm * 255);
+          ctx.fillStyle = `rgb(${r},${g},${b})`;
+        }
+        ctx.fillRect(spectrogramX, i, 2, 1);
+      }
+      spectrogramX += 2;
+      if (spectrogramX >= W) {
+        spectrogramX = 0;
+        ctx.fillStyle = theme.bg;
+        ctx.fillRect(0, 0, W, H);
+      }
+
+      // Draw cursor line
+      ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(spectrogramX, 0);
+      ctx.lineTo(spectrogramX, H);
+      ctx.stroke();
+    }
+  }
+  draw();
+}
+
+function lerpColor(a, b, t) {
+  const ah = parseInt(a.replace('#', ''), 16);
+  const bh = parseInt(b.replace('#', ''), 16);
+  const ar = (ah >> 16) & 0xff, ag = (ah >> 8) & 0xff, ab = ah & 0xff;
+  const br = (bh >> 16) & 0xff, bg = (bh >> 8) & 0xff, bb = bh & 0xff;
+  const rr = Math.round(ar + (br - ar) * t);
+  const rg = Math.round(ag + (bg - ag) * t);
+  const rb = Math.round(ab + (bb - ab) * t);
+  return `rgb(${rr},${rg},${rb})`;
+}
+
+// Handle resize
+window.addEventListener('resize', () => {
+  const wrap = document.getElementById('canvasWrap');
+  if (wrap.style.display === 'none') return;
+  const canvas = document.getElementById('vizCanvas');
+  const rect = wrap.getBoundingClientRect();
+  canvas.width = rect.width;
+  canvas.height = 400;
+  spectrogramX = 0;
+});
+
+loadSettings();
+</script>
+<script src="/related.js"></script>
+</body>
+</html>

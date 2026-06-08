@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>FreeMusicStore — 21 Browser-Based Music Tools</title>
+<meta name="description" content="21 free music creation tools: beat maker, synth, audio recorder, chord progressions, metronome, tuner. No signup. Runs in your browser.">
+<meta property="og:title" content="FreeMusicStore — Browser-Based Music Tools">
+<meta property="og:description" content="21 free music tools. Beat maker, synth, recorder, chord progressions, metronome, tuner. No signup required.">
+<link rel="canonical" href="https://freemusicstore.online/">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--accent:#8b5cf6;--bg:#fafafa;--text:#1a1a1a;--muted:#6b7280;--panel:#ffffff;--line:#e5e7eb}
+body{font-family:'Manrope',system-ui,sans-serif;background:var(--bg);color:var(--text)}
+a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+header{border-bottom:1px solid var(--line);padding:.6rem 1.5rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;background:var(--panel)}
+.brand{display:flex;align-items:center;gap:.5rem;text-decoration:none;color:var(--text)}
+.brand-emoji{font-size:1.4rem}.brand-name{font-family:'Fraunces',serif;font-size:1.05rem;font-weight:700}
+nav{display:flex;gap:.85rem;font-size:.82rem;font-weight:600;margin-left:auto}
+nav a{color:var(--muted)}nav a:hover{color:var(--text);text-decoration:none}
+.hero{text-align:center;padding:3rem 1.5rem 1.5rem}
+.hero h1{font-family:'Fraunces',serif;font-size:2.2rem;font-weight:700;margin-bottom:.5rem}
+.hero h1 span{color:var(--accent)}
+.hero p{color:var(--muted);font-size:.95rem;max-width:600px;margin:0 auto .8rem;line-height:1.6}
+.badge{display:inline-block;padding:.25rem .7rem;border-radius:99px;font-size:.75rem;font-weight:600;background:var(--panel);border:1px solid var(--line);color:var(--muted);margin:.15rem}
+.badge-ai{background:rgba(139,92,246,.1);border-color:rgba(139,92,246,.3);color:#8b5cf6}
+.filters{max-width:1100px;margin:0 auto;padding:.8rem 1.5rem;display:flex;gap:.4rem;flex-wrap:wrap;justify-content:center}
+.filter-btn{background:var(--panel);border:1px solid var(--line);color:var(--muted);padding:.35rem .8rem;border-radius:99px;font-size:.72rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s}
+.filter-btn:hover{border-color:var(--accent);color:var(--text)}
+.filter-btn.active{background:var(--accent);border-color:var(--accent);color:white}
+.grid{max-width:1100px;margin:0 auto;padding:0 1.5rem 2rem;display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:.8rem}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:1rem;display:flex;gap:.8rem;align-items:flex-start;transition:all .2s;text-decoration:none;color:inherit;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.08);text-decoration:none}
+.card.hidden{display:none}
+.card-icon{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;color:white}
+.card-body{flex:1;min-width:0}.card-name{font-size:.92rem;font-weight:700;margin-bottom:.2rem}
+.card-desc{font-size:.74rem;color:var(--muted);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card-cta{font-size:.72rem;font-weight:600;color:var(--accent);white-space:nowrap;align-self:center}
+.community{max-width:800px;margin:0 auto 2rem;padding:0 1.5rem;text-align:center}
+.community h2{font-family:'Fraunces',serif;font-size:1.3rem;margin-bottom:.4rem}
+.community p{color:var(--muted);font-size:.82rem;margin-bottom:.8rem;line-height:1.6}
+.xstore{max-width:1100px;margin:0 auto;padding:1rem 1.5rem;text-align:center}
+.xstore h3{font-size:.72rem;color:var(--muted);font-weight:600;margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.5px}
+.xstore-grid{display:flex;justify-content:center;gap:.4rem;flex-wrap:wrap}
+footer{border-top:1px solid var(--line);padding:1.2rem;text-align:center;font-size:.72rem;color:var(--muted);background:var(--panel)}
+footer a{color:var(--accent)}
+</style>
+</head>
+<body>
+<header>
+<a href="/" class="brand"><span class="brand-emoji">&#127925;</span><span class="brand-name">FreeMusicStore</span></a>
+<nav><a href="https://openfrontier.pages.dev">Open Frontier</a><a href="/">All Tools</a><a href="/production/beat-maker/">Beat Maker</a><a href="/utilities/tuner/">Tuner</a></nav>
+</header>
+<section class="hero">
+<h1>Free<span>Music</span>Store</h1>
+<p>21 browser-based music creation tools. Beat makers, synths, audio recorders, chord progressions, metronome, tuner. No signup, no tracking, runs in your browser.</p>
+<span class="badge">21 Tools</span><span class="badge">No Signup</span><span class="badge badge-ai">Web Audio API</span>
+</section>
+<div class="filters">
+<button class="filter-btn active" data-cat="all">All</button>
+<button class="filter-btn" data-cat="production">Production</button>
+<button class="filter-btn" data-cat="recording">Recording</button>
+<button class="filter-btn" data-cat="mixing">Mixing</button>
+<button class="filter-btn" data-cat="theory">Theory</button>
+<button class="filter-btn" data-cat="utilities">Utilities</button>
+</div>
+<div class="grid" id="tools-grid"></div>
+<section class="community">
+<h2>All audio. All in your browser.</h2>
+<p>Every tool runs locally using the Web Audio API. Your audio never leaves your device. No accounts, no cloud uploads, no tracking. Open source, community built.</p>
+</section>
+<section class="xstore">
+<h3>Explore More on Open Frontier</h3>
+<div class="xstore-grid">
+<a href="https://freeappstore.online" style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:#fff;border:1px solid #e5e7eb;border-radius:8px;text-decoration:none;color:#6b7280;font-size:.7rem;font-weight:600"><span>&#128241;</span><span>Apps</span></a>
+<a href="https://freegamestore.online" style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:#fff;border:1px solid #e5e7eb;border-radius:8px;text-decoration:none;color:#6b7280;font-size:.7rem;font-weight:600"><span>&#127918;</span><span>Games</span></a>
+<a href="https://freewebstore.online" style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:#fff;border:1px solid #e5e7eb;border-radius:8px;text-decoration:none;color:#6b7280;font-size:.7rem;font-weight:600"><span>&#127760;</span><span>Websites</span></a>
+<a href="https://freeagentstore.online" style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:#fff;border:1px solid #e5e7eb;border-radius:8px;text-decoration:none;color:#6b7280;font-size:.7rem;font-weight:600"><span>&#129302;</span><span>AI Agents</span></a>
+<a href="https://freemarketingstore.pages.dev" style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:#fff;border:1px solid #e5e7eb;border-radius:8px;text-decoration:none;color:#6b7280;font-size:.7rem;font-weight:600"><span>&#128227;</span><span>Marketing</span></a>
+</div>
+</section>
+<footer>FreeMusicStore &mdash; part of <a href="https://openfrontier.pages.dev">Open Frontier</a> | <a href="https://openfrontier-docs.pages.dev">Platform Docs</a></footer>
+<script>
+(function(){
+  fetch('/registry.json').then(r=>r.json()).then(function(data){
+    var tools=data.tools||[];
+    var grid=document.getElementById('tools-grid');
+    grid.innerHTML=tools.map(function(t){
+      return '<a href="/'+t.section+'/'+t.id+'/" class="card" data-cat="'+t.category+'">'
+        +'<div class="card-icon" style="background:'+t.iconBg+'">'+t.icon+'</div>'
+        +'<div class="card-body"><div class="card-name">'+t.name+'</div>'
+        +'<div class="card-desc">'+t.description+'</div></div>'
+        +'<span class="card-cta">Open tool &#8594;</span></a>';
+    }).join('');
+    // filters
+    var btns=document.querySelectorAll('.filter-btn');
+    btns.forEach(function(btn){
+      btn.addEventListener('click',function(){
+        btns.forEach(function(b){b.classList.remove('active')});
+        btn.classList.add('active');
+        var cat=btn.dataset.cat;
+        document.querySelectorAll('.card').forEach(function(card){
+          if(cat==='all'||card.dataset.cat===cat)card.classList.remove('hidden');
+          else card.classList.add('hidden');
+        });
+      });
+    });
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<title>Circle of Fifths - FreeMusicStore</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Manrope', sans-serif;
+  background: #0f0f0f;
+  color: #e0e0e0;
+  min-height: 100vh;
+  line-height: 1.5;
+}
+a { color: #8b5cf6; text-decoration: none; }
+a:hover { text-decoration: underline; }
+.back {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 16px 24px; font-size: 14px; font-weight: 500; color: #999;
+}
+.back:hover { color: #8b5cf6; text-decoration: none; }
+header {
+  text-align: center; padding: 24px 24px 32px;
+  border-bottom: 1px solid #1e1e1e;
+}
+header h1 { font-size: 28px; font-weight: 800; color: #fff; margin-bottom: 6px; }
+header p { color: #888; font-size: 15px; }
+.container { max-width: 900px; margin: 0 auto; padding: 24px; }
+.layout { display: flex; flex-wrap: wrap; gap: 32px; justify-content: center; align-items: flex-start; }
+.circle-wrap { flex-shrink: 0; }
+svg text { font-family: 'Manrope', sans-serif; }
+.info-panel {
+  flex: 1; min-width: 260px; max-width: 360px;
+  background: #1a1a1a; border: 1px solid #262626;
+  border-radius: 12px; padding: 24px;
+}
+.info-panel h2 { font-size: 22px; font-weight: 800; color: #fff; margin-bottom: 4px; }
+.info-panel .subtitle { font-size: 14px; color: #8b5cf6; font-weight: 600; margin-bottom: 16px; }
+.info-row { margin-bottom: 12px; }
+.info-label { font-size: 11px; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 2px; }
+.info-value { font-size: 15px; font-weight: 600; color: #ccc; }
+.chord-family { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.chord-pill {
+  background: #262626; border-radius: 6px; padding: 4px 10px;
+  font-size: 13px; font-weight: 600; color: #aaa;
+}
+.chord-pill.tonic { background: #8b5cf6; color: #fff; }
+.placeholder-msg { color: #555; font-size: 14px; text-align: center; padding: 40px 0; }
+</style>
+</head>
+<body>
+<a href="/" class="back">&larr; Back to Store</a>
+<header>
+  <h1>Circle of Fifths</h1>
+  <p>Click any key to hear its tonic and explore its chord family</p>
+</header>
+<div class="container">
+  <div class="layout">
+    <div class="circle-wrap">
+      <svg id="circleSvg" width="420" height="420" viewBox="0 0 420 420"></svg>
+    </div>
+    <div class="info-panel" id="infoPanel">
+      <div class="placeholder-msg">Click a key on the circle to see details</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const FIFTHS_MAJOR = ['C','G','D','A','E','B','F#/Gb','Db','Ab','Eb','Bb','F'];
+const FIFTHS_MINOR = ['Am','Em','Bm','F#m','C#m','G#m','D#m/Ebm','Bbm','Fm','Cm','Gm','Dm'];
+const KEY_SIGS = [
+  '0', '1#', '2#', '3#', '4#', '5#', '6#/6b', '5b', '4b', '3b', '2b', '1b'
+];
+const SIG_DETAILS = [
+  'No sharps or flats',
+  'F#',
+  'F#, C#',
+  'F#, C#, G#',
+  'F#, C#, G#, D#',
+  'F#, C#, G#, D#, A#',
+  'F#, C#, G#, D#, A#, E# / Bb, Eb, Ab, Db, Gb, Cb',
+  'Bb, Eb, Ab, Db, Gb',
+  'Bb, Eb, Ab, Db',
+  'Bb, Eb, Ab',
+  'Bb, Eb',
+  'Bb'
+];
+
+const MAJOR_INTERVALS = [0,2,4,5,7,9,11];
+const NOTE_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const MAJOR_CHORD_TYPES = ['','m','m','','','m','dim'];
+const ROMAN = ['I','ii','iii','IV','V','vi','vii\u00B0'];
+
+const HUES = [0,30,60,90,120,150,180,210,240,270,300,330];
+
+let audioCtx = null;
+let selectedIdx = null;
+
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function noteFreq(midi) { return 440 * Math.pow(2, (midi - 69) / 12); }
+
+function rootIdxFromFifths(i) {
+  return (i * 7) % 12;
+}
+
+function playTonic(fifthsIdx) {
+  const ctx = getAudioCtx();
+  const rootSemitone = rootIdxFromFifths(fifthsIdx);
+  const midi = 60 + rootSemitone;
+  const t = ctx.currentTime;
+  const gain = ctx.createGain();
+  gain.connect(ctx.destination);
+  gain.gain.setValueAtTime(0.25, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 1.2);
+  const osc = ctx.createOscillator();
+  osc.type = 'triangle';
+  osc.frequency.value = noteFreq(midi);
+  osc.connect(gain);
+  osc.start(t);
+  osc.stop(t + 1.2);
+  const osc2 = ctx.createOscillator();
+  osc2.type = 'sine';
+  osc2.frequency.value = noteFreq(midi);
+  const g2 = ctx.createGain();
+  g2.gain.value = 0.12;
+  osc2.connect(g2);
+  g2.connect(gain);
+  osc2.start(t);
+  osc2.stop(t + 1.2);
+}
+
+function getChordFamily(fifthsIdx) {
+  const rootSemitone = rootIdxFromFifths(fifthsIdx);
+  return MAJOR_INTERVALS.map((interval, i) => {
+    const noteIdx = (rootSemitone + interval) % 12;
+    const name = NOTE_NAMES[noteIdx] + MAJOR_CHORD_TYPES[i];
+    return { name, roman: ROMAN[i], isTonic: i === 0 };
+  });
+}
+
+function showInfo(idx, isMinor) {
+  const panel = document.getElementById('infoPanel');
+  const majorIdx = isMinor ? idx : idx;
+  const relMinorIdx = idx;
+  const majorName = FIFTHS_MAJOR[idx].split('/')[0];
+  const minorName = FIFTHS_MINOR[idx].split('/')[0];
+  const family = getChordFamily(idx);
+
+  const title = isMinor ? minorName : majorName;
+  const subtitle = isMinor
+    ? `Relative major: ${majorName}`
+    : `Relative minor: ${minorName}`;
+
+  panel.innerHTML = `
+    <h2>${title}</h2>
+    <div class="subtitle">${subtitle}</div>
+    <div class="info-row">
+      <div class="info-label">Key Signature</div>
+      <div class="info-value">${KEY_SIGS[idx]}</div>
+    </div>
+    <div class="info-row">
+      <div class="info-label">Accidentals</div>
+      <div class="info-value">${SIG_DETAILS[idx]}</div>
+    </div>
+    <div class="info-row">
+      <div class="info-label">Chord Family (Major)</div>
+      <div class="chord-family">
+        ${family.map(c => `<span class="chord-pill${c.isTonic ? ' tonic' : ''}">${c.roman} ${c.name}</span>`).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function buildCircle() {
+  const svg = document.getElementById('circleSvg');
+  const cx = 210, cy = 210;
+  const outerR = 190, innerR = 135, coreR = 85;
+  const segAngle = (2 * Math.PI) / 12;
+  const startOffset = -Math.PI / 2 - segAngle / 2;
+
+  // Background
+  const bg = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  bg.setAttribute('cx', cx);
+  bg.setAttribute('cy', cy);
+  bg.setAttribute('r', outerR);
+  bg.setAttribute('fill', '#181818');
+  svg.appendChild(bg);
+
+  for (let i = 0; i < 12; i++) {
+    const a1 = startOffset + i * segAngle;
+    const a2 = a1 + segAngle;
+    const hue = HUES[i];
+
+    // Outer segment (major)
+    const outerPath = arcPath(cx, cy, innerR, outerR, a1, a2);
+    const outerEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    outerEl.setAttribute('d', outerPath);
+    outerEl.setAttribute('fill', `hsl(${hue}, 35%, 22%)`);
+    outerEl.setAttribute('stroke', '#0f0f0f');
+    outerEl.setAttribute('stroke-width', '2');
+    outerEl.style.cursor = 'pointer';
+    outerEl.setAttribute('data-idx', i);
+    outerEl.setAttribute('data-ring', 'major');
+    outerEl.addEventListener('click', () => selectKey(i, false));
+    outerEl.addEventListener('mouseenter', () => {
+      if (selectedIdx !== i) outerEl.setAttribute('fill', `hsl(${hue}, 45%, 30%)`);
+    });
+    outerEl.addEventListener('mouseleave', () => {
+      if (selectedIdx !== i) outerEl.setAttribute('fill', `hsl(${hue}, 35%, 22%)`);
+    });
+    svg.appendChild(outerEl);
+
+    // Inner segment (minor)
+    const innerPath = arcPath(cx, cy, coreR, innerR, a1, a2);
+    const innerEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    innerEl.setAttribute('d', innerPath);
+    innerEl.setAttribute('fill', `hsl(${hue}, 25%, 15%)`);
+    innerEl.setAttribute('stroke', '#0f0f0f');
+    innerEl.setAttribute('stroke-width', '2');
+    innerEl.style.cursor = 'pointer';
+    innerEl.setAttribute('data-idx', i);
+    innerEl.setAttribute('data-ring', 'minor');
+    innerEl.addEventListener('click', () => selectKey(i, true));
+    innerEl.addEventListener('mouseenter', () => {
+      if (selectedIdx !== i) innerEl.setAttribute('fill', `hsl(${hue}, 35%, 22%)`);
+    });
+    innerEl.addEventListener('mouseleave', () => {
+      if (selectedIdx !== i) innerEl.setAttribute('fill', `hsl(${hue}, 25%, 15%)`);
+    });
+    svg.appendChild(innerEl);
+
+    // Major text
+    const midAngle = a1 + segAngle / 2;
+    const textR = (innerR + outerR) / 2;
+    const tx = cx + textR * Math.cos(midAngle);
+    const ty = cy + textR * Math.sin(midAngle);
+    const majorText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    majorText.setAttribute('x', tx);
+    majorText.setAttribute('y', ty);
+    majorText.setAttribute('text-anchor', 'middle');
+    majorText.setAttribute('dominant-baseline', 'central');
+    majorText.setAttribute('fill', '#e0e0e0');
+    majorText.setAttribute('font-size', '14');
+    majorText.setAttribute('font-weight', '700');
+    majorText.style.pointerEvents = 'none';
+    majorText.textContent = FIFTHS_MAJOR[i].split('/')[0];
+    svg.appendChild(majorText);
+
+    // Minor text
+    const minTextR = (coreR + innerR) / 2;
+    const mx = cx + minTextR * Math.cos(midAngle);
+    const my = cy + minTextR * Math.sin(midAngle);
+    const minorText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    minorText.setAttribute('x', mx);
+    minorText.setAttribute('y', my);
+    minorText.setAttribute('text-anchor', 'middle');
+    minorText.setAttribute('dominant-baseline', 'central');
+    minorText.setAttribute('fill', '#999');
+    minorText.setAttribute('font-size', '11');
+    minorText.setAttribute('font-weight', '600');
+    minorText.style.pointerEvents = 'none';
+    minorText.textContent = FIFTHS_MINOR[i].split('/')[0];
+    svg.appendChild(minorText);
+  }
+
+  // Center circle
+  const center = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  center.setAttribute('cx', cx);
+  center.setAttribute('cy', cy);
+  center.setAttribute('r', coreR);
+  center.setAttribute('fill', '#0f0f0f');
+  center.setAttribute('stroke', '#262626');
+  center.setAttribute('stroke-width', '2');
+  svg.appendChild(center);
+
+  const centerText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+  centerText.setAttribute('x', cx);
+  centerText.setAttribute('y', cy - 8);
+  centerText.setAttribute('text-anchor', 'middle');
+  centerText.setAttribute('dominant-baseline', 'central');
+  centerText.setAttribute('fill', '#555');
+  centerText.setAttribute('font-size', '12');
+  centerText.setAttribute('font-weight', '600');
+  centerText.textContent = 'Circle of';
+  svg.appendChild(centerText);
+
+  const centerText2 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+  centerText2.setAttribute('x', cx);
+  centerText2.setAttribute('y', cy + 10);
+  centerText2.setAttribute('text-anchor', 'middle');
+  centerText2.setAttribute('dominant-baseline', 'central');
+  centerText2.setAttribute('fill', '#8b5cf6');
+  centerText2.setAttribute('font-size', '14');
+  centerText2.setAttribute('font-weight', '800');
+  centerText2.textContent = 'Fifths';
+  svg.appendChild(centerText2);
+}
+
+function arcPath(cx, cy, r1, r2, a1, a2) {
+  const x1i = cx + r1 * Math.cos(a1);
+  const y1i = cy + r1 * Math.sin(a1);
+  const x2i = cx + r1 * Math.cos(a2);
+  const y2i = cy + r1 * Math.sin(a2);
+  const x1o = cx + r2 * Math.cos(a1);
+  const y1o = cy + r2 * Math.sin(a1);
+  const x2o = cx + r2 * Math.cos(a2);
+  const y2o = cy + r2 * Math.sin(a2);
+  return `M ${x1i} ${y1i} L ${x1o} ${y1o} A ${r2} ${r2} 0 0 1 ${x2o} ${y2o} L ${x2i} ${y2i} A ${r1} ${r1} 0 0 0 ${x1i} ${y1i} Z`;
+}
+
+function selectKey(idx, isMinor) {
+  selectedIdx = idx;
+  playTonic(idx);
+  showInfo(idx, isMinor);
+
+  // Update highlights
+  const svg = document.getElementById('circleSvg');
+  const paths = svg.querySelectorAll('path');
+  paths.forEach(p => {
+    const pIdx = parseInt(p.getAttribute('data-idx'));
+    const ring = p.getAttribute('data-ring');
+    const hue = HUES[pIdx];
+    if (pIdx === idx) {
+      p.setAttribute('fill', `hsl(${hue}, 55%, 35%)`);
+      p.setAttribute('stroke', '#8b5cf6');
+      p.setAttribute('stroke-width', '3');
+    } else {
+      const base = ring === 'major' ? `hsl(${hue}, 35%, 22%)` : `hsl(${hue}, 25%, 15%)`;
+      p.setAttribute('fill', base);
+      p.setAttribute('stroke', '#0f0f0f');
+      p.setAttribute('stroke-width', '2');
+    }
+  });
+
+  localStorage.setItem('fmus-circle-fifths-last', JSON.stringify({ idx, isMinor }));
+}
+
+buildCircle();
+
+// Restore last selection
+const saved = localStorage.getItem('fmus-circle-fifths-last');
+if (saved) {
+  try {
+    const s = JSON.parse(saved);
+    selectKey(s.idx, s.isMinor);
+  } catch(e) {}
+}
+</script>
+<script src="/related.js"></script>
+</body>
+</html>

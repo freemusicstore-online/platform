@@ -1,0 +1,193 @@
+{
+  "tools": [
+    {
+      "id": "beat-maker",
+      "name": "Beat Maker",
+      "description": "Step sequencer drum machine. 16 steps, 8 tracks, tempo control. Export WAV loops.",
+      "icon": "🥁",
+      "iconBg": "#8b5cf6",
+      "category": "production",
+      "section": "production"
+    },
+    {
+      "id": "synth",
+      "name": "Web Synth",
+      "description": "Polyphonic synthesizer with oscillators, filters, ADSR envelope. Play with keyboard or MIDI.",
+      "icon": "🎹",
+      "iconBg": "#6366f1",
+      "category": "production",
+      "section": "production"
+    },
+    {
+      "id": "sample-pads",
+      "name": "Sample Pads",
+      "description": "Launchpad-style 16-pad trigger. Load your own samples or use built-in kits. Velocity-sensitive.",
+      "icon": "🎚️",
+      "iconBg": "#8b5cf6",
+      "category": "production",
+      "section": "production"
+    },
+    {
+      "id": "loop-station",
+      "name": "Loop Station",
+      "description": "Record and layer audio loops in real-time. Overdub, undo, adjust volume per layer.",
+      "icon": "🔁",
+      "iconBg": "#6366f1",
+      "category": "production",
+      "section": "production"
+    },
+    {
+      "id": "tone-generator",
+      "name": "Tone Generator",
+      "description": "Generate sine, square, sawtooth, triangle waves. Set frequency, adjust volume. Useful for testing.",
+      "icon": "〰️",
+      "iconBg": "#8b5cf6",
+      "category": "production",
+      "section": "production"
+    },
+    {
+      "id": "audio-recorder",
+      "name": "Audio Recorder",
+      "description": "Record from microphone or system audio. Waveform display, pause/resume, export WAV/MP3.",
+      "icon": "🎙️",
+      "iconBg": "#ef4444",
+      "category": "recording",
+      "section": "recording"
+    },
+    {
+      "id": "voice-changer",
+      "name": "Voice Changer",
+      "description": "Real-time voice effects: pitch shift, echo, reverb, robot, chipmunk. Record transformed audio.",
+      "icon": "🗣️",
+      "iconBg": "#ec4899",
+      "category": "recording",
+      "section": "recording"
+    },
+    {
+      "id": "audio-trimmer",
+      "name": "Audio Trimmer",
+      "description": "Trim, cut, and split audio files. Visual waveform editor. Fade in/out. Export selection.",
+      "icon": "✂️",
+      "iconBg": "#ef4444",
+      "category": "recording",
+      "section": "recording"
+    },
+    {
+      "id": "audio-effects",
+      "name": "Audio Effects",
+      "description": "Apply reverb, delay, EQ, compressor, distortion to any audio file. Real-time preview. Export.",
+      "icon": "🎛️",
+      "iconBg": "#10b981",
+      "category": "mixing",
+      "section": "mixing"
+    },
+    {
+      "id": "audio-visualizer",
+      "name": "Audio Visualizer",
+      "description": "Waveform, frequency spectrum, and spectrogram displays. Upload a file or use microphone input.",
+      "icon": "📊",
+      "iconBg": "#06b6d4",
+      "category": "mixing",
+      "section": "mixing"
+    },
+    {
+      "id": "stereo-panner",
+      "name": "Stereo Panner",
+      "description": "Pan audio left/right, adjust stereo width, balance channels. Visual stereo field display.",
+      "icon": "🔊",
+      "iconBg": "#10b981",
+      "category": "mixing",
+      "section": "mixing"
+    },
+    {
+      "id": "chord-progressions",
+      "name": "Chord Progressions",
+      "description": "Generate chord progressions by key and genre. Play back, transpose, export MIDI. Common patterns included.",
+      "icon": "🎶",
+      "iconBg": "#f59e0b",
+      "category": "theory",
+      "section": "theory"
+    },
+    {
+      "id": "circle-of-fifths",
+      "name": "Circle of Fifths",
+      "description": "Interactive circle of fifths. Shows key signatures, relative minors, common chord relationships.",
+      "icon": "⭕",
+      "iconBg": "#f97316",
+      "category": "theory",
+      "section": "theory"
+    },
+    {
+      "id": "scale-reference",
+      "name": "Scale Reference",
+      "description": "All scales and modes with piano keyboard display. Major, minor, pentatonic, blues, modes, exotic.",
+      "icon": "🎼",
+      "iconBg": "#f59e0b",
+      "category": "theory",
+      "section": "theory"
+    },
+    {
+      "id": "interval-trainer",
+      "name": "Interval Trainer",
+      "description": "Ear training for musical intervals. Ascending, descending, harmonic. Track your accuracy score.",
+      "icon": "👂",
+      "iconBg": "#f97316",
+      "category": "theory",
+      "section": "theory"
+    },
+    {
+      "id": "key-finder",
+      "name": "Key Finder",
+      "description": "Detect the musical key of a song. Upload audio or tap in notes. Shows probable key and scale.",
+      "icon": "🔑",
+      "iconBg": "#f59e0b",
+      "category": "theory",
+      "section": "theory"
+    },
+    {
+      "id": "metronome",
+      "name": "Metronome",
+      "description": "Precise BPM metronome with tap tempo. Time signatures, accent patterns, visual beat indicator.",
+      "icon": "⏱️",
+      "iconBg": "#3b82f6",
+      "category": "utilities",
+      "section": "utilities"
+    },
+    {
+      "id": "tuner",
+      "name": "Chromatic Tuner",
+      "description": "Tune any instrument using your microphone. Chromatic display, cents offset, reference pitch (A=440Hz).",
+      "icon": "🎯",
+      "iconBg": "#3b82f6",
+      "category": "utilities",
+      "section": "utilities"
+    },
+    {
+      "id": "bpm-tapper",
+      "name": "BPM Tapper",
+      "description": "Tap spacebar or click to find BPM of any song. Running average, reset, copy result.",
+      "icon": "👆",
+      "iconBg": "#3b82f6",
+      "category": "utilities",
+      "section": "utilities"
+    },
+    {
+      "id": "audio-converter",
+      "name": "Audio Converter",
+      "description": "Convert between WAV, MP3, OGG formats in your browser. Adjust bitrate, sample rate. No upload needed.",
+      "icon": "🔄",
+      "iconBg": "#06b6d4",
+      "category": "utilities",
+      "section": "utilities"
+    },
+    {
+      "id": "noise-generator",
+      "name": "Noise Generator",
+      "description": "White, pink, brown noise for focus, sleep, or mixing reference. Timer, volume control, fade out.",
+      "icon": "🌊",
+      "iconBg": "#06b6d4",
+      "category": "utilities",
+      "section": "utilities"
+    }
+  ]
+}

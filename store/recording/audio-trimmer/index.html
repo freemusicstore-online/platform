@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<title>Audio Trimmer - FreeMusicStore</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --accent: #8b5cf6;
+  --accent-hover: #7c3aed;
+  --accent-20: rgba(139, 92, 246, 0.2);
+  --bg: #0a0a0b;
+  --surface: #141416;
+  --surface-2: #1e1e22;
+  --border: #2a2a2e;
+  --text: #f0f0f2;
+  --text-dim: #8a8a8e;
+  --danger: #ef4444;
+  --success: #22c55e;
+  --radius: 12px;
+}
+body {
+  font-family: 'Manrope', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.5;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.back { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; color: var(--text-dim); padding: 20px 24px; }
+.back:hover { color: var(--text); text-decoration: none; }
+.container { max-width: 720px; margin: 0 auto; padding: 0 24px 80px; }
+h1 { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+.subtitle { color: var(--text-dim); font-size: 14px; margin-bottom: 32px; }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-bottom: 16px;
+}
+
+/* Drop zone */
+.drop-zone {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 48px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.drop-zone:hover, .drop-zone.dragover {
+  border-color: var(--accent);
+  background: var(--accent-20);
+}
+.drop-zone .icon { font-size: 36px; margin-bottom: 12px; color: var(--text-dim); }
+.drop-zone .label { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+.drop-zone .hint { font-size: 13px; color: var(--text-dim); }
+.drop-zone input[type="file"] { display: none; }
+
+/* Waveform */
+.waveform-wrap {
+  position: relative;
+  margin-bottom: 20px;
+  display: none;
+}
+canvas#waveform {
+  width: 100%;
+  height: 140px;
+  border-radius: 8px;
+  background: var(--surface-2);
+  cursor: crosshair;
+}
+
+/* Selection overlay */
+.selection-overlay {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  pointer-events: none;
+}
+.selection-region {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  background: rgba(139, 92, 246, 0.15);
+  border-left: 2px solid var(--accent);
+  border-right: 2px solid var(--accent);
+}
+.handle {
+  position: absolute;
+  top: 0;
+  width: 12px;
+  height: 100%;
+  cursor: ew-resize;
+  pointer-events: all;
+  z-index: 2;
+}
+.handle::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 4px;
+  height: 32px;
+  background: var(--accent);
+  border-radius: 2px;
+}
+.handle-start { left: -6px; }
+.handle-end { right: -6px; }
+
+/* Playhead */
+.playhead {
+  position: absolute;
+  top: 0;
+  width: 2px;
+  height: 100%;
+  background: var(--text);
+  pointer-events: none;
+  display: none;
+  z-index: 3;
+}
+
+/* Info bar */
+.info-bar {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  color: var(--text-dim);
+  display: none;
+}
+.info-bar .val { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+/* Controls */
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  display: none;
+}
+
+button {
+  font-family: 'Manrope', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
+.btn-secondary { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); }
+.btn-secondary:hover:not(:disabled) { background: var(--border); }
+.btn-success { background: var(--success); color: #fff; }
+.btn-success:hover:not(:disabled) { background: #16a34a; }
+
+.fade-options {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-left: auto;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+.fade-options label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+.fade-options input[type="checkbox"] { accent-color: var(--accent); }
+
+.filename {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  display: none;
+}
+</style>
+</head>
+<body>
+<a href="/" class="back">&larr; Back to Store</a>
+<div class="container">
+  <h1>Audio Trimmer</h1>
+  <p class="subtitle">Upload audio, select a region, and export a trimmed WAV file</p>
+
+  <div class="card">
+    <div class="drop-zone" id="dropZone">
+      <div class="icon">&#x1F3B5;</div>
+      <div class="label">Drop an audio file here</div>
+      <div class="hint">or click to browse (MP3, WAV, OGG, M4A, FLAC)</div>
+      <input type="file" id="fileInput" accept="audio/*">
+    </div>
+
+    <div class="filename" id="filename"></div>
+
+    <div class="waveform-wrap" id="waveformWrap">
+      <canvas id="waveform"></canvas>
+      <div class="selection-overlay" id="selectionOverlay">
+        <div class="selection-region" id="selectionRegion">
+          <div class="handle handle-start" id="handleStart"></div>
+          <div class="handle handle-end" id="handleEnd"></div>
+        </div>
+      </div>
+      <div class="playhead" id="playhead"></div>
+    </div>
+
+    <div class="info-bar" id="infoBar">
+      <span>Duration: <span class="val" id="totalDuration">0:00</span></span>
+      <span>Selection: <span class="val" id="selStart">0:00</span> &ndash; <span class="val" id="selEnd">0:00</span></span>
+      <span>Length: <span class="val" id="selLength">0:00</span></span>
+    </div>
+
+    <div class="controls" id="controls">
+      <button class="btn-secondary" id="btnPlaySel">Play Selection</button>
+      <button class="btn-secondary" id="btnPlayFull">Play Full</button>
+      <button class="btn-success" id="btnExport">Export WAV</button>
+      <div class="fade-options">
+        <label><input type="checkbox" id="chkFadeIn"> Fade in</label>
+        <label><input type="checkbox" id="chkFadeOut"> Fade out</label>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const STORAGE_PREFIX = 'fmus-';
+
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+const filenameEl = document.getElementById('filename');
+const waveformWrap = document.getElementById('waveformWrap');
+const canvas = document.getElementById('waveform');
+const ctx = canvas.getContext('2d');
+const selectionOverlay = document.getElementById('selectionOverlay');
+const selectionRegion = document.getElementById('selectionRegion');
+const handleStart = document.getElementById('handleStart');
+const handleEnd = document.getElementById('handleEnd');
+const playhead = document.getElementById('playhead');
+const infoBar = document.getElementById('infoBar');
+const controls = document.getElementById('controls');
+const totalDurationEl = document.getElementById('totalDuration');
+const selStartEl = document.getElementById('selStart');
+const selEndEl = document.getElementById('selEnd');
+const selLengthEl = document.getElementById('selLength');
+const btnPlaySel = document.getElementById('btnPlaySel');
+const btnPlayFull = document.getElementById('btnPlayFull');
+const btnExport = document.getElementById('btnExport');
+const chkFadeIn = document.getElementById('chkFadeIn');
+const chkFadeOut = document.getElementById('chkFadeOut');
+
+let audioBuffer = null;
+let audioCtx = null;
+let currentSource = null;
+let selStartRatio = 0.0;
+let selEndRatio = 1.0;
+let dragging = null; // 'start' | 'end' | 'region' | null
+let dragStartX = 0;
+let dragStartSelStart = 0;
+let dragStartSelEnd = 0;
+let playAnimFrame = null;
+let loadedFileName = '';
+
+// --- File loading ---
+
+dropZone.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', (e) => {
+  if (e.target.files.length) loadFile(e.target.files[0]);
+});
+dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+  if (e.dataTransfer.files.length) loadFile(e.dataTransfer.files[0]);
+});
+
+async function loadFile(file) {
+  loadedFileName = file.name.replace(/\.[^.]+$/, '');
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+  } catch (e) {
+    alert('Could not decode this audio file. Please try another format.');
+    return;
+  }
+
+  selStartRatio = 0;
+  selEndRatio = 1;
+
+  dropZone.style.display = 'none';
+  filenameEl.textContent = file.name;
+  filenameEl.style.display = 'block';
+  waveformWrap.style.display = 'block';
+  infoBar.style.display = 'flex';
+  controls.style.display = 'flex';
+
+  resizeCanvas();
+  drawWaveform();
+  updateSelection();
+  updateInfo();
+}
+
+// --- Canvas ---
+
+function resizeCanvas() {
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * window.devicePixelRatio;
+  canvas.height = rect.height * window.devicePixelRatio;
+  ctx.setTransform(window.devicePixelRatio, 0, 0, window.devicePixelRatio, 0, 0);
+}
+window.addEventListener('resize', () => {
+  if (!audioBuffer) return;
+  resizeCanvas();
+  drawWaveform();
+  updateSelection();
+});
+
+function drawWaveform() {
+  if (!audioBuffer) return;
+  const w = canvas.width / window.devicePixelRatio;
+  const h = canvas.height / window.devicePixelRatio;
+  ctx.clearRect(0, 0, w, h);
+
+  const data = audioBuffer.getChannelData(0);
+  const step = Math.ceil(data.length / w);
+  const mid = h / 2;
+
+  ctx.fillStyle = '#8b5cf6';
+  for (let i = 0; i < w; i++) {
+    let min = 1.0, max = -1.0;
+    const start = Math.floor(i * step);
+    for (let j = 0; j < step && start + j < data.length; j++) {
+      const val = data[start + j];
+      if (val < min) min = val;
+      if (val > max) max = val;
+    }
+    const yMin = mid + min * mid * 0.9;
+    const yMax = mid + max * mid * 0.9;
+    ctx.fillRect(i, yMax, 1, Math.max(1, yMin - yMax));
+  }
+
+  // Center line
+  ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(0, mid);
+  ctx.lineTo(w, mid);
+  ctx.stroke();
+}
+
+// --- Selection handles ---
+
+function updateSelection() {
+  const wrapRect = waveformWrap.getBoundingClientRect();
+  const w = wrapRect.width;
+  const left = selStartRatio * w;
+  const right = selEndRatio * w;
+  selectionRegion.style.left = left + 'px';
+  selectionRegion.style.width = (right - left) + 'px';
+  selectionOverlay.style.width = w + 'px';
+}
+
+function ratioFromX(clientX) {
+  const rect = waveformWrap.getBoundingClientRect();
+  return Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+}
+
+handleStart.addEventListener('mousedown', (e) => { e.preventDefault(); dragging = 'start'; });
+handleEnd.addEventListener('mousedown', (e) => { e.preventDefault(); dragging = 'end'; });
+selectionRegion.addEventListener('mousedown', (e) => {
+  if (e.target === handleStart || e.target === handleEnd) return;
+  e.preventDefault();
+  dragging = 'region';
+  dragStartX = e.clientX;
+  dragStartSelStart = selStartRatio;
+  dragStartSelEnd = selEndRatio;
+});
+
+// Touch support
+handleStart.addEventListener('touchstart', (e) => { e.preventDefault(); dragging = 'start'; }, { passive: false });
+handleEnd.addEventListener('touchstart', (e) => { e.preventDefault(); dragging = 'end'; }, { passive: false });
+selectionRegion.addEventListener('touchstart', (e) => {
+  if (e.target === handleStart || e.target === handleEnd) return;
+  e.preventDefault();
+  dragging = 'region';
+  dragStartX = e.touches[0].clientX;
+  dragStartSelStart = selStartRatio;
+  dragStartSelEnd = selEndRatio;
+}, { passive: false });
+
+function onPointerMove(clientX) {
+  if (!dragging) return;
+  if (dragging === 'start') {
+    selStartRatio = Math.min(selEndRatio - 0.005, ratioFromX(clientX));
+    selStartRatio = Math.max(0, selStartRatio);
+  } else if (dragging === 'end') {
+    selEndRatio = Math.max(selStartRatio + 0.005, ratioFromX(clientX));
+    selEndRatio = Math.min(1, selEndRatio);
+  } else if (dragging === 'region') {
+    const rect = waveformWrap.getBoundingClientRect();
+    const dx = (clientX - dragStartX) / rect.width;
+    let newStart = dragStartSelStart + dx;
+    let newEnd = dragStartSelEnd + dx;
+    const span = newEnd - newStart;
+    if (newStart < 0) { newStart = 0; newEnd = span; }
+    if (newEnd > 1) { newEnd = 1; newStart = 1 - span; }
+    selStartRatio = newStart;
+    selEndRatio = newEnd;
+  }
+  updateSelection();
+  updateInfo();
+}
+
+document.addEventListener('mousemove', (e) => onPointerMove(e.clientX));
+document.addEventListener('touchmove', (e) => { if (dragging) onPointerMove(e.touches[0].clientX); }, { passive: true });
+document.addEventListener('mouseup', () => { dragging = null; });
+document.addEventListener('touchend', () => { dragging = null; });
+
+// --- Info ---
+
+function formatTime(sec) {
+  const m = Math.floor(sec / 60);
+  const s = (sec % 60).toFixed(2);
+  return `${m}:${s.padStart(5, '0')}`;
+}
+
+function updateInfo() {
+  if (!audioBuffer) return;
+  const dur = audioBuffer.duration;
+  totalDurationEl.textContent = formatTime(dur);
+  selStartEl.textContent = formatTime(selStartRatio * dur);
+  selEndEl.textContent = formatTime(selEndRatio * dur);
+  selLengthEl.textContent = formatTime((selEndRatio - selStartRatio) * dur);
+}
+
+// --- Playback ---
+
+function stopPlayback() {
+  if (currentSource) {
+    try { currentSource.stop(); } catch (e) {}
+    currentSource = null;
+  }
+  cancelAnimationFrame(playAnimFrame);
+  playhead.style.display = 'none';
+}
+
+function playRange(startRatio, endRatio) {
+  stopPlayback();
+  if (!audioBuffer || !audioCtx) return;
+
+  const startTime = startRatio * audioBuffer.duration;
+  const duration = (endRatio - startRatio) * audioBuffer.duration;
+
+  currentSource = audioCtx.createBufferSource();
+  currentSource.buffer = audioBuffer;
+  currentSource.connect(audioCtx.destination);
+  currentSource.start(0, startTime, duration);
+
+  const playStartCtxTime = audioCtx.currentTime;
+  playhead.style.display = 'block';
+
+  function animatePlayhead() {
+    const elapsed = audioCtx.currentTime - playStartCtxTime;
+    if (elapsed >= duration) {
+      playhead.style.display = 'none';
+      return;
+    }
+    const ratio = startRatio + (elapsed / audioBuffer.duration);
+    const rect = waveformWrap.getBoundingClientRect();
+    playhead.style.left = (ratio * rect.width) + 'px';
+    playAnimFrame = requestAnimationFrame(animatePlayhead);
+  }
+  animatePlayhead();
+
+  currentSource.onended = () => {
+    cancelAnimationFrame(playAnimFrame);
+    playhead.style.display = 'none';
+    currentSource = null;
+  };
+}
+
+btnPlaySel.addEventListener('click', () => playRange(selStartRatio, selEndRatio));
+btnPlayFull.addEventListener('click', () => playRange(0, 1));
+
+// --- Export ---
+
+btnExport.addEventListener('click', async () => {
+  if (!audioBuffer) return;
+  btnExport.disabled = true;
+  btnExport.textContent = 'Exporting...';
+
+  try {
+    const startSample = Math.floor(selStartRatio * audioBuffer.length);
+    const endSample = Math.floor(selEndRatio * audioBuffer.length);
+    const length = endSample - startSample;
+    const numChannels = audioBuffer.numberOfChannels;
+    const sampleRate = audioBuffer.sampleRate;
+
+    const fadeIn = chkFadeIn.checked;
+    const fadeOut = chkFadeOut.checked;
+    const fadeSamples = Math.min(Math.floor(sampleRate * 0.05), Math.floor(length / 4)); // 50ms or 25% of length
+
+    // Use OfflineAudioContext for proper rendering
+    const offlineCtx = new OfflineAudioContext(numChannels, length, sampleRate);
+    const source = offlineCtx.createBufferSource();
+    source.buffer = audioBuffer;
+
+    if (fadeIn || fadeOut) {
+      const gainNode = offlineCtx.createGain();
+      source.connect(gainNode);
+      gainNode.connect(offlineCtx.destination);
+
+      if (fadeIn) {
+        gainNode.gain.setValueAtTime(0, 0);
+        gainNode.gain.linearRampToValueAtTime(1, fadeSamples / sampleRate);
+      }
+      if (fadeOut) {
+        const fadeOutStart = (length - fadeSamples) / sampleRate;
+        gainNode.gain.setValueAtTime(1, fadeOutStart);
+        gainNode.gain.linearRampToValueAtTime(0, length / sampleRate);
+      }
+    } else {
+      source.connect(offlineCtx.destination);
+    }
+
+    source.start(0, startSample / sampleRate, length / sampleRate);
+    const renderedBuffer = await offlineCtx.startRendering();
+
+    // Encode WAV
+    const wavLength = renderedBuffer.length;
+    const wavBuf = new ArrayBuffer(44 + wavLength * numChannels * 2);
+    const dv = new DataView(wavBuf);
+
+    function ws(o, s) { for (let i = 0; i < s.length; i++) dv.setUint8(o + i, s.charCodeAt(i)); }
+    ws(0, 'RIFF');
+    dv.setUint32(4, 36 + wavLength * numChannels * 2, true);
+    ws(8, 'WAVE');
+    ws(12, 'fmt ');
+    dv.setUint32(16, 16, true);
+    dv.setUint16(20, 1, true);
+    dv.setUint16(22, numChannels, true);
+    dv.setUint32(24, sampleRate, true);
+    dv.setUint32(28, sampleRate * numChannels * 2, true);
+    dv.setUint16(32, numChannels * 2, true);
+    dv.setUint16(34, 16, true);
+    ws(36, 'data');
+    dv.setUint32(40, wavLength * numChannels * 2, true);
+
+    let offset = 44;
+    for (let i = 0; i < wavLength; i++) {
+      for (let ch = 0; ch < numChannels; ch++) {
+        const sample = Math.max(-1, Math.min(1, renderedBuffer.getChannelData(ch)[i]));
+        dv.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
+        offset += 2;
+      }
+    }
+
+    const wavBlob = new Blob([wavBuf], { type: 'audio/wav' });
+    const url = URL.createObjectURL(wavBlob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${loadedFileName}-trimmed.wav`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+  } catch (e) {
+    alert('Export failed: ' + e.message);
+  }
+
+  btnExport.disabled = false;
+  btnExport.textContent = 'Export WAV';
+});
+</script>
+<script src="/related.js"></script>
+</body>
+</html>

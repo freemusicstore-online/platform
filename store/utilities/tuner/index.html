@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<title>Chromatic Tuner - FreeMusicStore</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Manrope', sans-serif;
+  background: #0a0a0a;
+  color: #e5e5e5;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+a { color: #8b5cf6; text-decoration: none; }
+a:hover { text-decoration: underline; }
+.back { position: absolute; top: 1.25rem; left: 1.25rem; font-size: 0.875rem; font-weight: 500; }
+.back::before { content: '\2190 '; }
+header { text-align: center; padding: 3rem 1rem 1.5rem; }
+header h1 { font-size: 1.5rem; font-weight: 800; color: #fff; }
+header p { font-size: 0.875rem; color: #a3a3a3; margin-top: 0.25rem; }
+.container { width: 100%; max-width: 420px; padding: 0 1rem 3rem; display: flex; flex-direction: column; align-items: center; gap: 2rem; }
+.note-display { text-align: center; }
+.note-name { font-size: 6rem; font-weight: 800; color: #fff; line-height: 1; transition: color 0.2s; }
+.note-octave { font-size: 2rem; font-weight: 600; color: #a3a3a3; vertical-align: sub; }
+.cents-value { font-size: 1.25rem; font-weight: 600; margin-top: 0.5rem; transition: color 0.2s; }
+.freq-display { font-size: 0.875rem; color: #525252; margin-top: 0.25rem; }
+.gauge-container { width: 100%; position: relative; height: 80px; }
+.gauge-track {
+  position: absolute; top: 50%; left: 0; right: 0; height: 4px;
+  background: #262626; border-radius: 2px; transform: translateY(-50%);
+}
+.gauge-center {
+  position: absolute; top: 50%; left: 50%; width: 3px; height: 32px;
+  background: #8b5cf6; border-radius: 2px; transform: translate(-50%, -50%);
+}
+.gauge-ticks { position: absolute; top: 50%; left: 0; right: 0; transform: translateY(-50%); }
+.gauge-tick {
+  position: absolute; width: 1px; height: 12px; background: #333;
+  transform: translate(-50%, -50%);
+}
+.gauge-tick.major { height: 20px; background: #525252; }
+.gauge-labels { position: absolute; bottom: 0; left: 0; right: 0; display: flex; justify-content: space-between; font-size: 0.625rem; color: #525252; }
+.needle {
+  position: absolute; top: 50%; left: 50%; width: 12px; height: 12px;
+  border-radius: 50%; background: #ef4444; transform: translate(-50%, -50%);
+  transition: left 0.1s ease-out, background 0.2s;
+  box-shadow: 0 0 8px rgba(239,68,68,0.4);
+}
+.needle.in-tune { background: #22c55e; box-shadow: 0 0 12px rgba(34,197,94,0.5); }
+.btn {
+  font-family: 'Manrope', sans-serif; font-weight: 600; font-size: 0.875rem;
+  padding: 0.75rem 2rem; border-radius: 0.5rem; border: none; cursor: pointer;
+  transition: opacity 0.15s;
+}
+.btn:hover { opacity: 0.85; }
+.btn-primary { background: #8b5cf6; color: #fff; }
+.btn-primary.active { background: #7c3aed; }
+.settings { width: 100%; }
+.setting-row { display: flex; align-items: center; justify-content: space-between; }
+.setting-label { font-size: 0.875rem; color: #a3a3a3; }
+.ref-pitch { display: flex; align-items: center; gap: 0.5rem; }
+.ref-pitch button {
+  font-family: 'Manrope', sans-serif; width: 28px; height: 28px; border-radius: 50%;
+  background: #262626; color: #e5e5e5; border: 1px solid #333; cursor: pointer;
+  font-size: 1rem; display: flex; align-items: center; justify-content: center;
+  font-weight: 700; line-height: 1;
+}
+.ref-pitch button:hover { background: #333; }
+.ref-pitch span { font-size: 0.875rem; font-weight: 600; min-width: 60px; text-align: center; }
+.status { font-size: 0.875rem; color: #525252; text-align: center; }
+</style>
+</head>
+<body>
+<a href="/" class="back">&larr; Back to Store</a>
+<header>
+  <h1>Chromatic Tuner</h1>
+  <p>Microphone-based pitch detection</p>
+</header>
+<div class="container">
+  <div class="note-display">
+    <span class="note-name" id="noteName">--</span><span class="note-octave" id="noteOctave"></span>
+    <div class="cents-value" id="centsValue">-- cents</div>
+    <div class="freq-display" id="freqDisplay">-- Hz</div>
+  </div>
+
+  <div class="gauge-container">
+    <div class="gauge-track"></div>
+    <div class="gauge-ticks" id="gaugeTicks"></div>
+    <div class="gauge-center"></div>
+    <div class="needle" id="needle"></div>
+    <div class="gauge-labels"><span>-50</span><span>0</span><span>+50</span></div>
+  </div>
+
+  <button class="btn btn-primary" id="startBtn">Start Tuner</button>
+
+  <div class="settings">
+    <div class="setting-row">
+      <span class="setting-label">Reference A4</span>
+      <div class="ref-pitch">
+        <button id="refDown">-</button>
+        <span id="refValue">440 Hz</span>
+        <button id="refUp">+</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="status" id="status">Tap start to begin</div>
+</div>
+
+<script>
+(function() {
+  const STORAGE_KEY = 'fmus-tuner';
+  const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+
+  let audioCtx = null;
+  let analyser = null;
+  let mediaStream = null;
+  let rafId = null;
+  let isRunning = false;
+  let refPitch = 440;
+
+  const noteName = document.getElementById('noteName');
+  const noteOctave = document.getElementById('noteOctave');
+  const centsValue = document.getElementById('centsValue');
+  const freqDisplay = document.getElementById('freqDisplay');
+  const needle = document.getElementById('needle');
+  const startBtn = document.getElementById('startBtn');
+  const refValueEl = document.getElementById('refValue');
+  const status = document.getElementById('status');
+
+  // Build gauge ticks
+  const gaugeTicks = document.getElementById('gaugeTicks');
+  for (let i = -50; i <= 50; i += 5) {
+    const tick = document.createElement('div');
+    tick.className = 'gauge-tick' + (i % 10 === 0 ? ' major' : '');
+    tick.style.left = ((i + 50) / 100 * 100) + '%';
+    gaugeTicks.appendChild(tick);
+  }
+
+  function loadState() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+      if (saved && saved.refPitch) refPitch = saved.refPitch;
+    } catch(e) {}
+    refValueEl.textContent = refPitch + ' Hz';
+  }
+
+  function saveState() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ refPitch }));
+  }
+
+  function freqToNote(freq) {
+    const semitones = 12 * Math.log2(freq / refPitch);
+    const midi = Math.round(semitones) + 69;
+    const noteIndex = ((midi % 12) + 12) % 12;
+    const octave = Math.floor(midi / 12) - 1;
+    const cents = Math.round((semitones - Math.round(semitones)) * 100);
+    return { name: NOTE_NAMES[noteIndex], octave, cents };
+  }
+
+  function autocorrelate(buffer, sampleRate) {
+    let size = buffer.length;
+    let rms = 0;
+    for (let i = 0; i < size; i++) rms += buffer[i] * buffer[i];
+    rms = Math.sqrt(rms / size);
+    if (rms < 0.01) return -1;
+
+    let r1 = 0, r2 = size - 1;
+    const threshold = 0.2;
+    for (let i = 0; i < size / 2; i++) {
+      if (Math.abs(buffer[i]) < threshold) { r1 = i; break; }
+    }
+    for (let i = 1; i < size / 2; i++) {
+      if (Math.abs(buffer[size - i]) < threshold) { r2 = size - i; break; }
+    }
+
+    buffer = buffer.slice(r1, r2);
+    size = buffer.length;
+
+    const c = new Float32Array(size);
+    for (let i = 0; i < size; i++) {
+      for (let j = 0; j < size - i; j++) {
+        c[i] += buffer[j] * buffer[j + i];
+      }
+    }
+
+    let d = 0;
+    while (c[d] > c[d + 1]) d++;
+
+    let maxval = -1, maxpos = -1;
+    for (let i = d; i < size; i++) {
+      if (c[i] > maxval) { maxval = c[i]; maxpos = i; }
+    }
+
+    let T0 = maxpos;
+    const x1 = c[T0 - 1], x2 = c[T0], x3 = c[T0 + 1];
+    const a = (x1 + x3 - 2 * x2) / 2;
+    const b = (x3 - x1) / 2;
+    if (a) T0 = T0 - b / (2 * a);
+
+    return sampleRate / T0;
+  }
+
+  function updateDisplay() {
+    if (!isRunning) return;
+    const buffer = new Float32Array(analyser.fftSize);
+    analyser.getFloatTimeDomainData(buffer);
+    const freq = autocorrelate(buffer, audioCtx.sampleRate);
+
+    if (freq > 0 && freq < 5000) {
+      const note = freqToNote(freq);
+      noteName.textContent = note.name;
+      noteOctave.textContent = note.octave;
+      centsValue.textContent = (note.cents >= 0 ? '+' : '') + note.cents + ' cents';
+      freqDisplay.textContent = freq.toFixed(1) + ' Hz';
+
+      const inTune = Math.abs(note.cents) <= 5;
+      const clampedCents = Math.max(-50, Math.min(50, note.cents));
+      needle.style.left = ((clampedCents + 50) / 100 * 100) + '%';
+      needle.classList.toggle('in-tune', inTune);
+      noteName.style.color = inTune ? '#22c55e' : (Math.abs(note.cents) > 25 ? '#ef4444' : '#fff');
+      centsValue.style.color = inTune ? '#22c55e' : (Math.abs(note.cents) > 25 ? '#ef4444' : '#a3a3a3');
+    }
+
+    rafId = requestAnimationFrame(updateDisplay);
+  }
+
+  async function startTuner() {
+    try {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const source = audioCtx.createMediaStreamSource(mediaStream);
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 4096;
+      source.connect(analyser);
+      isRunning = true;
+      startBtn.textContent = 'Stop Tuner';
+      startBtn.classList.add('active');
+      status.textContent = 'Listening...';
+      updateDisplay();
+    } catch(e) {
+      status.textContent = 'Microphone access denied';
+    }
+  }
+
+  function stopTuner() {
+    isRunning = false;
+    if (rafId) cancelAnimationFrame(rafId);
+    if (mediaStream) mediaStream.getTracks().forEach(t => t.stop());
+    if (audioCtx) audioCtx.close();
+    audioCtx = null;
+    startBtn.textContent = 'Start Tuner';
+    startBtn.classList.remove('active');
+    status.textContent = 'Tap start to begin';
+    noteName.textContent = '--';
+    noteOctave.textContent = '';
+    centsValue.textContent = '-- cents';
+    freqDisplay.textContent = '-- Hz';
+    needle.style.left = '50%';
+    needle.classList.remove('in-tune');
+    noteName.style.color = '#fff';
+    centsValue.style.color = '#a3a3a3';
+  }
+
+  startBtn.addEventListener('click', () => {
+    if (isRunning) stopTuner(); else startTuner();
+  });
+
+  document.getElementById('refDown').addEventListener('click', () => {
+    refPitch = Math.max(400, refPitch - 1);
+    refValueEl.textContent = refPitch + ' Hz';
+    saveState();
+  });
+
+  document.getElementById('refUp').addEventListener('click', () => {
+    refPitch = Math.min(480, refPitch + 1);
+    refValueEl.textContent = refPitch + ' Hz';
+    saveState();
+  });
+
+  loadState();
+})();
+</script>
+<script src="/related.js"></script>
+</body>
+</html>

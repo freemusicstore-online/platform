@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<title>Chord Progressions - FreeMusicStore</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Manrope', sans-serif;
+  background: #0f0f0f;
+  color: #e0e0e0;
+  min-height: 100vh;
+  line-height: 1.5;
+}
+a { color: #8b5cf6; text-decoration: none; }
+a:hover { text-decoration: underline; }
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 16px 24px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #999;
+}
+.back:hover { color: #8b5cf6; text-decoration: none; }
+header {
+  text-align: center;
+  padding: 24px 24px 32px;
+  border-bottom: 1px solid #1e1e1e;
+}
+header h1 {
+  font-size: 28px;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 6px;
+}
+header p { color: #888; font-size: 15px; }
+.container { max-width: 800px; margin: 0 auto; padding: 24px; }
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 24px;
+}
+.controls label { font-size: 13px; font-weight: 600; color: #aaa; text-transform: uppercase; letter-spacing: 0.5px; }
+.control-group { display: flex; flex-direction: column; gap: 4px; }
+select, input[type="range"] { font-family: 'Manrope', sans-serif; }
+select {
+  background: #1a1a1a;
+  color: #e0e0e0;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  min-width: 100px;
+}
+select:focus { outline: none; border-color: #8b5cf6; }
+.tempo-group { display: flex; align-items: center; gap: 8px; }
+.tempo-group input[type="range"] {
+  accent-color: #8b5cf6;
+  width: 120px;
+}
+.tempo-val { font-size: 14px; color: #8b5cf6; font-weight: 600; min-width: 60px; }
+.loop-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: #aaa;
+  user-select: none;
+}
+.loop-toggle input { display: none; }
+.loop-toggle .check {
+  width: 18px; height: 18px;
+  border: 2px solid #444;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+.loop-toggle input:checked + .check {
+  background: #8b5cf6;
+  border-color: #8b5cf6;
+}
+.loop-toggle input:checked + .check::after {
+  content: '';
+  width: 6px; height: 10px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg) translateY(-1px);
+}
+.progressions-list { display: flex; flex-direction: column; gap: 12px; }
+.progression-card {
+  background: #1a1a1a;
+  border: 1px solid #262626;
+  border-radius: 12px;
+  padding: 16px 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+.progression-card:hover { border-color: #8b5cf6; background: #1e1a2e; }
+.progression-card.playing { border-color: #8b5cf6; background: #1e1a2e; box-shadow: 0 0 20px rgba(139, 92, 246, 0.15); }
+.prog-name { font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+.prog-roman { font-size: 14px; color: #8b5cf6; font-weight: 600; margin-bottom: 8px; }
+.prog-chords {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.chord-badge {
+  background: #262626;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #ccc;
+  transition: all 0.15s;
+}
+.chord-badge.active { background: #8b5cf6; color: #fff; }
+.chord-notes { font-size: 11px; color: #777; display: block; margin-top: 2px; font-weight: 400; }
+.stop-btn {
+  background: #8b5cf6;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 24px;
+  font-family: 'Manrope', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 16px;
+}
+.stop-btn:hover { background: #7c3aed; }
+.style-note { font-size: 12px; color: #555; margin-bottom: 16px; }
+</style>
+</head>
+<body>
+<a href="/" class="back">&larr; Back to Store</a>
+<header>
+  <h1>Chord Progressions</h1>
+  <p>Select a key and mode, then click a progression to hear it</p>
+</header>
+<div class="container">
+  <div class="controls">
+    <div class="control-group">
+      <label>Key</label>
+      <select id="keySelect"></select>
+    </div>
+    <div class="control-group">
+      <label>Mode</label>
+      <select id="modeSelect">
+        <option value="major">Major</option>
+        <option value="minor">Minor</option>
+      </select>
+    </div>
+    <div class="control-group">
+      <label>Tempo</label>
+      <div class="tempo-group">
+        <input type="range" id="tempoSlider" min="40" max="200" value="100">
+        <span class="tempo-val" id="tempoVal">100 BPM</span>
+      </div>
+    </div>
+    <div class="control-group">
+      <label>&nbsp;</label>
+      <label class="loop-toggle">
+        <input type="checkbox" id="loopToggle">
+        <span class="check"></span>
+        Loop
+      </label>
+    </div>
+  </div>
+  <p class="style-note">Click any progression to play it</p>
+  <div id="progressionsList" class="progressions-list"></div>
+  <button id="stopBtn" class="stop-btn" style="display:none;">Stop</button>
+</div>
+
+<script>
+const NOTE_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const FLAT_NAMES = ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
+const KEYS = ['C','C#/Db','D','D#/Eb','E','F','F#/Gb','G','G#/Ab','A','A#/Bb','B'];
+const KEY_INDICES = [0,1,2,3,4,5,6,7,8,9,10,11];
+
+const MAJOR_INTERVALS = [0,2,4,5,7,9,11];
+const MINOR_INTERVALS = [0,2,3,5,7,8,10];
+
+const MAJOR_CHORD_TYPES = ['maj','min','min','maj','maj','min','dim'];
+const MINOR_CHORD_TYPES = ['min','dim','maj','min','min','maj','maj'];
+
+const MAJOR_ROMAN = ['I','ii','iii','IV','V','vi','vii\u00B0'];
+const MINOR_ROMAN = ['i','ii\u00B0','III','iv','v','VI','VII'];
+
+const MAJOR_PROGRESSIONS = [
+  { name: 'Classic (Pop/Rock)', numerals: [0,3,4,0], label: 'I - IV - V - I' },
+  { name: 'Axis of Awesome', numerals: [0,4,5,3], label: 'I - V - vi - IV' },
+  { name: 'Jazz ii-V-I', numerals: [1,4,0], label: 'ii - V - I' },
+  { name: '50s Progression', numerals: [0,5,3,4], label: 'I - vi - IV - V' },
+  { name: 'Pachelbel Canon', numerals: [0,4,5,2,3,0,3,4], label: 'I - V - vi - iii - IV - I - IV - V' },
+  { name: 'Andalusian Cadence', numerals: [5,4,3,2], label: 'vi - V - IV - iii' },
+  { name: 'Blues (12-bar short)', numerals: [0,0,3,3,4,3,0,4], label: 'I - I - IV - IV - V - IV - I - V' },
+  { name: 'Descending Bass', numerals: [0,4,5,3], label: 'I - V - vi - IV' },
+];
+
+const MINOR_PROGRESSIONS = [
+  { name: 'Natural Minor', numerals: [0,3,4,0], label: 'i - iv - v - i' },
+  { name: 'Andalusian', numerals: [0,6,5,4], label: 'i - VII - VI - v' },
+  { name: 'Pop Minor', numerals: [0,5,6,3], label: 'i - VI - VII - iv' },
+  { name: 'Minor Jazz', numerals: [1,4,0], label: 'ii\u00B0 - v - i' },
+  { name: 'Dark Progression', numerals: [0,1,5,4], label: 'i - ii\u00B0 - VI - v' },
+  { name: 'Emotional Minor', numerals: [0,3,5,6], label: 'i - iv - VI - VII' },
+];
+
+const CHORD_INTERVALS = {
+  maj: [0,4,7],
+  min: [0,3,7],
+  dim: [0,3,6],
+};
+
+let audioCtx = null;
+let playing = false;
+let currentTimeout = null;
+let scheduledNodes = [];
+
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function noteFreq(midiNote) {
+  return 440 * Math.pow(2, (midiNote - 69) / 12);
+}
+
+function getScaleNotes(rootIdx, mode) {
+  const intervals = mode === 'major' ? MAJOR_INTERVALS : MINOR_INTERVALS;
+  return intervals.map(i => (rootIdx + i) % 12);
+}
+
+function getChordNotes(rootNoteIdx, type) {
+  const intervals = CHORD_INTERVALS[type];
+  return intervals.map(i => (rootNoteIdx + i) % 12);
+}
+
+function noteName(idx) {
+  return NOTE_NAMES[idx % 12];
+}
+
+function buildChordData(keyIdx, mode) {
+  const intervals = mode === 'major' ? MAJOR_INTERVALS : MINOR_INTERVALS;
+  const types = mode === 'major' ? MAJOR_CHORD_TYPES : MINOR_CHORD_TYPES;
+  const roman = mode === 'major' ? MAJOR_ROMAN : MINOR_ROMAN;
+  return intervals.map((interval, i) => {
+    const chordRoot = (keyIdx + interval) % 12;
+    const type = types[i];
+    const notes = getChordNotes(chordRoot, type);
+    const suffix = type === 'min' ? 'm' : type === 'dim' ? 'dim' : '';
+    return {
+      name: NOTE_NAMES[chordRoot] + suffix,
+      roman: roman[i],
+      notes: notes.map(n => NOTE_NAMES[n]),
+      rootMidi: 60 + chordRoot,
+      type,
+      rootIdx: chordRoot
+    };
+  });
+}
+
+function playChord(chordData, startTime, duration) {
+  const ctx = getAudioCtx();
+  const baseOctaveMidi = 48;
+  const midiNotes = CHORD_INTERVALS[chordData.type].map(i => baseOctaveMidi + chordData.rootIdx + i);
+  const gainNode = ctx.createGain();
+  gainNode.connect(ctx.destination);
+  gainNode.gain.setValueAtTime(0.18, startTime);
+  gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + duration - 0.05);
+  const nodes = [];
+  midiNotes.forEach(midi => {
+    const osc1 = ctx.createOscillator();
+    osc1.type = 'triangle';
+    osc1.frequency.value = noteFreq(midi);
+    osc1.connect(gainNode);
+    osc1.start(startTime);
+    osc1.stop(startTime + duration);
+    nodes.push(osc1);
+    const osc2 = ctx.createOscillator();
+    osc2.type = 'sine';
+    osc2.frequency.value = noteFreq(midi + 12);
+    const g2 = ctx.createGain();
+    g2.gain.value = 0.08;
+    osc2.connect(g2);
+    g2.connect(gainNode);
+    osc2.start(startTime);
+    osc2.stop(startTime + duration);
+    nodes.push(osc2);
+  });
+  return nodes;
+}
+
+function stopPlaying() {
+  playing = false;
+  if (currentTimeout) { clearTimeout(currentTimeout); currentTimeout = null; }
+  scheduledNodes.forEach(n => { try { n.stop(); } catch(e) {} });
+  scheduledNodes = [];
+  document.querySelectorAll('.progression-card').forEach(c => c.classList.remove('playing'));
+  document.querySelectorAll('.chord-badge').forEach(b => b.classList.remove('active'));
+  document.getElementById('stopBtn').style.display = 'none';
+}
+
+function playProgression(progIdx) {
+  stopPlaying();
+  playing = true;
+  document.getElementById('stopBtn').style.display = 'inline-block';
+
+  const keyIdx = KEY_INDICES[document.getElementById('keySelect').selectedIndex];
+  const mode = document.getElementById('modeSelect').value;
+  const tempo = parseInt(document.getElementById('tempoSlider').value);
+  const loop = document.getElementById('loopToggle').checked;
+  const progs = mode === 'major' ? MAJOR_PROGRESSIONS : MINOR_PROGRESSIONS;
+  const prog = progs[progIdx];
+  const chords = buildChordData(keyIdx, mode);
+
+  const card = document.querySelectorAll('.progression-card')[progIdx];
+  card.classList.add('playing');
+
+  const beatDuration = 60 / tempo;
+  const ctx = getAudioCtx();
+
+  function scheduleRound() {
+    if (!playing) return;
+    const badges = card.querySelectorAll('.chord-badge');
+    let time = ctx.currentTime + 0.05;
+    prog.numerals.forEach((numIdx, i) => {
+      const chord = chords[numIdx];
+      const nodes = playChord(chord, time, beatDuration * 0.95);
+      scheduledNodes.push(...nodes);
+      const delay = (time - ctx.currentTime) * 1000;
+      const t1 = setTimeout(() => {
+        badges.forEach(b => b.classList.remove('active'));
+        if (badges[i]) badges[i].classList.add('active');
+      }, Math.max(0, delay));
+      time += beatDuration;
+    });
+    const totalDuration = prog.numerals.length * beatDuration;
+    currentTimeout = setTimeout(() => {
+      if (!playing) return;
+      badges.forEach(b => b.classList.remove('active'));
+      if (loop && playing) {
+        scheduleRound();
+      } else {
+        stopPlaying();
+      }
+    }, totalDuration * 1000);
+  }
+  scheduleRound();
+}
+
+function renderProgressions() {
+  const keyIdx = KEY_INDICES[document.getElementById('keySelect').selectedIndex];
+  const mode = document.getElementById('modeSelect').value;
+  const chords = buildChordData(keyIdx, mode);
+  const progs = mode === 'major' ? MAJOR_PROGRESSIONS : MINOR_PROGRESSIONS;
+  const list = document.getElementById('progressionsList');
+  list.innerHTML = '';
+  progs.forEach((prog, pi) => {
+    const card = document.createElement('div');
+    card.className = 'progression-card';
+    card.onclick = () => playProgression(pi);
+    const chordBadges = prog.numerals.map(numIdx => {
+      const ch = chords[numIdx];
+      return `<span class="chord-badge">${ch.roman} - ${ch.name}<span class="chord-notes">${ch.notes.join(' ')}</span></span>`;
+    }).join('');
+    card.innerHTML = `
+      <div class="prog-name">${prog.name}</div>
+      <div class="prog-roman">${prog.label}</div>
+      <div class="prog-chords">${chordBadges}</div>
+    `;
+    list.appendChild(card);
+  });
+}
+
+// Init
+const keySelect = document.getElementById('keySelect');
+KEYS.forEach((k, i) => {
+  const opt = document.createElement('option');
+  opt.value = i;
+  opt.textContent = k;
+  keySelect.appendChild(opt);
+});
+
+const saved = localStorage.getItem('fmus-chord-prog-settings');
+if (saved) {
+  try {
+    const s = JSON.parse(saved);
+    if (s.key !== undefined) keySelect.selectedIndex = s.key;
+    if (s.mode) document.getElementById('modeSelect').value = s.mode;
+    if (s.tempo) {
+      document.getElementById('tempoSlider').value = s.tempo;
+      document.getElementById('tempoVal').textContent = s.tempo + ' BPM';
+    }
+    if (s.loop) document.getElementById('loopToggle').checked = s.loop;
+  } catch(e) {}
+}
+
+function saveSettings() {
+  localStorage.setItem('fmus-chord-prog-settings', JSON.stringify({
+    key: keySelect.selectedIndex,
+    mode: document.getElementById('modeSelect').value,
+    tempo: parseInt(document.getElementById('tempoSlider').value),
+    loop: document.getElementById('loopToggle').checked,
+  }));
+}
+
+keySelect.addEventListener('change', () => { stopPlaying(); renderProgressions(); saveSettings(); });
+document.getElementById('modeSelect').addEventListener('change', () => { stopPlaying(); renderProgressions(); saveSettings(); });
+document.getElementById('tempoSlider').addEventListener('input', e => {
+  document.getElementById('tempoVal').textContent = e.target.value + ' BPM';
+  saveSettings();
+});
+document.getElementById('loopToggle').addEventListener('change', saveSettings);
+document.getElementById('stopBtn').addEventListener('click', stopPlaying);
+
+renderProgressions();
+</script>
+<script src="/related.js"></script>
+</body>
+</html>

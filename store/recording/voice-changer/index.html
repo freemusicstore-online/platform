@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<title>Voice Changer - FreeMusicStore</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --accent: #8b5cf6;
+  --accent-hover: #7c3aed;
+  --bg: #0a0a0b;
+  --surface: #141416;
+  --surface-2: #1e1e22;
+  --border: #2a2a2e;
+  --text: #f0f0f2;
+  --text-dim: #8a8a8e;
+  --danger: #ef4444;
+  --success: #22c55e;
+  --radius: 12px;
+}
+body {
+  font-family: 'Manrope', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.5;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.back { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; color: var(--text-dim); padding: 20px 24px; }
+.back:hover { color: var(--text); text-decoration: none; }
+.container { max-width: 640px; margin: 0 auto; padding: 0 24px 80px; }
+h1 { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+.subtitle { color: var(--text-dim); font-size: 14px; margin-bottom: 32px; }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-bottom: 16px;
+}
+
+.status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-dim);
+}
+.status-dot.active {
+  background: var(--success);
+  animation: pulse 1s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+canvas#visualizer {
+  width: 100%;
+  height: 80px;
+  border-radius: 8px;
+  background: var(--surface-2);
+  margin-bottom: 20px;
+}
+
+.effects-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.effect-btn {
+  font-family: 'Manrope', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  background: var(--surface-2);
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+.effect-btn:hover { border-color: var(--accent); color: var(--text); }
+.effect-btn.active {
+  background: rgba(139, 92, 246, 0.15);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.effect-btn .icon { font-size: 20px; display: block; margin-bottom: 4px; }
+
+.main-controls {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+button {
+  font-family: 'Manrope', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.btn-mic { background: var(--accent); color: #fff; }
+.btn-mic:hover:not(:disabled) { background: var(--accent-hover); }
+.btn-mic.active { background: var(--danger); }
+.btn-mic.active:hover { background: #dc2626; }
+
+.btn-secondary { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); }
+.btn-secondary:hover:not(:disabled) { background: var(--border); }
+
+.recordings { margin-top: 8px; }
+.recordings h2 { font-size: 18px; font-weight: 600; margin-bottom: 16px; }
+.recording-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.recording-item .info { flex-shrink: 0; }
+.recording-item .name { font-size: 14px; font-weight: 600; }
+.recording-item .meta { font-size: 12px; color: var(--text-dim); }
+.recording-item audio { flex: 1; height: 36px; min-width: 0; }
+.btn-dl { background: var(--accent); color: #fff; padding: 8px 14px; font-size: 13px; border-radius: 8px; text-decoration: none; font-weight: 600; }
+.btn-dl:hover { background: var(--accent-hover); text-decoration: none; }
+
+.param-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+.param-row label { min-width: 80px; }
+.param-row input[type="range"] {
+  flex: 1;
+  accent-color: var(--accent);
+}
+.param-row .val {
+  min-width: 40px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  font-weight: 600;
+}
+</style>
+</head>
+<body>
+<a href="/" class="back">&larr; Back to Store</a>
+<div class="container">
+  <h1>Voice Changer</h1>
+  <p class="subtitle">Real-time voice effects using Web Audio API</p>
+
+  <div class="card">
+    <div class="status-bar">
+      <div class="status-indicator">
+        <span class="status-dot" id="statusDot"></span>
+        <span id="statusText">Microphone off</span>
+      </div>
+    </div>
+
+    <canvas id="visualizer"></canvas>
+
+    <div class="effects-grid">
+      <button class="effect-btn" data-effect="pitchUp">
+        <span class="icon">&#x2191;</span>Pitch Up
+      </button>
+      <button class="effect-btn" data-effect="pitchDown">
+        <span class="icon">&#x2193;</span>Pitch Down
+      </button>
+      <button class="effect-btn" data-effect="echo">
+        <span class="icon">&#x223F;</span>Echo
+      </button>
+      <button class="effect-btn" data-effect="reverb">
+        <span class="icon">&#x2726;</span>Reverb
+      </button>
+      <button class="effect-btn" data-effect="robot">
+        <span class="icon">&#x2699;</span>Robot
+      </button>
+    </div>
+
+    <div id="paramControls"></div>
+
+    <div class="main-controls">
+      <button class="btn-mic" id="btnMic">Start Mic</button>
+      <button class="btn-secondary" id="btnRecord" disabled>Record Output</button>
+    </div>
+  </div>
+
+  <div class="recordings" id="recordingsSection" style="display:none;">
+    <h2>Recordings</h2>
+    <div id="recordingsList"></div>
+  </div>
+</div>
+
+<script>
+const STORAGE_PREFIX = 'fmus-';
+
+const canvas = document.getElementById('visualizer');
+const ctx = canvas.getContext('2d');
+const btnMic = document.getElementById('btnMic');
+const btnRecord = document.getElementById('btnRecord');
+const statusDot = document.getElementById('statusDot');
+const statusText = document.getElementById('statusText');
+const paramControls = document.getElementById('paramControls');
+const recordingsList = document.getElementById('recordingsList');
+const recordingsSection = document.getElementById('recordingsSection');
+const effectBtns = document.querySelectorAll('.effect-btn');
+
+let audioCtx = null;
+let stream = null;
+let sourceNode = null;
+let analyser = null;
+let gainNode = null;
+let destNode = null;
+let micActive = false;
+let animFrameId = null;
+
+// Effect nodes
+let pitchNode = null;
+let echoDelayNode = null;
+let echoFeedbackNode = null;
+let echoWetGain = null;
+let echoDryGain = null;
+let reverbConvolver = null;
+let reverbWetGain = null;
+let reverbDryGain = null;
+let robotShaper = null;
+let robotGain = null;
+
+// Recording
+let mediaRecorder = null;
+let recordChunks = [];
+let isRecording = false;
+let recordingCount = 0;
+
+// Effect state
+const activeEffects = { pitchUp: false, pitchDown: false, echo: false, reverb: false, robot: false };
+
+function resizeCanvas() {
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * window.devicePixelRatio;
+  canvas.height = rect.height * window.devicePixelRatio;
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+drawIdle();
+
+function drawIdle() {
+  const w = canvas.width / window.devicePixelRatio;
+  const h = canvas.height / window.devicePixelRatio;
+  ctx.clearRect(0, 0, w, h);
+  ctx.strokeStyle = '#2a2a2e';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(0, h / 2);
+  ctx.lineTo(w, h / 2);
+  ctx.stroke();
+}
+
+function drawVisualizer() {
+  if (!analyser) return;
+  const bufLen = analyser.frequencyBinCount;
+  const data = new Uint8Array(bufLen);
+  analyser.getByteFrequencyData(data);
+
+  const w = canvas.width / window.devicePixelRatio;
+  const h = canvas.height / window.devicePixelRatio;
+  ctx.clearRect(0, 0, w, h);
+
+  const barWidth = w / bufLen * 2.5;
+  let x = 0;
+  for (let i = 0; i < bufLen; i++) {
+    const barHeight = (data[i] / 255) * h;
+    const hue = 260 + (i / bufLen) * 30;
+    ctx.fillStyle = `hsla(${hue}, 70%, 60%, 0.8)`;
+    ctx.fillRect(x, h - barHeight, barWidth - 1, barHeight);
+    x += barWidth;
+    if (x > w) break;
+  }
+
+  if (micActive) animFrameId = requestAnimationFrame(drawVisualizer);
+}
+
+function generateImpulseResponse(ctx, duration, decay) {
+  const rate = ctx.sampleRate;
+  const length = rate * duration;
+  const impulse = ctx.createBuffer(2, length, rate);
+  for (let ch = 0; ch < 2; ch++) {
+    const data = impulse.getChannelData(ch);
+    for (let i = 0; i < length; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, decay);
+    }
+  }
+  return impulse;
+}
+
+function makeDistortionCurve(amount) {
+  const samples = 44100;
+  const curve = new Float32Array(samples);
+  for (let i = 0; i < samples; i++) {
+    const x = (i * 2) / samples - 1;
+    curve[i] = ((Math.PI + amount) * x) / (Math.PI + amount * Math.abs(x));
+  }
+  return curve;
+}
+
+function buildAudioGraph() {
+  if (!audioCtx || !sourceNode) return;
+
+  // Disconnect everything from source
+  sourceNode.disconnect();
+
+  // Create fresh nodes
+  analyser = audioCtx.createAnalyser();
+  analyser.fftSize = 512;
+  gainNode = audioCtx.createGain();
+  gainNode.gain.value = 1.0;
+  destNode = audioCtx.createMediaStreamDestination();
+
+  // Pitch shift via detune on a buffer — we use a different approach:
+  // We'll chain nodes: source -> [effects] -> gain -> analyser -> destination + destNode
+  let currentNode = sourceNode;
+
+  // Pitch (use oscillator-based approach via playbackRate isn't available on live stream)
+  // Instead, we'll use a pair of delay lines for pitch shifting effect
+  if (activeEffects.pitchUp || activeEffects.pitchDown) {
+    // Simple pitch shift using a modulated delay
+    pitchNode = audioCtx.createDelay(1.0);
+    const pitchLfo = audioCtx.createOscillator();
+    const pitchLfoGain = audioCtx.createGain();
+    pitchLfo.frequency.value = activeEffects.pitchUp ? 5 : 2;
+    pitchLfoGain.gain.value = activeEffects.pitchUp ? 0.003 : 0.008;
+    pitchNode.delayTime.value = activeEffects.pitchUp ? 0.01 : 0.03;
+    pitchLfo.connect(pitchLfoGain);
+    pitchLfoGain.connect(pitchNode.delayTime);
+    pitchLfo.start();
+    pitchNode._lfo = pitchLfo;
+    currentNode.connect(pitchNode);
+    currentNode = pitchNode;
+  }
+
+  // Echo
+  if (activeEffects.echo) {
+    echoDelayNode = audioCtx.createDelay(2.0);
+    echoDelayNode.delayTime.value = 0.3;
+    echoFeedbackNode = audioCtx.createGain();
+    echoFeedbackNode.gain.value = 0.4;
+    echoWetGain = audioCtx.createGain();
+    echoWetGain.gain.value = 0.6;
+    echoDryGain = audioCtx.createGain();
+    echoDryGain.gain.value = 1.0;
+    const echoMerge = audioCtx.createGain();
+
+    currentNode.connect(echoDryGain);
+    echoDryGain.connect(echoMerge);
+
+    currentNode.connect(echoDelayNode);
+    echoDelayNode.connect(echoFeedbackNode);
+    echoFeedbackNode.connect(echoDelayNode);
+    echoDelayNode.connect(echoWetGain);
+    echoWetGain.connect(echoMerge);
+
+    currentNode = echoMerge;
+  }
+
+  // Reverb
+  if (activeEffects.reverb) {
+    reverbConvolver = audioCtx.createConvolver();
+    reverbConvolver.buffer = generateImpulseResponse(audioCtx, 2.5, 3);
+    reverbWetGain = audioCtx.createGain();
+    reverbWetGain.gain.value = 0.5;
+    reverbDryGain = audioCtx.createGain();
+    reverbDryGain.gain.value = 1.0;
+    const reverbMerge = audioCtx.createGain();
+
+    currentNode.connect(reverbDryGain);
+    reverbDryGain.connect(reverbMerge);
+
+    currentNode.connect(reverbConvolver);
+    reverbConvolver.connect(reverbWetGain);
+    reverbWetGain.connect(reverbMerge);
+
+    currentNode = reverbMerge;
+  }
+
+  // Robot (waveshaper distortion)
+  if (activeEffects.robot) {
+    robotShaper = audioCtx.createWaveShaper();
+    robotShaper.curve = makeDistortionCurve(50);
+    robotShaper.oversample = '4x';
+    robotGain = audioCtx.createGain();
+    robotGain.gain.value = 0.5;
+
+    currentNode.connect(robotShaper);
+    robotShaper.connect(robotGain);
+    currentNode = robotGain;
+  }
+
+  currentNode.connect(gainNode);
+  gainNode.connect(analyser);
+  analyser.connect(audioCtx.destination);
+  analyser.connect(destNode);
+}
+
+async function startMic() {
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch (e) {
+    alert('Microphone access denied.');
+    return;
+  }
+
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  sourceNode = audioCtx.createMediaStreamSource(stream);
+
+  buildAudioGraph();
+
+  micActive = true;
+  statusDot.classList.add('active');
+  statusText.textContent = 'Microphone active';
+  btnMic.textContent = 'Stop Mic';
+  btnMic.classList.add('active');
+  btnRecord.disabled = false;
+
+  drawVisualizer();
+}
+
+function stopMic() {
+  micActive = false;
+  cancelAnimationFrame(animFrameId);
+
+  if (isRecording) stopRecord();
+
+  if (stream) {
+    stream.getTracks().forEach(t => t.stop());
+    stream = null;
+  }
+  if (audioCtx) {
+    audioCtx.close();
+    audioCtx = null;
+    sourceNode = null;
+    analyser = null;
+  }
+
+  statusDot.classList.remove('active');
+  statusText.textContent = 'Microphone off';
+  btnMic.textContent = 'Start Mic';
+  btnMic.classList.remove('active');
+  btnRecord.disabled = true;
+  drawIdle();
+}
+
+function startRecord() {
+  if (!destNode) return;
+  recordChunks = [];
+  mediaRecorder = new MediaRecorder(destNode.stream);
+  mediaRecorder.ondataavailable = (e) => {
+    if (e.data.size > 0) recordChunks.push(e.data);
+  };
+  mediaRecorder.onstop = () => {
+    const blob = new Blob(recordChunks, { type: 'audio/webm' });
+    convertAndAdd(blob);
+  };
+  mediaRecorder.start();
+  isRecording = true;
+  btnRecord.textContent = 'Stop Recording';
+  btnRecord.style.background = 'var(--danger)';
+  btnRecord.style.color = '#fff';
+  btnRecord.style.borderColor = 'var(--danger)';
+}
+
+function stopRecord() {
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+    mediaRecorder.stop();
+  }
+  isRecording = false;
+  btnRecord.textContent = 'Record Output';
+  btnRecord.style.background = '';
+  btnRecord.style.color = '';
+  btnRecord.style.borderColor = '';
+}
+
+async function convertAndAdd(blob) {
+  recordingCount++;
+  const effects = Object.entries(activeEffects).filter(([,v]) => v).map(([k]) => k);
+  const label = effects.length ? effects.join('+') : 'dry';
+
+  // Try WAV conversion
+  let finalBlob = blob;
+  let ext = 'webm';
+  try {
+    const ab = await blob.arrayBuffer();
+    const offCtx = new OfflineAudioContext(1, 1, 44100);
+    const audioBuf = await offCtx.decodeAudioData(ab);
+    const numCh = audioBuf.numberOfChannels;
+    const sr = audioBuf.sampleRate;
+    const len = audioBuf.length;
+    const wavBuf = new ArrayBuffer(44 + len * numCh * 2);
+    const dv = new DataView(wavBuf);
+    const ws = (o, s) => { for (let i = 0; i < s.length; i++) dv.setUint8(o + i, s.charCodeAt(i)); };
+    ws(0,'RIFF'); dv.setUint32(4,36+len*numCh*2,true); ws(8,'WAVE');
+    ws(12,'fmt '); dv.setUint32(16,16,true); dv.setUint16(20,1,true);
+    dv.setUint16(22,numCh,true); dv.setUint32(24,sr,true);
+    dv.setUint32(28,sr*numCh*2,true); dv.setUint16(32,numCh*2,true);
+    dv.setUint16(34,16,true); ws(36,'data'); dv.setUint32(40,len*numCh*2,true);
+    let off = 44;
+    for (let i = 0; i < len; i++) {
+      for (let c = 0; c < numCh; c++) {
+        const s = Math.max(-1, Math.min(1, audioBuf.getChannelData(c)[i]));
+        dv.setInt16(off, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+        off += 2;
+      }
+    }
+    finalBlob = new Blob([wavBuf], { type: 'audio/wav' });
+    ext = 'wav';
+  } catch (e) { /* keep webm */ }
+
+  const url = URL.createObjectURL(finalBlob);
+  const name = `Voice ${recordingCount} (${label})`;
+  const item = document.createElement('div');
+  item.className = 'recording-item';
+  item.innerHTML = `
+    <div class="info">
+      <div class="name">${name}</div>
+      <div class="meta">${ext.toUpperCase()}</div>
+    </div>
+    <audio controls src="${url}"></audio>
+    <a class="btn-dl" href="${url}" download="voice-${recordingCount}-${label}.${ext}">Download</a>
+  `;
+  recordingsList.prepend(item);
+  recordingsSection.style.display = '';
+}
+
+// Effect toggles
+effectBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    const effect = btn.dataset.effect;
+
+    // Pitch up and pitch down are mutually exclusive
+    if (effect === 'pitchUp' && !activeEffects.pitchUp) {
+      activeEffects.pitchDown = false;
+      document.querySelector('[data-effect="pitchDown"]').classList.remove('active');
+    } else if (effect === 'pitchDown' && !activeEffects.pitchDown) {
+      activeEffects.pitchUp = false;
+      document.querySelector('[data-effect="pitchUp"]').classList.remove('active');
+    }
+
+    activeEffects[effect] = !activeEffects[effect];
+    btn.classList.toggle('active', activeEffects[effect]);
+
+    if (micActive) {
+      buildAudioGraph();
+      drawVisualizer();
+    }
+  });
+});
+
+btnMic.addEventListener('click', () => {
+  if (micActive) stopMic();
+  else startMic();
+});
+
+btnRecord.addEventListener('click', () => {
+  if (isRecording) stopRecord();
+  else startRecord();
+});
+</script>
+<script src="/related.js"></script>
+</body>
+</html>

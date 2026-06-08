@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<title>Audio Effects - FreeMusicStore</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --accent: #8b5cf6;
+  --accent-hover: #7c3aed;
+  --bg: #0f0f0f;
+  --surface: #1a1a1a;
+  --surface2: #242424;
+  --border: #333;
+  --text: #f0f0f0;
+  --text-dim: #999;
+  --green: #22c55e;
+  --red: #ef4444;
+  --radius: 10px;
+}
+body {
+  font-family: 'Manrope', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.5;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 16px 24px;
+  font-size: 14px;
+  color: var(--text-dim);
+}
+.back:hover { color: var(--text); text-decoration: none; }
+header {
+  text-align: center;
+  padding: 0 24px 32px;
+}
+header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+header p {
+  color: var(--text-dim);
+  font-size: 15px;
+  max-width: 520px;
+  margin: 0 auto;
+}
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 24px 64px;
+}
+.upload-zone {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 48px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  margin-bottom: 24px;
+}
+.upload-zone:hover, .upload-zone.dragover {
+  border-color: var(--accent);
+  background: rgba(139, 92, 246, 0.05);
+}
+.upload-zone p { color: var(--text-dim); font-size: 15px; }
+.upload-zone .icon { font-size: 36px; margin-bottom: 12px; }
+.file-info {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.file-info .name { font-weight: 600; font-size: 15px; }
+.file-info .meta { color: var(--text-dim); font-size: 13px; }
+.transport {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+}
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
+.btn-secondary { background: var(--surface2); color: var(--text); }
+.btn-secondary:hover:not(:disabled) { background: var(--border); }
+.btn-export { background: var(--green); color: #fff; }
+.btn-export:hover:not(:disabled) { background: #16a34a; }
+.effects-chain {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.effect-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.effect-card.active { border-color: var(--accent); }
+.effect-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  cursor: pointer;
+  user-select: none;
+}
+.effect-header h3 { font-size: 15px; font-weight: 600; }
+.effect-toggle {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  background: var(--surface2);
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.effect-toggle.on { background: var(--accent); }
+.effect-toggle::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+.effect-toggle.on::after { transform: translateX(20px); }
+.effect-params {
+  padding: 0 20px 20px;
+  display: none;
+}
+.effect-card.active .effect-params { display: block; }
+.param-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.param-row:last-child { margin-bottom: 0; }
+.param-label {
+  font-size: 13px;
+  color: var(--text-dim);
+  min-width: 90px;
+  flex-shrink: 0;
+}
+.param-slider {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  background: var(--surface2);
+  border-radius: 3px;
+  outline: none;
+}
+.param-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  background: var(--accent);
+  border-radius: 50%;
+  cursor: pointer;
+}
+.param-value {
+  font-size: 13px;
+  font-weight: 600;
+  min-width: 50px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.progress-bar {
+  width: 100%;
+  height: 4px;
+  background: var(--surface2);
+  border-radius: 2px;
+  margin-bottom: 24px;
+  overflow: hidden;
+  display: none;
+}
+.progress-bar .fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+  width: 0%;
+  transition: width 0.1s;
+}
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<a href="/" class="back">&larr; Back to Store</a>
+
+<header>
+  <h1>Audio Effects</h1>
+  <p>Upload an audio file and apply a chain of real-time effects: reverb, delay, EQ, and compression. Preview and export as WAV.</p>
+</header>
+
+<div class="container">
+  <div id="uploadZone" class="upload-zone">
+    <div class="icon">&#9835;</div>
+    <p>Drop an audio file here or click to browse</p>
+    <p style="font-size:13px;margin-top:8px;color:#666">MP3, WAV, OGG, FLAC</p>
+  </div>
+  <input type="file" id="fileInput" accept="audio/*" style="display:none">
+
+  <div id="fileInfo" class="file-info hidden">
+    <div>
+      <div class="name" id="fileName"></div>
+      <div class="meta" id="fileMeta"></div>
+    </div>
+    <button class="btn btn-secondary" onclick="removeFile()" style="padding:6px 14px;font-size:13px">Remove</button>
+  </div>
+
+  <div class="progress-bar" id="progressBar"><div class="fill" id="progressFill"></div></div>
+
+  <div class="transport" id="transport" style="display:none">
+    <button class="btn btn-primary" id="playBtn" onclick="togglePlay()">&#9654; Play</button>
+    <button class="btn btn-secondary" id="stopBtn" onclick="stopPlayback()">&#9632; Stop</button>
+    <button class="btn btn-export" id="exportBtn" onclick="exportWav()">&#8615; Export WAV</button>
+  </div>
+
+  <div class="effects-chain" id="effectsChain" style="display:none">
+    <!-- Reverb -->
+    <div class="effect-card active" data-effect="reverb">
+      <div class="effect-header" onclick="toggleEffect(this)">
+        <h3>Reverb</h3>
+        <button class="effect-toggle on" onclick="event.stopPropagation();toggleBypass(this,'reverb')"></button>
+      </div>
+      <div class="effect-params">
+        <div class="param-row">
+          <span class="param-label">Decay</span>
+          <input class="param-slider" type="range" min="0.1" max="5" step="0.1" value="2" data-param="reverbDecay" oninput="updateParam(this)">
+          <span class="param-value">2.0s</span>
+        </div>
+        <div class="param-row">
+          <span class="param-label">Mix</span>
+          <input class="param-slider" type="range" min="0" max="100" step="1" value="30" data-param="reverbMix" oninput="updateParam(this)">
+          <span class="param-value">30%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delay -->
+    <div class="effect-card active" data-effect="delay">
+      <div class="effect-header" onclick="toggleEffect(this)">
+        <h3>Delay</h3>
+        <button class="effect-toggle on" onclick="event.stopPropagation();toggleBypass(this,'delay')"></button>
+      </div>
+      <div class="effect-params">
+        <div class="param-row">
+          <span class="param-label">Time</span>
+          <input class="param-slider" type="range" min="0.05" max="1" step="0.01" value="0.3" data-param="delayTime" oninput="updateParam(this)">
+          <span class="param-value">0.30s</span>
+        </div>
+        <div class="param-row">
+          <span class="param-label">Feedback</span>
+          <input class="param-slider" type="range" min="0" max="90" step="1" value="40" data-param="delayFeedback" oninput="updateParam(this)">
+          <span class="param-value">40%</span>
+        </div>
+        <div class="param-row">
+          <span class="param-label">Mix</span>
+          <input class="param-slider" type="range" min="0" max="100" step="1" value="25" data-param="delayMix" oninput="updateParam(this)">
+          <span class="param-value">25%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- EQ -->
+    <div class="effect-card active" data-effect="eq">
+      <div class="effect-header" onclick="toggleEffect(this)">
+        <h3>3-Band EQ</h3>
+        <button class="effect-toggle on" onclick="event.stopPropagation();toggleBypass(this,'eq')"></button>
+      </div>
+      <div class="effect-params">
+        <div class="param-row">
+          <span class="param-label">Low (250Hz)</span>
+          <input class="param-slider" type="range" min="-12" max="12" step="0.5" value="0" data-param="eqLow" oninput="updateParam(this)">
+          <span class="param-value">0 dB</span>
+        </div>
+        <div class="param-row">
+          <span class="param-label">Mid (1kHz)</span>
+          <input class="param-slider" type="range" min="-12" max="12" step="0.5" value="0" data-param="eqMid" oninput="updateParam(this)">
+          <span class="param-value">0 dB</span>
+        </div>
+        <div class="param-row">
+          <span class="param-label">High (4kHz)</span>
+          <input class="param-slider" type="range" min="-12" max="12" step="0.5" value="0" data-param="eqHigh" oninput="updateParam(this)">
+          <span class="param-value">0 dB</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Compressor -->
+    <div class="effect-card active" data-effect="compressor">
+      <div class="effect-header" onclick="toggleEffect(this)">
+        <h3>Compressor</h3>
+        <button class="effect-toggle on" onclick="event.stopPropagation();toggleBypass(this,'compressor')"></button>
+      </div>
+      <div class="effect-params">
+        <div class="param-row">
+          <span class="param-label">Threshold</span>
+          <input class="param-slider" type="range" min="-60" max="0" step="1" value="-24" data-param="compThreshold" oninput="updateParam(this)">
+          <span class="param-value">-24 dB</span>
+        </div>
+        <div class="param-row">
+          <span class="param-label">Ratio</span>
+          <input class="param-slider" type="range" min="1" max="20" step="0.5" value="4" data-param="compRatio" oninput="updateParam(this)">
+          <span class="param-value">4:1</span>
+        </div>
+        <div class="param-row">
+          <span class="param-label">Attack</span>
+          <input class="param-slider" type="range" min="0" max="100" step="1" value="10" data-param="compAttack" oninput="updateParam(this)">
+          <span class="param-value">10 ms</span>
+        </div>
+        <div class="param-row">
+          <span class="param-label">Release</span>
+          <input class="param-slider" type="range" min="10" max="1000" step="10" value="250" data-param="compRelease" oninput="updateParam(this)">
+          <span class="param-value">250 ms</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const STORAGE_PREFIX = 'fmus-audio-effects-';
+
+let audioCtx = null;
+let audioBuffer = null;
+let sourceNode = null;
+let isPlaying = false;
+let startTime = 0;
+let pauseOffset = 0;
+
+// Effect nodes
+let reverbConvolver = null;
+let reverbDry = null;
+let reverbWet = null;
+let delayNode = null;
+let delayFeedback = null;
+let delayDry = null;
+let delayWet = null;
+let eqLow = null;
+let eqMid = null;
+let eqHigh = null;
+let compressor = null;
+
+// Bypass state
+const bypass = {
+  reverb: false,
+  delay: false,
+  eq: false,
+  compressor: false
+};
+
+// Params
+const params = {
+  reverbDecay: 2,
+  reverbMix: 30,
+  delayTime: 0.3,
+  delayFeedback: 40,
+  delayMix: 25,
+  eqLow: 0,
+  eqMid: 0,
+  eqHigh: 0,
+  compThreshold: -24,
+  compRatio: 4,
+  compAttack: 10,
+  compRelease: 250
+};
+
+function loadSettings() {
+  try {
+    const saved = localStorage.getItem(STORAGE_PREFIX + 'params');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      Object.assign(params, parsed);
+      document.querySelectorAll('.param-slider').forEach(slider => {
+        const key = slider.dataset.param;
+        if (params[key] !== undefined) {
+          slider.value = params[key];
+          updateParamDisplay(slider);
+        }
+      });
+    }
+  } catch (e) { /* ignore */ }
+}
+
+function saveSettings() {
+  try {
+    localStorage.setItem(STORAGE_PREFIX + 'params', JSON.stringify(params));
+  } catch (e) { /* ignore */ }
+}
+
+function initAudioContext() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+}
+
+function generateImpulse(duration, sampleRate) {
+  const length = sampleRate * duration;
+  const impulse = audioCtx.createBuffer(2, length, sampleRate);
+  for (let ch = 0; ch < 2; ch++) {
+    const data = impulse.getChannelData(ch);
+    for (let i = 0; i < length; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, duration);
+    }
+  }
+  return impulse;
+}
+
+function buildEffectsChain() {
+  // EQ
+  eqLow = audioCtx.createBiquadFilter();
+  eqLow.type = 'lowshelf';
+  eqLow.frequency.value = 250;
+  eqLow.gain.value = params.eqLow;
+
+  eqMid = audioCtx.createBiquadFilter();
+  eqMid.type = 'peaking';
+  eqMid.frequency.value = 1000;
+  eqMid.Q.value = 1;
+  eqMid.gain.value = params.eqMid;
+
+  eqHigh = audioCtx.createBiquadFilter();
+  eqHigh.type = 'highshelf';
+  eqHigh.frequency.value = 4000;
+  eqHigh.gain.value = params.eqHigh;
+
+  // Compressor
+  compressor = audioCtx.createDynamicsCompressor();
+  compressor.threshold.value = params.compThreshold;
+  compressor.ratio.value = params.compRatio;
+  compressor.attack.value = params.compAttack / 1000;
+  compressor.release.value = params.compRelease / 1000;
+
+  // Reverb
+  reverbConvolver = audioCtx.createConvolver();
+  reverbConvolver.buffer = generateImpulse(params.reverbDecay, audioCtx.sampleRate);
+  reverbDry = audioCtx.createGain();
+  reverbWet = audioCtx.createGain();
+  const reverbMixVal = params.reverbMix / 100;
+  reverbDry.gain.value = 1 - reverbMixVal;
+  reverbWet.gain.value = reverbMixVal;
+
+  // Delay
+  delayNode = audioCtx.createDelay(2);
+  delayNode.delayTime.value = params.delayTime;
+  delayFeedback = audioCtx.createGain();
+  delayFeedback.gain.value = params.delayFeedback / 100;
+  delayDry = audioCtx.createGain();
+  delayWet = audioCtx.createGain();
+  const delayMixVal = params.delayMix / 100;
+  delayDry.gain.value = 1 - delayMixVal;
+  delayWet.gain.value = delayMixVal;
+
+  delayNode.connect(delayFeedback);
+  delayFeedback.connect(delayNode);
+}
+
+function connectChain(source, destination) {
+  let current = source;
+
+  // EQ
+  if (!bypass.eq) {
+    current.connect(eqLow);
+    eqLow.connect(eqMid);
+    eqMid.connect(eqHigh);
+    current = eqHigh;
+  }
+
+  // Compressor
+  if (!bypass.compressor) {
+    const compInput = current;
+    current = compressor;
+    compInput.connect(compressor);
+  }
+
+  // Reverb
+  if (!bypass.reverb) {
+    const reverbMerger = audioCtx.createGain();
+    current.connect(reverbDry);
+    current.connect(reverbConvolver);
+    reverbConvolver.connect(reverbWet);
+    reverbDry.connect(reverbMerger);
+    reverbWet.connect(reverbMerger);
+    current = reverbMerger;
+  }
+
+  // Delay
+  if (!bypass.delay) {
+    const delayMerger = audioCtx.createGain();
+    current.connect(delayDry);
+    current.connect(delayNode);
+    delayNode.connect(delayWet);
+    delayDry.connect(delayMerger);
+    delayWet.connect(delayMerger);
+    current = delayMerger;
+  }
+
+  current.connect(destination);
+}
+
+// Upload handling
+const uploadZone = document.getElementById('uploadZone');
+const fileInput = document.getElementById('fileInput');
+
+uploadZone.addEventListener('click', () => fileInput.click());
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadZone.classList.remove('dragover');
+  if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', e => {
+  if (e.target.files.length) handleFile(e.target.files[0]);
+});
+
+function handleFile(file) {
+  if (!file.type.startsWith('audio/') && !file.name.match(/\.(mp3|wav|ogg|flac|m4a|aac|webm)$/i)) return;
+  initAudioContext();
+
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    try {
+      audioBuffer = await audioCtx.decodeAudioData(e.target.result);
+      document.getElementById('fileName').textContent = file.name;
+      const duration = audioBuffer.duration;
+      const mins = Math.floor(duration / 60);
+      const secs = Math.floor(duration % 60);
+      document.getElementById('fileMeta').textContent =
+        `${mins}:${secs.toString().padStart(2, '0')} | ${audioBuffer.numberOfChannels}ch | ${audioBuffer.sampleRate}Hz`;
+      uploadZone.classList.add('hidden');
+      document.getElementById('fileInfo').classList.remove('hidden');
+      document.getElementById('transport').style.display = 'flex';
+      document.getElementById('effectsChain').style.display = 'flex';
+    } catch (err) {
+      alert('Could not decode audio file.');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function removeFile() {
+  stopPlayback();
+  audioBuffer = null;
+  uploadZone.classList.remove('hidden');
+  document.getElementById('fileInfo').classList.add('hidden');
+  document.getElementById('transport').style.display = 'none';
+  document.getElementById('effectsChain').style.display = 'none';
+  fileInput.value = '';
+}
+
+function togglePlay() {
+  if (isPlaying) {
+    stopPlayback();
+  } else {
+    startPlayback();
+  }
+}
+
+function startPlayback() {
+  if (!audioBuffer) return;
+  initAudioContext();
+  buildEffectsChain();
+
+  sourceNode = audioCtx.createBufferSource();
+  sourceNode.buffer = audioBuffer;
+  sourceNode.onended = () => {
+    if (isPlaying) {
+      isPlaying = false;
+      pauseOffset = 0;
+      document.getElementById('playBtn').innerHTML = '&#9654; Play';
+    }
+  };
+
+  connectChain(sourceNode, audioCtx.destination);
+  sourceNode.start(0, pauseOffset);
+  startTime = audioCtx.currentTime - pauseOffset;
+  isPlaying = true;
+  document.getElementById('playBtn').innerHTML = '&#10074;&#10074; Pause';
+}
+
+function stopPlayback() {
+  if (sourceNode) {
+    try { sourceNode.stop(); } catch (e) { /* ignore */ }
+    sourceNode.disconnect();
+    sourceNode = null;
+  }
+  if (isPlaying) {
+    pauseOffset = audioCtx.currentTime - startTime;
+  }
+  isPlaying = false;
+  pauseOffset = 0;
+  document.getElementById('playBtn').innerHTML = '&#9654; Play';
+}
+
+function toggleEffect(header) {
+  const card = header.closest('.effect-card');
+  card.classList.toggle('active');
+}
+
+function toggleBypass(btn, effect) {
+  btn.classList.toggle('on');
+  bypass[effect] = !btn.classList.contains('on');
+  if (isPlaying) {
+    const offset = audioCtx.currentTime - startTime;
+    pauseOffset = offset;
+    if (sourceNode) {
+      try { sourceNode.stop(); } catch (e) {}
+      sourceNode.disconnect();
+    }
+    isPlaying = false;
+    startPlayback();
+  }
+}
+
+function updateParam(slider) {
+  const key = slider.dataset.param;
+  params[key] = parseFloat(slider.value);
+  updateParamDisplay(slider);
+  applyParamChange(key);
+  saveSettings();
+}
+
+function updateParamDisplay(slider) {
+  const key = slider.dataset.param;
+  const val = parseFloat(slider.value);
+  const display = slider.parentElement.querySelector('.param-value');
+  switch (key) {
+    case 'reverbDecay': display.textContent = val.toFixed(1) + 's'; break;
+    case 'reverbMix': display.textContent = val + '%'; break;
+    case 'delayTime': display.textContent = val.toFixed(2) + 's'; break;
+    case 'delayFeedback': display.textContent = val + '%'; break;
+    case 'delayMix': display.textContent = val + '%'; break;
+    case 'eqLow': case 'eqMid': case 'eqHigh': display.textContent = val + ' dB'; break;
+    case 'compThreshold': display.textContent = val + ' dB'; break;
+    case 'compRatio': display.textContent = val + ':1'; break;
+    case 'compAttack': display.textContent = val + ' ms'; break;
+    case 'compRelease': display.textContent = val + ' ms'; break;
+  }
+}
+
+function applyParamChange(key) {
+  if (!audioCtx) return;
+  const t = audioCtx.currentTime;
+  switch (key) {
+    case 'reverbDecay':
+      if (reverbConvolver) reverbConvolver.buffer = generateImpulse(params.reverbDecay, audioCtx.sampleRate);
+      break;
+    case 'reverbMix':
+      if (reverbDry) { reverbDry.gain.setValueAtTime(1 - params.reverbMix / 100, t); }
+      if (reverbWet) { reverbWet.gain.setValueAtTime(params.reverbMix / 100, t); }
+      break;
+    case 'delayTime':
+      if (delayNode) delayNode.delayTime.setValueAtTime(params.delayTime, t);
+      break;
+    case 'delayFeedback':
+      if (delayFeedback) delayFeedback.gain.setValueAtTime(params.delayFeedback / 100, t);
+      break;
+    case 'delayMix':
+      if (delayDry) { delayDry.gain.setValueAtTime(1 - params.delayMix / 100, t); }
+      if (delayWet) { delayWet.gain.setValueAtTime(params.delayMix / 100, t); }
+      break;
+    case 'eqLow':
+      if (eqLow) eqLow.gain.setValueAtTime(params.eqLow, t);
+      break;
+    case 'eqMid':
+      if (eqMid) eqMid.gain.setValueAtTime(params.eqMid, t);
+      break;
+    case 'eqHigh':
+      if (eqHigh) eqHigh.gain.setValueAtTime(params.eqHigh, t);
+      break;
+    case 'compThreshold':
+      if (compressor) compressor.threshold.setValueAtTime(params.compThreshold, t);
+      break;
+    case 'compRatio':
+      if (compressor) compressor.ratio.setValueAtTime(params.compRatio, t);
+      break;
+    case 'compAttack':
+      if (compressor) compressor.attack.setValueAtTime(params.compAttack / 1000, t);
+      break;
+    case 'compRelease':
+      if (compressor) compressor.release.setValueAtTime(params.compRelease / 1000, t);
+      break;
+  }
+}
+
+async function exportWav() {
+  if (!audioBuffer) return;
+  const btn = document.getElementById('exportBtn');
+  btn.disabled = true;
+  btn.textContent = 'Rendering...';
+  const progressBar = document.getElementById('progressBar');
+  const progressFill = document.getElementById('progressFill');
+  progressBar.style.display = 'block';
+  progressFill.style.width = '0%';
+
+  try {
+    const offlineCtx = new OfflineAudioContext(
+      audioBuffer.numberOfChannels,
+      audioBuffer.length,
+      audioBuffer.sampleRate
+    );
+
+    // Rebuild effects chain in offline context
+    const offEqLow = offlineCtx.createBiquadFilter();
+    offEqLow.type = 'lowshelf';
+    offEqLow.frequency.value = 250;
+    offEqLow.gain.value = bypass.eq ? 0 : params.eqLow;
+
+    const offEqMid = offlineCtx.createBiquadFilter();
+    offEqMid.type = 'peaking';
+    offEqMid.frequency.value = 1000;
+    offEqMid.Q.value = 1;
+    offEqMid.gain.value = bypass.eq ? 0 : params.eqMid;
+
+    const offEqHigh = offlineCtx.createBiquadFilter();
+    offEqHigh.type = 'highshelf';
+    offEqHigh.frequency.value = 4000;
+    offEqHigh.gain.value = bypass.eq ? 0 : params.eqHigh;
+
+    const offComp = offlineCtx.createDynamicsCompressor();
+    if (!bypass.compressor) {
+      offComp.threshold.value = params.compThreshold;
+      offComp.ratio.value = params.compRatio;
+      offComp.attack.value = params.compAttack / 1000;
+      offComp.release.value = params.compRelease / 1000;
+    }
+
+    const source = offlineCtx.createBufferSource();
+    source.buffer = audioBuffer;
+
+    let current = source;
+
+    // EQ
+    current.connect(offEqLow);
+    offEqLow.connect(offEqMid);
+    offEqMid.connect(offEqHigh);
+    current = offEqHigh;
+
+    // Compressor
+    if (!bypass.compressor) {
+      current.connect(offComp);
+      current = offComp;
+    }
+
+    // Reverb
+    if (!bypass.reverb) {
+      const offConvolver = offlineCtx.createConvolver();
+      const impulseLen = audioBuffer.sampleRate * params.reverbDecay;
+      const impulse = offlineCtx.createBuffer(2, impulseLen, audioBuffer.sampleRate);
+      for (let ch = 0; ch < 2; ch++) {
+        const data = impulse.getChannelData(ch);
+        for (let i = 0; i < impulseLen; i++) {
+          data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / impulseLen, params.reverbDecay);
+        }
+      }
+      offConvolver.buffer = impulse;
+      const offRDry = offlineCtx.createGain();
+      const offRWet = offlineCtx.createGain();
+      offRDry.gain.value = 1 - params.reverbMix / 100;
+      offRWet.gain.value = params.reverbMix / 100;
+      const rMerge = offlineCtx.createGain();
+      current.connect(offRDry);
+      current.connect(offConvolver);
+      offConvolver.connect(offRWet);
+      offRDry.connect(rMerge);
+      offRWet.connect(rMerge);
+      current = rMerge;
+    }
+
+    // Delay
+    if (!bypass.delay) {
+      const offDelay = offlineCtx.createDelay(2);
+      offDelay.delayTime.value = params.delayTime;
+      const offFb = offlineCtx.createGain();
+      offFb.gain.value = params.delayFeedback / 100;
+      const offDDry = offlineCtx.createGain();
+      const offDWet = offlineCtx.createGain();
+      offDDry.gain.value = 1 - params.delayMix / 100;
+      offDWet.gain.value = params.delayMix / 100;
+      offDelay.connect(offFb);
+      offFb.connect(offDelay);
+      const dMerge = offlineCtx.createGain();
+      current.connect(offDDry);
+      current.connect(offDelay);
+      offDelay.connect(offDWet);
+      offDDry.connect(dMerge);
+      offDWet.connect(dMerge);
+      current = dMerge;
+    }
+
+    current.connect(offlineCtx.destination);
+    source.start(0);
+
+    progressFill.style.width = '30%';
+    const rendered = await offlineCtx.startRendering();
+    progressFill.style.width = '70%';
+
+    const wav = encodeWav(rendered);
+    progressFill.style.width = '100%';
+
+    const blob = new Blob([wav], { type: 'audio/wav' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'processed-audio.wav';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+  } catch (err) {
+    alert('Export failed: ' + err.message);
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '&#8615; Export WAV';
+  setTimeout(() => { progressBar.style.display = 'none'; }, 500);
+}
+
+function encodeWav(buffer) {
+  const numChannels = buffer.numberOfChannels;
+  const sampleRate = buffer.sampleRate;
+  const format = 1; // PCM
+  const bitsPerSample = 16;
+  const channels = [];
+  for (let i = 0; i < numChannels; i++) {
+    channels.push(buffer.getChannelData(i));
+  }
+  const numSamples = channels[0].length;
+  const dataSize = numSamples * numChannels * (bitsPerSample / 8);
+  const headerSize = 44;
+  const arrayBuffer = new ArrayBuffer(headerSize + dataSize);
+  const view = new DataView(arrayBuffer);
+
+  function writeString(offset, str) {
+    for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+  }
+
+  writeString(0, 'RIFF');
+  view.setUint32(4, 36 + dataSize, true);
+  writeString(8, 'WAVE');
+  writeString(12, 'fmt ');
+  view.setUint32(16, 16, true);
+  view.setUint16(20, format, true);
+  view.setUint16(22, numChannels, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * numChannels * (bitsPerSample / 8), true);
+  view.setUint16(32, numChannels * (bitsPerSample / 8), true);
+  view.setUint16(34, bitsPerSample, true);
+  writeString(36, 'data');
+  view.setUint32(40, dataSize, true);
+
+  let offset = 44;
+  for (let i = 0; i < numSamples; i++) {
+    for (let ch = 0; ch < numChannels; ch++) {
+      let sample = Math.max(-1, Math.min(1, channels[ch][i]));
+      sample = sample < 0 ? sample * 0x8000 : sample * 0x7FFF;
+      view.setInt16(offset, sample, true);
+      offset += 2;
+    }
+  }
+  return arrayBuffer;
+}
+
+loadSettings();
+</script>
+<script src="/related.js"></script>
+</body>
+</html>
